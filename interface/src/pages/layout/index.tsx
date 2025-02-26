@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router'
 import { Flex, Layout, Menu } from 'antd'
 import { OpenAIFilled, SettingFilled } from '@ant-design/icons'
+import ColumnGroup from 'antd/es/table/ColumnGroup'
 const { Header, Footer, Sider, Content } = Layout
 
 const items = [
@@ -10,7 +11,7 @@ const items = [
     key: '2',
     label: 'System',
     icon: <SettingFilled />,
-    children: [{ key: '2-1', label: 'Config', path: '/config' }],
+    children: [{ key: '2-1', label: 'Setting', path: '/setting' }],
   },
 ]
 
@@ -36,11 +37,15 @@ const findKey = (path, items) => {
 export default function MyLayout() {
   let location = useLocation().pathname
   const navigate = useNavigate()
-  let key = findKey(location, items)
-  console.log(key)
-  const [selectedKeys, setSelectedKeys] = useState([key || '1'])
+  const [selectedKeys, setSelectedKeys] = useState([])
   const handleMenuClick = ({ item, key, keyPath, domEvent }) => {
-    let path = item.props.path || '/'
+    setSelectedKeys([key])
+    navigate(item.props.path)
+  }
+
+  // 初始化菜单选中
+  if (!selectedKeys || selectedKeys.length === 0) {
+    let key = findKey(location, items)
     setSelectedKeys([key])
   }
 

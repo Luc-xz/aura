@@ -4,7 +4,7 @@ import { Routes, Route, Navigate } from 'react-router'
 
 import Login from './pages/login'
 import Layout from './pages/layout'
-import Config from './pages/config'
+import Setting from './pages/setting'
 import Chat from './pages/chat'
 
 function App() {
@@ -21,8 +21,8 @@ function App() {
             element={<Navigate to="chat" />}
           />
           <Route
-            path="config"
-            element={<Config />}
+            path="setting"
+            element={<Setting />}
           />
           <Route
             path="chat"
