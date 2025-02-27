@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+@layer components {
+  .card-active {
+    @apply border border-blue-500 rounded bg-gradient-to-b from-blue-100 via-transparent to-transparent;
+  }
+
+  .card-inactive {
+    @apply border border-transparent;
+  }
+
+}
+

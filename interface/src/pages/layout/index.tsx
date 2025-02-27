@@ -67,7 +67,7 @@ export default function MyLayout() {
             mode="inline"
             theme="light"
           />
-          <div className="absolute bottom-0 left-0 px-8 py-2 h-10 w-full  border-t border-gray-200">
+          <div className="absolute bottom-0 left-0 px-8 py-2 h-10 w-full border-t border-border">
             <div
               className="text-base cursor-pointer hover:text-blue-500"
               onClick={() => setCollapsed(!collapsed)}>
