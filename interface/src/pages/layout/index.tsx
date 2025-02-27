@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router'
 import { Flex, Layout, Menu } from 'antd'
-import { OpenAIFilled, SettingFilled } from '@ant-design/icons'
+import { OpenAIFilled, SettingFilled, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons'
 import ColumnGroup from 'antd/es/table/ColumnGroup'
 const { Header, Footer, Sider, Content } = Layout
 
@@ -49,20 +49,31 @@ export default function MyLayout() {
     setSelectedKeys([key])
   }
 
+  const [collapsed, setCollapsed] = useState(false)
+
   return (
     <Flex className="w-full h-full">
       <Layout>
         <Sider
-          style={{
-            backgroundColor: 'white',
-          }}>
+          className="relative"
+          collapsed={collapsed}
+          theme="light">
           <Menu
+            className="mb-10"
             selectedKeys={selectedKeys}
             items={items}
             onClick={handleMenuClick}
+            inlineCollapsed={collapsed}
             mode="inline"
             theme="light"
           />
+          <div className="absolute bottom-0 left-0 px-8 py-2 h-10 w-full  border-t border-gray-200">
+            <div
+              className="text-base cursor-pointer hover:text-blue-500"
+              onClick={() => setCollapsed(!collapsed)}>
+              {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            </div>
+          </div>
         </Sider>
         <Layout>
           <Outlet />
