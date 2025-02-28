@@ -1,9 +1,12 @@
 @import "tailwindcss";
 
 @theme {
+  --color-primary: #1890ff;
   --color-moon: #f0f3f9;
   --color-border: #e0e0e0;
 }
+
+@layer base {}
 
 @layer utilities {
   .title {
@@ -16,5 +19,15 @@
 
   .title-ter {
     @apply text-xl;
+  }
+}
+
+@layer components {
+  .card-active {
+    @apply border border-primary rounded bg-gradient-to-b from-blue-100 via-transparent to-transparent;
+  }
+
+  .card-inactive {
+    @apply border border-transparent;
   }
 }

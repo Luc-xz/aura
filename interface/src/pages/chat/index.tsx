@@ -1,7 +1,6 @@
 import { Button } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { PlusOutlined, CaretLeftFilled, CaretRightFilled } from '@ant-design/icons'
 import { useState } from 'react'
-import './index.css'
 
 function ChatHistory() {
   const [history, setHistory] = useState([
@@ -45,6 +44,7 @@ function ChatHistory() {
     },
   ])
   const [activeChat, setActiveChat] = useState(history[0])
+  const [historyVisible, setHistoryVisible] = useState(true)
 
   const HistoryCardList = history.map((item) => (
     <div
@@ -62,16 +62,23 @@ function ChatHistory() {
   ))
 
   return (
-    <div className="flex-1 bg-moon p-4 border-r border-border">
-      <div className="title-ter mb-8">历史对话</div>
-      <Button
-        className="w-full mb-2"
-        color="default"
-        variant="outlined"
-        icon={<PlusOutlined />}>
-        新建对话
-      </Button>
-      {HistoryCardList}
+    <div className={`relative bg-moon border-r border-border transition-all duration-300 ${historyVisible ? 'flex-1' : 'flex-none'}`}>
+      <div className={`${historyVisible ? 'p-4' : 'w-0 overflow-hidden p-0'}`}>
+        <div className="title-ter mb-8">历史对话</div>
+        <Button
+          className="w-full mb-2"
+          color="default"
+          variant="outlined"
+          icon={<PlusOutlined />}>
+          新建对话
+        </Button>
+        {HistoryCardList}
+      </div>
+      <div
+        className="absolute top-[50%] right-[-32px] w-5 h-11 flex items-center justify-center bg-moon color-primary text-sm hover:text-base border border-border rounded text-gray-500"
+        onClick={() => setHistoryVisible(!historyVisible)}>
+        {historyVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
+      </div>
     </div>
   )
 }
