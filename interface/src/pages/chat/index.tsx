@@ -1,5 +1,5 @@
-import { Button } from 'antd'
-import { PlusOutlined, CaretLeftFilled, CaretRightFilled } from '@ant-design/icons'
+import { Button, Card, Divider } from 'antd'
+import { PlusOutlined, CaretLeftFilled, CaretRightFilled, SwapOutlined, SettingOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 
 function ChatHistory() {
@@ -84,7 +84,34 @@ function ChatHistory() {
 }
 
 function Chat() {
-  return <div className="flex-4">Chat</div>
+  const [model, setModel] = useState({
+    name: 'DeepSeek-R1',
+  })
+
+  return (
+    <div className="flex flex-4 flex-col">
+      <div className="relative flex-none basis-18 flex items-center justify-center shadow-sm">
+        <Card
+          className="relative z-1 flex-1 mx-10 my-1 max-w-210 h-14"
+          size="small">
+          <div className="flex items-center px-2 w-full h-8">
+            <span className="flex-1 text-md font-bold">{model.name}</span>
+            <div className="text-gray cursor-pointer">
+              <SwapOutlined />
+            </div>
+            <Divider type="vertical" />
+            <div className="text-gray cursor-pointer">
+              <SettingOutlined />
+            </div>
+          </div>
+        </Card>
+        <img
+          className="absolute top-0 left-0 z-0 w-full h-full"
+          src="src/assets/images/chat-header-bg.jpg"></img>
+      </div>
+      <div className="flex-1">content</div>
+    </div>
+  )
 }
 
 export default function Page({}) {
