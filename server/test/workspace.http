@@ -1,0 +1,12 @@
+@proto = http
+@host = localhost
+@port = 3000
+@baseApi = /api/workspace
+@baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
+
+GET {{baseUrl}}/ HTTP/1.1
+
+###
+
+GET {{baseUrl}}/1 HTTP/1.1
+

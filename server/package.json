@@ -1,0 +1,19 @@
+{
+  "name": "aura-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^4.21.2",
+    "js-yaml": "^4.1.0",
+    "log4js": "^6.9.1",
+    "mysql2": "^3.12.0"
+  }
+}

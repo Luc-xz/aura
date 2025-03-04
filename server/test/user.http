@@ -1,0 +1,9 @@
+@proto = http
+@host = localhost
+@port = 3000
+@baseApi = /api/user
+@baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
+
+GET {{baseUrl}}/ HTTP/1.1
+
+###
