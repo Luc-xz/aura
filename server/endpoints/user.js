@@ -34,6 +34,37 @@ function workspaceEndpoints(apiRouter) {
       })
     }
   })
+
+  router.post('/update', async (req, res) => {
+    const { id, name, email, password } = req.body
+
+    try {
+      const [data] = await sql.execute(
+        'UPDATE user SET name = ?, email = ?, password = ? WHERE id = ?',
+        [name, email, password, id]
+      )
+      res.status(200).json(data)
+    } catch (e) {
+      res.status(500).json({
+        message: 'update user error',
+        error: e.message
+      })
+    }
+  })
+
+  router.post('/delete', async (req, res) => {
+    const { id } = req.body
+
+    try {
+      const [data] = await sql.execute('DELETE FROM user WHERE id = ?', [id])
+      res.status(200).json(data)
+    } catch (e) {
+      res.status(500).json({
+        message: 'delete user error',
+        error: e.message
+      })
+    }
+  })
 }
 
 export default workspaceEndpoints

@@ -12,5 +12,26 @@ POST {{baseUrl}}/create
 content-type: application/json
 
 {
-    "name": null
+    "name": "first_user"
+}
+
+###
+
+POST {{baseUrl}}/update
+content-type: application/json
+
+{
+    "id": 1,
+    "name": "default_user",
+    "email": "default_user@example.com",
+    "password": "123456"
+}
+
+###
+
+POST {{baseUrl}}/delete
+content-type: application/json
+
+{
+    "id": 2
 }
