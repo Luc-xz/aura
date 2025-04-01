@@ -3,7 +3,7 @@
 @theme {
   --color-primary: #1890ff;
   --color-moon: #f0f3f9;
-  --color-border: #e0e0e0;
+  --color-ashen: #e0e0e0;
 }
 
 @layer base {}

@@ -17,44 +17,44 @@ import { useState, useEffect } from 'react'
 
 function HistoryPanel({ activeChat, setActiveChat }) {
   const [history, setHistory] = useState([
-    {
-      id: 1,
-      title: '对话1',
-      model: 'gpt-3.5-turbo',
-      createdAt: '2021-01-01 12:00:00',
-      updatedAt: '2021-01-01 12:00:00',
-      data: [
-        {
-          proposer: 'user',
-          content: '你好，我是小明，很高兴认识你',
-          time: '2021-01-01 12:00:00',
-        },
-        {
-          proposer: 'bot',
-          content: '你好，小明，很高兴认识你',
-          time: '2021-01-01 12:00:00',
-        },
-      ],
-    },
-    {
-      id: 2,
-      title: '对话2',
-      model: 'gpt-3.5-turbo',
-      createdAt: '2021-01-01 12:00:00',
-      updatedAt: '2021-01-01 12:00:00',
-      data: [
-        {
-          proposer: 'user',
-          content: '你好，我是小明，很高兴认识你',
-          time: '2021-01-01 12:00:00',
-        },
-        {
-          proposer: 'bot',
-          content: '你好，小明，很高兴认识你',
-          time: '2021-01-01 12:00:00',
-        },
-      ],
-    },
+    // {
+    //   id: 1,
+    //   title: '对话1',
+    //   model: 'gpt-3.5-turbo',
+    //   createdAt: '2021-01-01 12:00:00',
+    //   updatedAt: '2021-01-01 12:00:00',
+    //   data: [
+    //     {
+    //       proposer: 'user',
+    //       content: '你好，我是小明，很高兴认识你',
+    //       time: '2021-01-01 12:00:00',
+    //     },
+    //     {
+    //       proposer: 'bot',
+    //       content: '你好，小明，很高兴认识你',
+    //       time: '2021-01-01 12:00:00',
+    //     },
+    //   ],
+    // },
+    // {
+    //   id: 2,
+    //   title: '对话2',
+    //   model: 'gpt-3.5-turbo',
+    //   createdAt: '2021-01-01 12:00:00',
+    //   updatedAt: '2021-01-01 12:00:00',
+    //   data: [
+    //     {
+    //       proposer: 'user',
+    //       content: '你好，我是小明，很高兴认识你',
+    //       time: '2021-01-01 12:00:00',
+    //     },
+    //     {
+    //       proposer: 'bot',
+    //       content: '你好，小明，很高兴认识你',
+    //       time: '2021-01-01 12:00:00',
+    //     },
+    //   ],
+    // },
   ])
   const [historyVisible, setHistoryVisible] = useState(true)
 
@@ -78,7 +78,7 @@ function HistoryPanel({ activeChat, setActiveChat }) {
   }, [])
 
   return (
-    <div className="relative bg-moon border-r border-border flex-0">
+    <div className="relative bg-moon border-r border-ashen flex-0">
       <div className={`overflow-hidden transition-all duration-300 ${historyVisible ? 'w-55' : 'w-0'}`}>
         <div className="p-4 w-55">
           <div className="title-ter mb-8">历史对话</div>
@@ -93,7 +93,7 @@ function HistoryPanel({ activeChat, setActiveChat }) {
         </div>
       </div>
       <div
-        className="absolute top-[50%] right-[-32px] w-5 h-11 flex items-center justify-center bg-moon color-primary text-sm hover:text-base border border-border rounded text-gray-500 cursor-pointer"
+        className="absolute top-[50%] right-[-32px] w-5 h-11 flex items-center justify-center bg-moon color-primary text-sm hover:text-base border border-ashen rounded text-gray-500 cursor-pointer"
         onClick={() => setHistoryVisible(!historyVisible)}>
         {historyVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
       </div>
