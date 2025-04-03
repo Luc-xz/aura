@@ -14,6 +14,7 @@ function userEndpoints(apiRouter) {
         const { limit, offset, page } = getOffset(req.query)
         const [data] = await sql.query('SELECT * FROM user LIMIT ? OFFSET ?', [limit, offset])
         res.status(200).json({
+          message: 'get user success',
           data,
           total,
           page,
@@ -22,6 +23,7 @@ function userEndpoints(apiRouter) {
       } else {
         const [data] = await sql.query('SELECT * FROM user')
         res.status(200).json({
+          message: 'get user success',
           data,
           total,
         })
@@ -61,7 +63,10 @@ function userEndpoints(apiRouter) {
         'UPDATE user SET name = ?, email = ?, password = ? WHERE id = ?',
         [name, email, password, id]
       )
-      res.status(200).json(data)
+      res.status(200).json({
+        message: 'update user success',
+        data
+      })
     } catch (e) {
       res.status(500).json({
         message: 'update user error',
@@ -75,7 +80,10 @@ function userEndpoints(apiRouter) {
 
     try {
       const [data] = await sql.execute('DELETE FROM user WHERE id = ?', [id])
-      res.status(200).json(data)
+      res.status(200).json({
+        message: 'delete user success',
+        data
+      })
     } catch (e) {
       res.status(500).json({
         message: 'delete user error',

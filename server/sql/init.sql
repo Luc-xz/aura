@@ -9,3 +9,24 @@ CREATE TABLE IF NOT EXISTS user (
   INDEX idx_email (email),
   INDEX idx_created_at (created_at)
 );
+
+CREATE TABLE IF NOT EXISTS workspace (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL UNIQUE,
+  model VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_title (title),
+  INDEX idx_created_at (created_at)
+);
+
+CREATE TABLE IF NOT EXISTS chat (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  workspace_id INT NOT NULL,
+  FOREIGN KEY (workspace_id) REFERENCES workspace(id),
+  proposer VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_created_at (created_at)
+);

@@ -9,7 +9,7 @@
 @layer base {}
 
 @layer utilities {
-  .title {
+  .title-pri {
     @apply text-3xl font-bold;
   }
 
