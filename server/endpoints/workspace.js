@@ -6,7 +6,7 @@ const router = express.Router()
 function workspaceEndpoints(apiRouter) {
   apiRouter.use('/workspace', router)
 
-  router.get('/', (req, res) => {
+  router.get('/', async (req, res) => {
     try {
       const data = await sql.query('SELECT * FROM workspace')
       res.status(200).json({
