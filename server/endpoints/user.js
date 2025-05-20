@@ -36,7 +36,7 @@ function userEndpoints(apiRouter) {
     }
   })
 
-  router.post('/create', async (req, res) => {
+  router.post('/', async (req, res) => {
     const { name, email = null, password = null } = req.body
 
     try {
@@ -55,8 +55,9 @@ function userEndpoints(apiRouter) {
     }
   })
 
-  router.post('/update', async (req, res) => {
-    const { id, name, email, password } = req.body
+  router.put('/:id', async (req, res) => {
+    const { id } = req.params
+    const { name, email, password } = req.body
 
     try {
       const [data] = await sql.execute(
@@ -75,8 +76,8 @@ function userEndpoints(apiRouter) {
     }
   })
 
-  router.post('/delete', async (req, res) => {
-    const { id } = req.body
+  router.delete('/:id', async (req, res) => {
+    const { id } = req.params
 
     try {
       const [data] = await sql.execute('DELETE FROM user WHERE id = ?', [id])

@@ -4,9 +4,34 @@
 @baseApi = /api/workspace
 @baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
 
+# 列表查询
 GET {{baseUrl}}/ HTTP/1.1
 
 ###
-
+# 详情查询
 GET {{baseUrl}}/1 HTTP/1.1
+
+###
+# 创建
+POST {{baseUrl}}/ HTTP/1.1
+content-type: application/json
+
+{
+  "title": "test3",
+  "model": "gpt-3.5-turbo"
+}
+
+###
+# 更新
+PUT {{baseUrl}}/1 HTTP/1.1
+content-type: application/json
+
+{
+  "title": "test2",
+  "model": "gpt-3.5-turbo"
+}
+
+###
+# 删除
+DELETE {{baseUrl}}/1 HTTP/1.1
 

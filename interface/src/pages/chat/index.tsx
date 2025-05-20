@@ -1,4 +1,4 @@
-import { Button, Card, Divider, Flex, Space } from 'antd'
+import { Button, Card, Divider, Flex, Space, Modal, Form, Input, message } from 'antd'
 import { Bubble, Attachments, Sender } from '@ant-design/x'
 import {
   PlusOutlined,
@@ -13,56 +13,21 @@ import {
   CloudUploadOutlined,
   LinkOutlined,
 } from '@ant-design/icons'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { getWorkspaceList, createWorkspace } from '@/api/workspace'
 
 function HistoryPanel({ activeChat, setActiveChat }) {
-  const [history, setHistory] = useState([
-    // {
-    //   id: 1,
-    //   title: '对话1',
-    //   model: 'gpt-3.5-turbo',
-    //   createdAt: '2021-01-01 12:00:00',
-    //   updatedAt: '2021-01-01 12:00:00',
-    //   data: [
-    //     {
-    //       proposer: 'user',
-    //       content: '你好，我是小明，很高兴认识你',
-    //       time: '2021-01-01 12:00:00',
-    //     },
-    //     {
-    //       proposer: 'bot',
-    //       content: '你好，小明，很高兴认识你',
-    //       time: '2021-01-01 12:00:00',
-    //     },
-    //   ],
-    // },
-    // {
-    //   id: 2,
-    //   title: '对话2',
-    //   model: 'gpt-3.5-turbo',
-    //   createdAt: '2021-01-01 12:00:00',
-    //   updatedAt: '2021-01-01 12:00:00',
-    //   data: [
-    //     {
-    //       proposer: 'user',
-    //       content: '你好，我是小明，很高兴认识你',
-    //       time: '2021-01-01 12:00:00',
-    //     },
-    //     {
-    //       proposer: 'bot',
-    //       content: '你好，小明，很高兴认识你',
-    //       time: '2021-01-01 12:00:00',
-    //     },
-    //   ],
-    // },
-  ])
+  const [history, setHistory] = useState([])
   const [historyVisible, setHistoryVisible] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [form] = Form.useForm()
+  const historyRef = useRef(null)
 
   const HistoryCardList = history.map((item) => (
     <div
       key={item.id}
       onClick={() => setActiveChat(item)}
-      className={`p-3 w-full space-x-2  cursor-pointer ${item.id === (activeChat && activeChat.id) ? 'card-active' : 'card-inactive'}`}>
+      className={`p-3 w-full space-x-2 cursor-pointer ${item.id === (activeChat && activeChat.id) ? 'card-active' : 'card-inactive'}`}>
       <div className="flex items-center">
         <div className="flex flex-col justify-between">
           <div>{item.title}</div>
@@ -73,23 +38,56 @@ function HistoryPanel({ activeChat, setActiveChat }) {
     </div>
   ))
 
+  const handleCreateWorkspace = async () => {
+    await form.validateFields()
+    const [res, err] = await createWorkspace(form.getFieldsValue(true))
+    if (res) {
+      message.success('新建对话成功')
+      setIsModalOpen(false)
+      form.resetFields()
+      setActiveChat(res.data)
+      fetchWorkspaceList()
+    } else {
+      message.error('新建对话失败：' + err.message)
+    }
+  }
+
+  const fetchWorkspaceList = async () => {
+    console.log('getWorkspaceList')
+    const [res, err] = await getWorkspaceList()
+    if (res) {
+      let history = res.data || []
+      setHistory(history)
+    }
+  }
+
   useEffect(() => {
-    setActiveChat(history[0])
+    fetchWorkspaceList()
   }, [])
+
+  useEffect(() => {
+    let chat = history.find((item) => item.id === activeChat?.id) || history[0]
+    setActiveChat(chat)
+  }, [history])
 
   return (
     <div className="relative bg-moon border-r border-ashen flex-0">
-      <div className={`overflow-hidden transition-all duration-300 ${historyVisible ? 'w-55' : 'w-0'}`}>
-        <div className="p-4 w-55">
+      <div className={`overflow-hidden h-full transition-all duration-300 ${historyVisible ? 'w-55' : 'w-0'}`}>
+        <div className="overflow-hidden p-4 w-55 h-full">
           <div className="title-ter mb-8">历史对话</div>
           <Button
+            onClick={() => setIsModalOpen(true)}
             className="w-full mb-2"
             color="default"
             variant="outlined"
             icon={<PlusOutlined />}>
             新建对话
           </Button>
-          {HistoryCardList}
+          <div
+            ref={historyRef}
+            className="overflow-y-auto h-[calc(100%-92px)]">
+            {HistoryCardList}
+          </div>
         </div>
       </div>
       <div
@@ -97,6 +95,27 @@ function HistoryPanel({ activeChat, setActiveChat }) {
         onClick={() => setHistoryVisible(!historyVisible)}>
         {historyVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
       </div>
+      <Modal
+        title="新建对话"
+        closable={true}
+        open={isModalOpen}
+        onOk={handleCreateWorkspace}
+        onCancel={() => setIsModalOpen(false)}>
+        <Form form={form}>
+          <Form.Item
+            name="title"
+            label="对话名称"
+            rules={[{ required: true, message: '请输入对话名称' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="model"
+            label="对话模型"
+            rules={[{ required: true, message: '请输入对话模型' }]}>
+            <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   )
 }
@@ -107,7 +126,7 @@ function ChatPanel({ activeChat }) {
   })
 
   const chatBubbleList = activeChat
-    ? activeChat.data.map((item) => (
+    ? activeChat?.data?.map?.((item) => (
         <Bubble
           placement={item.proposer === 'user' ? 'end' : 'start'}
           content={item.content}

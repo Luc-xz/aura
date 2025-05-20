@@ -8,7 +8,7 @@ GET {{baseUrl}}/ HTTP/1.1
 
 ###
 
-POST {{baseUrl}}/create
+POST {{baseUrl}}/
 content-type: application/json
 
 {
@@ -17,11 +17,10 @@ content-type: application/json
 
 ###
 
-POST {{baseUrl}}/update
+PUT {{baseUrl}}/1
 content-type: application/json
 
 {
-    "id": 1,
     "name": "default_user",
     "email": "default_user@example.com",
     "password": "123456"
@@ -29,9 +28,5 @@ content-type: application/json
 
 ###
 
-POST {{baseUrl}}/delete
+DELETE {{baseUrl}}/2
 content-type: application/json
-
-{
-    "id": 2
-}
