@@ -1,4 +1,4 @@
-import { Button, Card, Divider, Flex, Space, Modal, Form, Input, message } from 'antd'
+import { Button, Card, Divider, Flex, Space, Modal, Form, Input, Dropdown, message } from 'antd'
 import { Bubble, Attachments, Sender } from '@ant-design/x'
 import {
   PlusOutlined,
@@ -14,7 +14,7 @@ import {
   LinkOutlined,
 } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
-import { getWorkspaceList, createWorkspace } from '@/api/workspace'
+import { getWorkspaceList, createWorkspace, updateWorkspace, deleteWorkspace } from '@/api/workspace'
 
 function HistoryPanel({ activeChat, setActiveChat }) {
   const [history, setHistory] = useState([])
@@ -22,6 +22,49 @@ function HistoryPanel({ activeChat, setActiveChat }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [form] = Form.useForm()
   const historyRef = useRef(null)
+
+  const dropdown = (
+    <Dropdown
+      menu={{
+        items: [
+          {
+            key: 'edit',
+            label: '编辑对话',
+          },
+          {
+            key: 'delete',
+            label: '删除对话',
+          },
+        ],
+        onClick: ({ key }) => {
+          if (key === 'edit') {
+            form.setFieldsValue({
+              id: activeChat.id,
+              title: activeChat.title,
+              model: activeChat.model,
+            })
+            setIsModalOpen(true)
+            return
+          }
+          if (key === 'delete') {
+            Modal.confirm({
+              title: '确定删除对话吗？',
+              onOk: async () => {
+                const [res, err] = await deleteWorkspace(activeChat.id)
+                if (res) {
+                  message.success('操作成功')
+                  fetchWorkspaceList()
+                }
+              },
+            })
+            return
+          }
+        },
+      }}
+      placement="bottomLeft">
+      <div className="relative bottom-1 flex-1 text-xl text-right cursor-pointer">...</div>
+    </Dropdown>
+  )
 
   const HistoryCardList = history.map((item) => (
     <div
@@ -33,22 +76,24 @@ function HistoryPanel({ activeChat, setActiveChat }) {
           <div>{item.title}</div>
           <div className="text-sm text-gray-500">{item.model}</div>
         </div>
-        {item.id === (activeChat && activeChat.id) && <div className="relative bottom-1 flex-1 text-xl text-right cursor-pointer">...</div>}
+        {item.id === (activeChat && activeChat.id) && dropdown}
       </div>
     </div>
   ))
 
-  const handleCreateWorkspace = async () => {
+  const handleEditWorkspace = async () => {
     await form.validateFields()
-    const [res, err] = await createWorkspace(form.getFieldsValue(true))
+    let flag = form.getFieldValue('id') ? 'update' : 'create'
+    let api = flag === 'update' ? updateWorkspace : createWorkspace
+    const [res, err] = await api(form.getFieldsValue(true))
     if (res) {
-      message.success('新建对话成功')
+      message.success('操作成功')
       setIsModalOpen(false)
       form.resetFields()
       setActiveChat(res.data)
       fetchWorkspaceList()
     } else {
-      message.error('新建对话失败：' + err.message)
+      message.error('操作失败：' + err.message)
     }
   }
 
@@ -96,10 +141,10 @@ function HistoryPanel({ activeChat, setActiveChat }) {
         {historyVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
       </div>
       <Modal
-        title="新建对话"
+        title={`${form.getFieldValue('id') ? '编辑' : '新建'}对话`}
         closable={true}
         open={isModalOpen}
-        onOk={handleCreateWorkspace}
+        onOk={handleEditWorkspace}
         onCancel={() => setIsModalOpen(false)}>
         <Form form={form}>
           <Form.Item

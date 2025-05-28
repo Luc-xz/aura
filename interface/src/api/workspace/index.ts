@@ -22,9 +22,9 @@ export const createWorkspace = (data: any) => {
   })
 }
 
-export const updateWorkspace = (id: string, data: any) => {
+export const updateWorkspace = (data: any) => {
   return request({
-    url: `/api/workspace/${id}`,
+    url: `/api/workspace/${data.id}`,
     method: 'PUT',
     data,
   })
