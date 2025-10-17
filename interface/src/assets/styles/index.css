@@ -4,6 +4,7 @@
   --color-primary: #1890ff;
   --color-moon: #f0f3f9;
   --color-ashen: #e0e0e0;
+  --flex-content: 0 0 max-content;
 }
 
 @layer base {}

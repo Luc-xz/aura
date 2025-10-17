@@ -62,7 +62,7 @@ function HistoryPanel({ activeChat, setActiveChat }) {
         },
       }}
       placement="bottomLeft">
-      <div className="relative bottom-1 flex-1 text-xl text-right cursor-pointer">...</div>
+      <div className="ml-2 relative bottom-1 text-xl text-right cursor-pointer">...</div>
     </Dropdown>
   )
 
@@ -70,11 +70,11 @@ function HistoryPanel({ activeChat, setActiveChat }) {
     <div
       key={item.id}
       onClick={() => setActiveChat(item)}
-      className={`p-3 w-full space-x-2 cursor-pointer ${item.id === (activeChat && activeChat.id) ? 'card-active' : 'card-inactive'}`}>
-      <div className="flex items-center">
-        <div className="flex flex-col justify-between">
-          <div>{item.title}</div>
-          <div className="text-sm text-gray-500">{item.model}</div>
+      className={`p-3 w-full space-x-2 cursor-pointer rounded hover:bg-blue-100 ${item.id === (activeChat && activeChat.id) ? 'card-active' : 'card-inactive'}`}>
+      <div className="flex items-center w-full">
+        <div className="flex flex-col justify-between flex-1 overflow-hidden">
+          <div className="truncate">{item.title}</div>
+          <div className="truncate text-sm text-gray-500">{item.model}</div>
         </div>
         {item.id === (activeChat && activeChat.id) && dropdown}
       </div>
