@@ -1,0 +1,17 @@
+@proto = http
+@host = localhost
+@port = 3000
+@baseApi = /api/chat
+@baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
+
+GET {{baseUrl}}/ HTTP/1.1
+
+###
+
+POST {{baseUrl}}/
+content-type: application/json
+
+{
+    "prompt": "用中文一句话简要解释一下量子纠缠",
+    "stream": true
+}
