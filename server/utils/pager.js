@@ -12,6 +12,11 @@ export function getOffset(query) {
 }
 
 export async function getTotal(table) {
-  const [[{total}]] = await sql.query(`SELECT COUNT(*) as total FROM ${table}`)
+  const [[{ total }]] = await sql.query(`SELECT COUNT(*) as total FROM ${table}`)
   return total
+}
+
+// TODO: complete pagination util
+export function getOffsetPage() {
+
 }
