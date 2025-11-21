@@ -6,6 +6,7 @@ import { loggerMiddleware } from './utils/logger.js'
 import userEndpoints from './endpoints/user.js'
 import workspaceEndpoints from './endpoints/workspace.js'
 import chatEndpoints from './endpoints/chat.js'
+import noteEndpoints from './endpoints/note.js'
 
 const app = express()
 const apiRouter = express.Router()
@@ -16,11 +17,12 @@ app.use('/api', apiRouter)
 userEndpoints(apiRouter)
 workspaceEndpoints(apiRouter)
 chatEndpoints(apiRouter)
+noteEndpoints(apiRouter)
 
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.type === 'entity.parse.failed') {
-    return res.status(400).json({ 
-      success: false, 
+    return res.status(400).json({
+      success: false,
       message: 'invalid request body'
     })
   }

@@ -1,0 +1,34 @@
+@proto = http
+@host = localhost
+@port = 3000
+@baseApi = /api/note
+@baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
+
+GET {{baseUrl}}/ HTTP/1.1
+
+###
+
+POST {{baseUrl}}/
+content-type: application/json
+
+{
+    "title": "test_note",
+    "content": "test_note_content",
+    "keywords": ["test_note_keywords"]
+}
+
+###
+
+PUT {{baseUrl}}/1
+content-type: application/json
+
+{
+    "title": "test_note",
+    "content": "test_note_content",
+    "keywords": ["keyword1", "keyword2"]
+}
+
+###
+
+DELETE {{baseUrl}}/2
+content-type: application/json

@@ -21,7 +21,6 @@ function chatEndpoints(apiRouter) {
     })
     if (!stream) {
       const data = await response.json()
-      console.log('data', data)
       res.status(200).json({
         message: 'chat success',
         data: data.message
