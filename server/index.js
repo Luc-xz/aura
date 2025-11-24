@@ -2,7 +2,7 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import sql from './sql/index.js'
 
-import { loggerMiddleware } from './utils/logger.js'
+import { loggerMiddleware, errorLoggerMiddleware } from './utils/logger.js'
 import userEndpoints from './endpoints/user.js'
 import workspaceEndpoints from './endpoints/workspace.js'
 import chatEndpoints from './endpoints/chat.js'
@@ -27,6 +27,7 @@ app.use((req, res, next) => {
 })
 
 // Global Error Handler
+app.use(errorLoggerMiddleware)
 app.use((err, req, res, next) => {
   // Handle Body Parser JSON syntax errors
   if (err instanceof SyntaxError && err.type === 'entity.parse.failed') {
