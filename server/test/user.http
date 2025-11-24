@@ -4,7 +4,11 @@
 @baseApi = /api/user
 @baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
 
-GET {{baseUrl}}/ HTTP/1.1
+GET {{baseUrl}}/list HTTP/1.1
+
+###
+
+GET {{baseUrl}}/page?page=1&pageSize=10&keyword=user1&createdAt=2025-11-24T00:00:00,2025-11-24T23:59:59 HTTP/1.1
 
 ###
 
@@ -12,12 +16,14 @@ POST {{baseUrl}}/
 content-type: application/json
 
 {
-    "name": "first_user"
+    "name": "third_user",
+    "email": "test2@gmail.com",
+    "password": "123456"
 }
 
 ###
 
-PUT {{baseUrl}}/1
+PUT {{baseUrl}}/46
 content-type: application/json
 
 {
@@ -28,5 +34,5 @@ content-type: application/json
 
 ###
 
-DELETE {{baseUrl}}/2
+DELETE {{baseUrl}}/41
 content-type: application/json

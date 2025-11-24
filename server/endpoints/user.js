@@ -1,97 +1,86 @@
 import express from 'express'
 import sql from '../sql/index.js'
-import { getOffset, getTotal } from '../utils/pager.js'
+import User from '../models/user.js'
+import { asyncHandler } from '../utils/asyncHandler.js'
 
 const router = express.Router()
 
 function userEndpoints(apiRouter) {
   apiRouter.use('/user', router)
 
-  router.get('/', async (req, res) => {
-    try {
-      const total = await getTotal('user')
-      if (req.query.page) {
-        const { limit, offset, page } = getOffset(req.query)
-        const [data] = await sql.query('SELECT * FROM user LIMIT ? OFFSET ?', [limit, offset])
-        res.status(200).json({
-          message: 'get user success',
-          data,
-          total,
-          page,
-          limit
-        })
-      } else {
-        const [data] = await sql.query('SELECT * FROM user')
-        res.status(200).json({
-          message: 'get user success',
-          data,
-          total,
-        })
+  router.get('/list', asyncHandler(async (req, res) => {
+    const { page, pageSize, orderBy, orderDir, ...rest } = req.query
+    const data = await User.findAll({
+      filters: rest,
+      pagination: null,
+      sort: {
+        orderBy,
+        orderDir
       }
-    } catch (e) {
-      res.status(500).json({
-        message: 'get user error',
-        error: e.message
-      })
-    }
-  })
+    })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
 
-  router.post('/', async (req, res) => {
+  router.get('/page', asyncHandler(async (req, res) => {
+    const { page, pageSize, orderBy, orderDir, ...rest } = req.query
+    const data = await User.findAll({
+      filters: {
+        ...rest,
+        createdAt: rest?.createdAt?.split(',') || null,
+        updatedAt: rest?.updatedAt?.split(',') || null,
+      },
+      pagination: {
+        page,
+        pageSize
+      },
+      sort: {
+        orderBy,
+        orderDir
+      }
+    })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
+
+  router.post('/', asyncHandler(async (req, res) => {
     const { name, email = null, password = null } = req.body
+    const data = await User.create({ name, email, password })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success',
+    })
+  }))
 
-    try {
-      const [data] = await sql.execute(
-        'INSERT INTO user (name, email, password) VALUES (?, ?, ?)',
-        [name, email, password]
-      )
-      res.status(200).json({
-        message: 'create user success',
-      })
-    } catch (e) {
-      res.status(500).json({
-        message: 'create user error',
-        error: e.message
-      })
-    }
-  })
-
-  router.put('/:id', async (req, res) => {
+  router.put('/:id', asyncHandler(async (req, res) => {
     const { id } = req.params
     const { name, email, password } = req.body
 
-    try {
-      const [data] = await sql.execute(
-        'UPDATE user SET name = ?, email = ?, password = ? WHERE id = ?',
-        [name, email, password, id]
-      )
-      res.status(200).json({
-        message: 'update user success',
-        data
-      })
-    } catch (e) {
-      res.status(500).json({
-        message: 'update user error',
-        error: e.message
-      })
-    }
-  })
+    const data = await User.update(id, { name, email, password })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success',
+    })
+  }))
 
-  router.delete('/:id', async (req, res) => {
+  router.delete('/:id', asyncHandler(async (req, res) => {
     const { id } = req.params
 
-    try {
-      const [data] = await sql.execute('DELETE FROM user WHERE id = ?', [id])
-      res.status(200).json({
-        message: 'delete user success',
-        data
-      })
-    } catch (e) {
-      res.status(500).json({
-        message: 'delete user error',
-        error: e.message
-      })
-    }
-  })
+    const data = await User.delete(id)
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success',
+    })
+  }))
 }
 
 export default userEndpoints

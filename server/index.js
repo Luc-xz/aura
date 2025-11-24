@@ -19,18 +19,31 @@ workspaceEndpoints(apiRouter)
 chatEndpoints(apiRouter)
 noteEndpoints(apiRouter)
 
+// Handle 404 - Catch all unmatched routes
+app.use((req, res, next) => {
+  const error = new Error('Not Found')
+  error.status = 404
+  next(error)
+})
+
+// Global Error Handler
 app.use((err, req, res, next) => {
+  // Handle Body Parser JSON syntax errors
   if (err instanceof SyntaxError && err.type === 'entity.parse.failed') {
     return res.status(400).json({
-      success: false,
+      code: 400,
       message: 'invalid request body'
     })
   }
-  next()
-})
 
-app.all('(.*)', (req, res, next) => {
-  res.status(404)
+  const statusCode = err.status || 500
+  const message = err.message || 'internal server error'
+
+  res.status(statusCode).json({
+    code: statusCode,
+    message: message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  })
 })
 
 app.listen(3000, () => {

@@ -1,14 +1,63 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
 
-class User () {
-  filterFields(user) {
+export default class User {
+  static filterFields(user) {
     const { password, ...rest } = user
     return rest
   }
 
-  static async findAll({ filters={}, pagination={}, sort={} } = {}) {
-    // TODO
+  static async findAll({ filters = {}, pagination = {}, sort = {} } = {}) {
+    let baseSql = `SELECT * FROM user WHERE 1=1`
+    const params = []
+
+    if (filters.keyword) {
+      baseSql += ' AND (name LIKE ? OR email LIKE ?)'
+      params.push(`%${filters.keyword}%`, `%${filters.keyword}%`)
+    }
+
+    if (filters.createdAt) {
+      baseSql += ' AND created_at BETWEEN ? AND ?'
+      params.push(filters.createdAt[0], filters.createdAt[1])
+    }
+
+    if (filters.updatedAt) {
+      baseSql += ' AND updated_at BETWEEN ? AND ?'
+      params.push(filters.updatedAt[0], filters.updatedAt[1])
+    }
+
+    if (filters.name) {
+      baseSql += ' AND name = ?'
+      params.push(filters.name)
+    }
+
+    if (filters.email) {
+      baseSql += ' AND email = ?'
+      params.push(filters.email)
+    }
+
+    if (pagination) {
+      const options = {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        allowedSortFields: ['name', 'email', 'created_at', 'updated_at'],
+        orderBy: sort.orderBy || 'created_at',
+        orderDir: sort.orderDir || 'DESC',
+      }
+
+      const { rows, page, pageSize, offset, total, totalPage } = await getOffsetPage(baseSql, params, options)
+      return {
+        rows: rows.map(this.filterFields),
+        page,
+        pageSize,
+        offset,
+        total,
+        totalPage
+      }
+    } else {
+      const [rows] = await db.query(baseSql, params)
+      return rows.map(this.filterFields) || []
+    }
   }
 
   static async findById(id) {
@@ -17,7 +66,7 @@ class User () {
     }
     const baseSql = 'SELECT * FROM user WHERE id = ?'
     const [rows] = await db.query(baseSql, [id])
-    return rows[0] && filterFields(rows[0])
+    return rows[0] && this.filterFields(rows[0])
   }
 
   static async create({ name, email, password } = {}) {
@@ -36,21 +85,23 @@ class User () {
     let params = []
     for (const key in payload) {
       if (['name', 'email', 'password'].includes(key) && payload[key]) {
-        sql += `${key} = ?`
+        sql += `${key} = ?, `
         params.push(payload[key])
       }
     }
     if (params.length < 1) {
-      // TODO: maybe do something
       return true
     }
-    sql = baseSql + sql + clause
+    // Remove trailing comma and space
+    sql = sql.slice(0, -2)
+
+    const finalSql = baseSql + sql + clause
     params.push(id)
-    const [result] = await db.query(sql, params)
+    const [result] = await db.query(finalSql, params)
     return result.affectedRows > 0
   }
 
-  static async delete (id) {
+  static async delete(id) {
     if (!id) {
       throw new Error('id is required')
     }
