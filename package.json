@@ -4,8 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "pnpm --filter aura-server start",
-    "dev": "pnpm --filter aura-interface dev"
+    "start:server": "pnpm --filter aura-server start",
+    "dev:server": "pnpm --filter aura-server dev",
+    "dev:ui": "pnpm --filter aura-interface dev"
   },
   "keywords": [],
   "author": "",

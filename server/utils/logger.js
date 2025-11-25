@@ -24,12 +24,12 @@ log4js.configure({
 const logger = log4js.getLogger()
 
 const loggerMiddleware = (req, res, next) => {
-  logger.info(`[INFO]::${req.method} ${req.url} ${JSON.stringify(req.body)}`)
+  logger.info(`${req.method} ${req.url} ${JSON.stringify(req.body)}`)
   next()
 }
 
 const errorLoggerMiddleware = (err, req, res, next) => {
-  logger.error(`[ERROR]::${req.method} ${req.url} - ${err.message}`)
+  logger.error(`${req.method} ${req.url} ${err.message} ${JSON.stringify(err.stack)}`)
   next(err)
 }
 

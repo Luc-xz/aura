@@ -1,3 +1,4 @@
+import './env.js'
 import express from 'express'
 import bodyParser from 'body-parser'
 import sql from './sql/index.js'
@@ -50,3 +51,6 @@ app.use((err, req, res, next) => {
 app.listen(3000, () => {
   console.log('Server is running on port 3000')
 })
+
+console.log('ENV:', process.env.NODE_ENV)
+console.log('TEST:', process.env.TEST)
