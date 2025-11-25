@@ -3,7 +3,8 @@ import { getOffsetPage } from '../utils/pager.js'
 
 export default class Note {
   static filterFields(note) {
-    return note
+    const { content, ...rest } = note
+    return rest
   }
 
   static async findAll({ filters = {}, pagination = {}, sort = {} } = {}) {
@@ -60,7 +61,7 @@ export default class Note {
     }
     const baseSql = 'SELECT * FROM note WHERE id = ?'
     const [rows] = await db.query(baseSql, [id])
-    return rows[0] && this.filterFields(rows[0])
+    return rows[0]
   }
 
   static async create({ title, content } = {}) {

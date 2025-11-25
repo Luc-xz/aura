@@ -29,7 +29,7 @@ const loggerMiddleware = (req, res, next) => {
 }
 
 const errorLoggerMiddleware = (err, req, res, next) => {
-  logger.error(`${req.method} ${req.url} ${err.message} ${JSON.stringify(err.stack)}`)
+  logger.error(`${req.method} ${req.url} ${JSON.stringify(req.body)} ${err.message} ${JSON.stringify(err.stack)}`)
   next(err)
 }
 

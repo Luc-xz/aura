@@ -1,23 +1,5 @@
 import db from '../sql/index.js'
 
-// TODO: remove this function after refactoring
-export function getOffset(query) {
-  const page = parseInt(query.page) || 1
-  const limit = parseInt(query.limit) || 10
-  const offset = (page - 1) * limit
-  return {
-    limit,
-    offset,
-    page,
-  }
-}
-
-// TODO: remove this function after refactoring
-export async function getTotal(table) {
-  const [[{ total }]] = await db.query(`SELECT COUNT(*) as total FROM ${table}`)
-  return total
-}
-
 const DEFAULT_PAGE = 1
 const DEFAULT_PAGE_SIZE = 10
 const MAX_PAGE_SIZE = 100

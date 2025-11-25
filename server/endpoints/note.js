@@ -1,74 +1,64 @@
 import express from 'express'
 import sql from '../sql/index.js'
+import Note from '../models/note.js'
+import { asyncHandler } from '../utils/asyncHandler.js'
 
 const router = express.Router()
 
 function noteEndpoints(apiRouter) {
   apiRouter.use('/note', router)
 
-  router.get('/', async (req, res) => {
-    try {
-      const [data] = await sql.query('SELECT * FROM note')
-      res.status(200).json({
-        message: 'get note success',
-        data,
-      })
-    } catch (err) {
-      res.status(500).json({
-        message: 'get note error',
-        error: err.message
-      })
-    }
-  })
+  router.get('/list', asyncHandler(async (req, res) => {
+    const { page, pageSize, orderBy, orderDir, ...rest } = req.query
+    const data = await Note.findAll({
+      filters: {
+        ...rest,
+        createdAt: rest?.createdAt?.split(',') || null,
+        updatedAt: rest?.updatedAt?.split(',') || null,
+      },
+      pagination: null,
+      sort: {
+        orderBy,
+        orderDir
+      }
+    })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
 
-  router.post('/', async (req, res) => {
-    try {
-      const { title, content, keywords } = req.body
-      const [data] = await sql.query('INSERT INTO note (title, content, keywords) VALUES (?, ?, ?)', [title, content, JSON.stringify(keywords)])
-      res.status(200).json({
-        message: 'create note success',
-        data,
-      })
-    } catch (err) {
-      res.status(500).json({
-        message: 'create note error',
-        error: err.message
-      })
-    }
-  })
+  router.post('/', asyncHandler(async (req, res) => {
+    const { title, content } = req.body
+    const data = await Note.create({ title, content })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
 
-  router.put('/:id', async (req, res) => {
-    try {
-      const { id } = req.params
-      const { title, content, keywords } = req.body
-      const [data] = await sql.query('UPDATE note SET title = ?, content = ?, keywords = ? WHERE id = ?', [title, content, JSON.stringify(keywords), id])
-      res.status(200).json({
-        message: 'update note success',
-        data,
-      })
-    } catch (err) {
-      res.status(500).json({
-        message: 'update note error',
-        error: err.message
-      })
-    }
-  })
+  router.put('/:id', asyncHandler(async (req, res) => {
+    const { id } = req.params
+    const { title, content } = req.body
+    const data = await Note.update(id, { title, content })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
 
-  router.delete('/:id', async (req, res) => {
-    try {
-      const { id } = req.params
-      const [data] = await sql.query('DELETE FROM note WHERE id = ?', [id])
-      res.status(200).json({
-        message: 'delete note success',
-        data,
-      })
-    } catch (err) {
-      res.status(500).json({
-        message: 'delete note error',
-        error: err.message
-      })
-    }
-  })
+  router.delete('/:id', asyncHandler(async (req, res) => {
+    const { id } = req.params
+    const data = await Note.delete(id)
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
 }
 
 export default noteEndpoints

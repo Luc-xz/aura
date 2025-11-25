@@ -4,11 +4,11 @@
 @baseApi = /api/chat
 @baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
 
-GET {{baseUrl}}/ HTTP/1.1
+GET {{baseUrl}}/page/2 HTTP/1.1
 
 ###
 
-POST {{baseUrl}}/
+POST {{baseUrl}}/2
 content-type: application/json
 
 {

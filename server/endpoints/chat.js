@@ -1,13 +1,43 @@
 import express from 'express'
 import sql from '../sql/index.js'
+import Chat from '../models/chat.js'
+import { asyncHandler } from '../utils/asyncHandler.js'
 
 const router = express.Router()
 
 function chatEndpoints(apiRouter) {
   apiRouter.use('/chat', router)
 
-  router.post('/', async (req, res) => {
+  router.get('/page/:workspaceId', asyncHandler(async (req, res) => {
+    const { page, pageSize, orderBy, orderDir, ...rest } = req.query
+    const data = await Chat.findByWorkspaceId(
+      req.params.workspaceId,
+      {
+        filters: {
+          ...rest,
+          createdAt: rest?.createdAt?.split(',') || null,
+          updatedAt: rest?.updatedAt?.split(',') || null,
+        },
+        pagination: {
+          page,
+          pageSize
+        },
+        sort: {
+          orderBy,
+          orderDir
+        }
+      })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
+
+  router.post('/:workspaceId', asyncHandler(async (req, res) => {
+    const { workspaceId } = req.params
     const { prompt, stream = true } = req.body
+    await Chat.create({ workspaceId, content: prompt, proposer: 'user' })
     const response = await fetch('http://localhost:11434/api/chat', {
       method: 'POST',
       headers: {
@@ -21,6 +51,7 @@ function chatEndpoints(apiRouter) {
     })
     if (!stream) {
       const data = await response.json()
+      await Chat.create({ workspaceId, content: data.message, proposer: 'assistant' })
       res.status(200).json({
         message: 'chat success',
         data: data.message
@@ -34,6 +65,7 @@ function chatEndpoints(apiRouter) {
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
+    let data = ''
 
     while (true) {
       const { done, value } = await reader.read()
@@ -41,18 +73,20 @@ function chatEndpoints(apiRouter) {
       const chunk = decoder.decode(value, { stream: true })
       for (const line of chunk.split('\n')) {
         if (!line.trim()) continue
-        try {
-          const obj = JSON.parse(line)
-          const piece = (obj?.message?.thinking ?? obj?.message?.content ?? '')
-          if (piece) res.write(`data: ${piece}\n\n`)
-          if (obj?.done) res.write(`event: done\ndata: [DONE]\n\n`)
-        } catch (err) {
-          console.log('err', err)
+        const obj = JSON.parse(line)
+        const piece = (obj?.message?.thinking ?? obj?.message?.content ?? '')
+        if (piece) {
+          data += piece
+          res.write(`data: ${piece}\n\n`)
+        }
+        if (obj?.done) {
+          await Chat.create({ workspaceId, content: data, proposer: 'assistant' })
+          res.write(`event: done\ndata: [DONE]\n\n`)
+          res.end()
         }
       }
     }
-    res.end()
-  })
+  }))
 }
 
 export default chatEndpoints

@@ -1,92 +1,66 @@
 import express from 'express'
 import sql from '../sql/index.js'
+import Workspace from '../models/workspace.js'
+import { asyncHandler } from '../utils/asyncHandler.js'
 
 const router = express.Router()
 
 function workspaceEndpoints(apiRouter) {
   apiRouter.use('/workspace', router)
 
-  router.get('/', async (req, res) => {
-    try {
-      const [data] = await sql.query('SELECT * FROM workspace')
-      res.status(200).json({
-        message: 'get workspace success',
-        data
-      })
-    } catch (err) {
-      res.status(500).json({
-        message: 'get workspace error',
-        error: err.message
-      })
-    }
-  })
+  router.get('/list', asyncHandler(async (req, res) => {
+    const { page, pageSize, orderBy, orderDir, ...rest } = req.query
+    const data = await Workspace.findAll({
+      filters: {
+        ...rest,
+        createdAt: rest?.createdAt?.split(',') || null,
+        updatedAt: rest?.updatedAt?.split(',') || null,
+      },
+      pagination: null,
+      sort: {
+        orderBy,
+        orderDir
+      }
+    })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
 
-  router.get('/:id', async (req, res) => {
-    try {
-      const [data] = await sql.query('SELECT * FROM workspace WHERE id = ?', [req.params.id])
-      const [chat] = await sql.query('SELECT * FROM chat WHERE workspace_id = ?', [req.params.id])
-      res.status(200).json({
-        message: 'get workspace success',
-        data: {
-          ...data,
-          chatList: chat || []
-        },
-      })
-    } catch (err) {
-      res.status(500).json({
-        message: 'get workspace error',
-        error: err.message
-      })
-    }
-  })
+  router.post('/', asyncHandler(async (req, res) => {
+    const { title, model } = req.body
+    // TODO: verify model
+    const data = await Workspace.create({ title, model })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
 
-  router.post('/', async (req, res) => {
-    try {
-      const { title, model } = req.body
-      const [data] = await sql.execute('INSERT INTO workspace (title, model) VALUES (?, ?)', [title, model])
-      const [detail] = await sql.query('SELECT * FROM workspace WHERE id = ?', [data.insertId])
-      res.status(200).json({
-        message: 'create workspace success',
-        data: detail[0] || {}
-      })
-    } catch (err) {
-      res.status(500).json({
-        message: 'create workspace error',
-        error: err.message
-      })
-    }
-  })
+  router.put('/:id', asyncHandler(async (req, res) => {
+    const { id } = req.params
+    const { title, model } = req.body
+    // TODO: verify model
+    const data = await Workspace.update(id, { title, model })
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
 
-  router.put('/:id', async (req, res) => {
-    try {
-      const { id } = req.params
-      const { title, model } = req.body
-      const [data] = await sql.execute('UPDATE workspace SET title = ?, model = ? WHERE id = ?', [title, model, id])
-      res.status(200).json({
-        message: 'update workspace success',
-      })
-    } catch (err) {
-      res.status(500).json({
-        message: 'update workspace error',
-        error: err.message
-      })
-    }
-  })
-
-  router.delete('/:id', async (req, res) => {
-    try {
-      const { id } = req.params
-      await sql.execute('DELETE FROM workspace WHERE id = ?', [id])
-      res.status(200).json({
-        message: 'delete workspace success',
-      })
-    } catch (err) {
-      res.status(500).json({
-        message: 'delete workspace error',
-        error: err.message
-      })
-    }
-  })
+  router.delete('/:id', asyncHandler(async (req, res) => {
+    const { id } = req.params
+    const data = await Workspace.delete(id)
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
 }
 
 export default workspaceEndpoints

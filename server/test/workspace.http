@@ -5,11 +5,7 @@
 @baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
 
 # 列表查询
-GET {{baseUrl}}/ HTTP/1.1
-
-###
-# 详情查询
-GET {{baseUrl}}/1 HTTP/1.1
+GET {{baseUrl}}/list HTTP/1.1
 
 ###
 # 创建
@@ -23,12 +19,12 @@ content-type: application/json
 
 ###
 # 更新
-PUT {{baseUrl}}/1 HTTP/1.1
+PUT {{baseUrl}}/2 HTTP/1.1
 content-type: application/json
 
 {
-  "title": "test2",
-  "model": "gpt-3.5-turbo"
+  "title": "工作区",
+  "model": "deepseek-r1:7b"
 }
 
 ###
