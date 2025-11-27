@@ -8,7 +8,7 @@ const router = express.Router()
 function chatEndpoints(apiRouter) {
   apiRouter.use('/chat', router)
 
-  router.get('/page/:workspaceId', asyncHandler(async (req, res) => {
+  router.get('/list/:workspaceId', asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await Chat.findByWorkspaceId(
       req.params.workspaceId,
@@ -18,10 +18,7 @@ function chatEndpoints(apiRouter) {
           createdAt: rest?.createdAt?.split(',') || null,
           updatedAt: rest?.updatedAt?.split(',') || null,
         },
-        pagination: {
-          page,
-          pageSize
-        },
+        pagination: null,
         sort: {
           orderBy,
           orderDir

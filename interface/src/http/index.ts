@@ -10,7 +10,7 @@ export const request = (options: AxiosRequestConfig) => {
     }).then(res => {
       resolve([res, null])
     }).catch(err => {
-      resolve([null, err.response.data])
+      resolve([null, err])
     })
   })
 }

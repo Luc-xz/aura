@@ -2,7 +2,7 @@ import { request } from '@/http'
 
 export const getWorkspaceList = () => {
   return request({
-    url: '/api/workspace',
+    url: '/api/workspace/list',
     method: 'GET',
   })
 }

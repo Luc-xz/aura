@@ -104,9 +104,9 @@ export default class Workspace {
     if (!id) {
       throw new Error('id is required')
     }
+    await db.query('DELETE FROM chat WHERE workspace_id = ?', [id])
     const baseSql = 'DELETE FROM workspace WHERE id = ?'
     const [result] = await db.query(baseSql, [id])
-    await db.query('DELETE FROM chat WHERE workspace_id = ?', [id])
     return result.affectedRows > 0
   }
 }

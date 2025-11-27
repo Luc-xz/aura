@@ -13,13 +13,15 @@ service.interceptors.request.use(config => {
 
 service.interceptors.response.use(response => {
   // console.log('response-interceptors', response)
-  if (response.status !== 200) {
-    handleNetworkError(response.status)
+  if (response.data?.code !== 1) {
+    handleNetworkError(response.data?.code)
     return Promise.reject(response.data)
   }
 
   return response.data
 }, error => {
+  // console.log('response-interceptors-error', error)
+  handleNetworkError(error.status)
   return Promise.reject(error)
 })
 

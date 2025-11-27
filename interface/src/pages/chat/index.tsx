@@ -70,7 +70,9 @@ function HistoryPanel({ activeChat, setActiveChat }) {
     <div
       key={item.id}
       onClick={() => setActiveChat(item)}
-      className={`p-3 w-full space-x-2 cursor-pointer rounded hover:bg-blue-100 ${item.id === (activeChat && activeChat.id) ? 'card-active' : 'card-inactive'}`}>
+      className={`p-3 w-full space-x-2 cursor-pointer rounded hover:bg-blue-100 ${
+        item.id === (activeChat && activeChat.id) ? 'card-active' : 'card-inactive'
+      }`}>
       <div className="flex items-center w-full">
         <div className="flex flex-col justify-between flex-1 overflow-hidden">
           <div className="truncate">{item.title}</div>
@@ -98,8 +100,8 @@ function HistoryPanel({ activeChat, setActiveChat }) {
   }
 
   const fetchWorkspaceList = async () => {
-    console.log('getWorkspaceList')
     const [res, err] = await getWorkspaceList()
+    console.log('getWorkspaceList', res, err)
     if (res) {
       let history = res.data || []
       setHistory(history)
@@ -197,6 +199,14 @@ function ChatPanel({ activeChat }) {
         />
       ))
     : null
+
+  useEffect(() => {
+    if (activeChat) {
+      setModel({
+        name: activeChat.model,
+      })
+    }
+  }, [activeChat])
 
   return (
     <div className="flex flex-4 flex-col">
