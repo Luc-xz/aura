@@ -187,8 +187,10 @@ function ChatPanel({ workspace }) {
     ? conversation?.map?.((item, index) => (
         <Bubble
           placement={item.proposer === 'user' ? 'end' : 'start'}
-          content={item.content}
+          content={<div className="whitespace-pre-wrap">{item.content}</div>}
+          typing={item.proposer !== 'user' && !item.id ? true : false}
           avatar={{ icon: item.proposer === 'user' ? <UserOutlined /> : <MehOutlined /> }}
+          variant={item.proposer === 'user' ? 'filled' : 'shadow'}
           key={index}
           footer={
             item.proposer === 'user' ? null : (
