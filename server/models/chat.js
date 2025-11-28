@@ -11,21 +11,28 @@ export default class Chat {
       throw new Error('workspaceId is required')
     }
     const baseSql = 'SELECT * FROM chat WHERE workspace_id = ?'
-    const options = {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      allowedSortFields: ['proposer', 'created_at', 'updated_at'],
-      orderBy: sort.orderBy || 'created_at',
-      orderDir: sort.orderDir || 'DESC',
-    }
-    const { rows, page, pageSize, offset, total, totalPage } = await getOffsetPage(baseSql, [workspaceId], options)
-    return {
-      rows: rows.map(this.filterFields),
-      page,
-      pageSize,
-      offset,
-      total,
-      totalPage
+
+    if (pagination) {
+      const options = {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        allowedSortFields: ['proposer', 'created_at', 'updated_at'],
+        orderBy: sort.orderBy || 'created_at',
+        orderDir: sort.orderDir || 'DESC',
+      }
+
+      const { rows, page, pageSize, offset, total, totalPage } = await getOffsetPage(baseSql, [workspaceId], options)
+      return {
+        rows: rows.map(this.filterFields),
+        page,
+        pageSize,
+        offset,
+        total,
+        totalPage
+      }
+    } else {
+      const [rows] = await db.query(baseSql, [workspaceId])
+      return rows.map(this.filterFields) || []
     }
   }
 

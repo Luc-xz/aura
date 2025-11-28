@@ -15,8 +15,9 @@ import {
 } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
 import { getWorkspaceList, createWorkspace, updateWorkspace, deleteWorkspace } from '@/api/workspace'
+import { getChatListByWorkspaceId, chatToWorkspace } from '@/api/chat'
 
-function HistoryPanel({ activeChat, setActiveChat }) {
+function HistoryPanel({ workspace, setWorkspace }) {
   const [history, setHistory] = useState([])
   const [historyVisible, setHistoryVisible] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -39,9 +40,9 @@ function HistoryPanel({ activeChat, setActiveChat }) {
         onClick: ({ key }) => {
           if (key === 'edit') {
             form.setFieldsValue({
-              id: activeChat.id,
-              title: activeChat.title,
-              model: activeChat.model,
+              id: workspace.id,
+              title: workspace.title,
+              model: workspace.model,
             })
             setIsModalOpen(true)
             return
@@ -50,7 +51,7 @@ function HistoryPanel({ activeChat, setActiveChat }) {
             Modal.confirm({
               title: '确定删除对话吗？',
               onOk: async () => {
-                const [res, err] = await deleteWorkspace(activeChat.id)
+                const [err, res] = await deleteWorkspace(workspace.id)
                 if (res) {
                   message.success('操作成功')
                   fetchWorkspaceList()
@@ -69,16 +70,16 @@ function HistoryPanel({ activeChat, setActiveChat }) {
   const HistoryCardList = history.map((item) => (
     <div
       key={item.id}
-      onClick={() => setActiveChat(item)}
+      onClick={() => setWorkspace(item)}
       className={`p-3 w-full space-x-2 cursor-pointer rounded hover:bg-blue-100 ${
-        item.id === (activeChat && activeChat.id) ? 'card-active' : 'card-inactive'
+        item.id === (workspace && workspace.id) ? 'card-active' : 'card-inactive'
       }`}>
       <div className="flex items-center w-full">
         <div className="flex flex-col justify-between flex-1 overflow-hidden">
           <div className="truncate">{item.title}</div>
           <div className="truncate text-sm text-gray-500">{item.model}</div>
         </div>
-        {item.id === (activeChat && activeChat.id) && dropdown}
+        {item.id === (workspace && workspace.id) && dropdown}
       </div>
     </div>
   ))
@@ -87,12 +88,12 @@ function HistoryPanel({ activeChat, setActiveChat }) {
     await form.validateFields()
     let flag = form.getFieldValue('id') ? 'update' : 'create'
     let api = flag === 'update' ? updateWorkspace : createWorkspace
-    const [res, err] = await api(form.getFieldsValue(true))
+    const [err, res] = await api(form.getFieldsValue(true))
     if (res) {
       message.success('操作成功')
       setIsModalOpen(false)
       form.resetFields()
-      setActiveChat(res.data)
+      setWorkspace(res.data)
       fetchWorkspaceList()
     } else {
       message.error('操作失败：' + err.message)
@@ -100,7 +101,7 @@ function HistoryPanel({ activeChat, setActiveChat }) {
   }
 
   const fetchWorkspaceList = async () => {
-    const [res, err] = await getWorkspaceList()
+    const [err, res] = await getWorkspaceList()
     console.log('getWorkspaceList', res, err)
     if (res) {
       let history = res.data || []
@@ -113,8 +114,8 @@ function HistoryPanel({ activeChat, setActiveChat }) {
   }, [])
 
   useEffect(() => {
-    let chat = history.find((item) => item.id === activeChat?.id) || history[0]
-    setActiveChat(chat)
+    let chat = history.find((item) => item.id === workspace?.id) || history[0]
+    setWorkspace(chat)
   }, [history])
 
   return (
@@ -167,17 +168,28 @@ function HistoryPanel({ activeChat, setActiveChat }) {
   )
 }
 
-function ChatPanel({ activeChat }) {
-  const [model, setModel] = useState({
-    name: 'DeepSeek-R1',
-  })
+function ChatPanel({ workspace }) {
+  const [conversation, setConversation] = useState<any[]>([])
+  const [prompt, setPrompt] = useState('')
+  const [loading, setLoading] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
-  const chatBubbleList = activeChat
-    ? activeChat?.data?.map?.((item) => (
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth',
+      })
+    }
+  }, [conversation])
+
+  const chatBubbleList = workspace
+    ? conversation?.map?.((item, index) => (
         <Bubble
           placement={item.proposer === 'user' ? 'end' : 'start'}
           content={item.content}
           avatar={{ icon: item.proposer === 'user' ? <UserOutlined /> : <MehOutlined /> }}
+          key={index}
           footer={
             item.proposer === 'user' ? null : (
               <Space>
@@ -200,13 +212,35 @@ function ChatPanel({ activeChat }) {
       ))
     : null
 
-  useEffect(() => {
-    if (activeChat) {
-      setModel({
-        name: activeChat.model,
-      })
+  const handleSend = async () => {
+    if (!workspace || prompt.trim() === '') {
+      return false
     }
-  }, [activeChat])
+    let content = prompt.trim()
+    setPrompt('')
+    setLoading(true)
+    const newConversation = [...conversation, { proposer: 'user', content }]
+    setConversation(newConversation)
+    const [err, res] = await chatToWorkspace(workspace.id, { content, stream: false })
+    if (res) {
+      setConversation([...newConversation, { proposer: 'assistant', content: res.data }])
+    }
+    setLoading(false)
+  }
+
+  const fetchConversation = async () => {
+    if (!workspace) {
+      return false
+    }
+    const [err, res] = await getChatListByWorkspaceId(workspace.id)
+    if (res) {
+      setConversation(res.data || [])
+    }
+  }
+
+  useEffect(() => {
+    fetchConversation()
+  }, [workspace])
 
   return (
     <div className="flex flex-4 flex-col">
@@ -216,7 +250,7 @@ function ChatPanel({ activeChat }) {
           className="relative z-1 flex-1 mx-10 my-1 max-w-210 h-14"
           size="small">
           <div className="flex items-center px-2 w-full h-8">
-            <span className="flex-1 text-md font-bold">{model.name}</span>
+            <span className="flex-1 text-md font-bold">{workspace?.model || ''}</span>
             <div className="text-gray cursor-pointer">
               <SwapOutlined />
             </div>
@@ -231,8 +265,10 @@ function ChatPanel({ activeChat }) {
           src="src/assets/images/chat-header-bg.jpg"></img>
       </div>
       {/* Record */}
-      <div className="flex-1">
-        <div className="mx-auto my-4 w-210 overflow-y-auto">
+      <div
+        className="flex-1 overflow-y-auto"
+        ref={scrollRef}>
+        <div className="mx-auto my-4 w-210">
           <Flex
             gap="middle"
             vertical>
@@ -244,6 +280,12 @@ function ChatPanel({ activeChat }) {
       <div className="flex-none basis-13 flex items-center justify-center mb-10">
         <div className="w-210">
           <Sender
+            value={prompt}
+            loading={loading}
+            onChange={(v) => {
+              setPrompt(v)
+            }}
+            onSubmit={handleSend}
             prefix={
               <Attachments
                 beforeUpload={() => false}
@@ -267,15 +309,15 @@ function ChatPanel({ activeChat }) {
 }
 
 export default function Page({}) {
-  const [activeChat, setActiveChat] = useState(null)
+  const [workspace, setWorkspace] = useState(null)
 
   return (
     <div className="flex w-full h-full">
       <HistoryPanel
-        activeChat={activeChat}
-        setActiveChat={setActiveChat}
+        workspace={workspace}
+        setWorkspace={setWorkspace}
       />
-      <ChatPanel activeChat={activeChat} />
+      <ChatPanel workspace={workspace} />
     </div>
   )
 }

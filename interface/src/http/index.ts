@@ -8,9 +8,9 @@ export const request = (options: AxiosRequestConfig) => {
     service({
       ...options,
     }).then(res => {
-      resolve([res, null])
+      resolve([null, res])
     }).catch(err => {
-      resolve([null, err])
+      resolve([err, null])
     })
   })
 }
