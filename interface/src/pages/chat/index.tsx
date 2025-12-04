@@ -115,7 +115,13 @@ function WorkspacePanel({ workspace, setWorkspace }) {
   }, [])
 
   useEffect(() => {
-    let chat = workspaceList.find((item) => item.id === workspace?.id) || workspaceList[0]
+    if (!workspaceList?.length) return
+    let chat = null
+    if (!workspace?.id) {
+      chat = workspaceList[0]
+    } else {
+      chat = workspaceList.find((item) => item.id === workspace?.id) || workspaceList[0]
+    }
     setWorkspace(chat)
   }, [workspaceList])
 
@@ -174,15 +180,6 @@ function ChatPanel({ workspace }) {
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth',
-      })
-    }
-  }, [conversation])
 
   const chatBubbleList = workspace
     ? conversation?.map?.((item, index) => (
@@ -268,6 +265,15 @@ function ChatPanel({ workspace }) {
   useEffect(() => {
     fetchConversation()
   }, [workspace])
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth',
+      })
+    }
+  }, [conversation])
 
   return (
     <div className="flex flex-4 flex-col">
