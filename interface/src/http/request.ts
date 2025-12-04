@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { handleNetworkError, handleErrMsg } from './handler'
+import { handleNetworkError, handleErrMsg, } from './handler'
 const env = import.meta.env
 
 const service = axios.create({
@@ -13,11 +13,10 @@ service.interceptors.request.use(config => {
 
 service.interceptors.response.use(response => {
   // console.log('response-interceptors', response)
-  if (response.data?.code !== 1) {
-    handleNetworkError(response.data?.code)
+  if (response.data?.code === 0) {
+    handleErrMsg(response.data?.msg)
     return Promise.reject(response.data)
   }
-
   return response.data
 }, error => {
   // console.log('response-interceptors-error', error)

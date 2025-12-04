@@ -72,14 +72,13 @@ function chatEndpoints(apiRouter) {
       for (const line of chunk.split('\n')) {
         if (!line.trim()) continue
         const obj = JSON.parse(line)
-        const piece = (obj?.message?.thinking ?? obj?.message?.content ?? '')
+        const piece = (obj?.message?.content ?? '')
         if (piece) {
           data += piece
-          res.write(`data: ${piece}\n\n`)
+          res.write(piece)
         }
         if (obj?.done) {
           await Chat.create({ workspaceId, content: data, proposer: 'assistant' })
-          res.write(`event: done\ndata: [DONE]\n\n`)
           res.end()
         }
       }

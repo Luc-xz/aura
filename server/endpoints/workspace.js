@@ -32,7 +32,8 @@ function workspaceEndpoints(apiRouter) {
   router.post('/', asyncHandler(async (req, res) => {
     const { title, model } = req.body
     // TODO: verify model
-    const data = await Workspace.create({ title, model })
+    const id = await Workspace.create({ title, model })
+    const data = await Workspace.findById(id)
     res.status(200).json({
       data,
       code: 1,

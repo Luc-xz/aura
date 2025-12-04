@@ -15,14 +15,14 @@ import {
 } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
 import { getWorkspaceList, createWorkspace, updateWorkspace, deleteWorkspace } from '@/api/workspace'
-import { getChatListByWorkspaceId, chatToWorkspace } from '@/api/chat'
+import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
 
-function HistoryPanel({ workspace, setWorkspace }) {
-  const [history, setHistory] = useState([])
-  const [historyVisible, setHistoryVisible] = useState(true)
+function WorkspacePanel({ workspace, setWorkspace }) {
+  const [workspaceList, setWorkspaceList] = useState([])
+  const [workspaceVisible, setWorkspaceVisible] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [form] = Form.useForm()
-  const historyRef = useRef(null)
+  const workspaceRef = useRef(null)
 
   const dropdown = (
     <Dropdown
@@ -67,7 +67,7 @@ function HistoryPanel({ workspace, setWorkspace }) {
     </Dropdown>
   )
 
-  const HistoryCardList = history.map((item) => (
+  const WorkspaceCardList = workspaceList.map((item) => (
     <div
       key={item.id}
       onClick={() => setWorkspace(item)}
@@ -89,6 +89,7 @@ function HistoryPanel({ workspace, setWorkspace }) {
     let flag = form.getFieldValue('id') ? 'update' : 'create'
     let api = flag === 'update' ? updateWorkspace : createWorkspace
     const [err, res] = await api(form.getFieldsValue(true))
+    console.log('[API]::[handleEditWorkspace]::', res, err)
     if (res) {
       message.success('操作成功')
       setIsModalOpen(false)
@@ -102,10 +103,10 @@ function HistoryPanel({ workspace, setWorkspace }) {
 
   const fetchWorkspaceList = async () => {
     const [err, res] = await getWorkspaceList()
-    console.log('getWorkspaceList', res, err)
+    console.log('[API]::[fetchWorkspaceList]::', res, err)
     if (res) {
-      let history = res.data || []
-      setHistory(history)
+      let list = res.data || []
+      setWorkspaceList(list)
     }
   }
 
@@ -114,15 +115,15 @@ function HistoryPanel({ workspace, setWorkspace }) {
   }, [])
 
   useEffect(() => {
-    let chat = history.find((item) => item.id === workspace?.id) || history[0]
+    let chat = workspaceList.find((item) => item.id === workspace?.id) || workspaceList[0]
     setWorkspace(chat)
-  }, [history])
+  }, [workspaceList])
 
   return (
     <div className="relative bg-moon border-r border-ashen flex-0">
-      <div className={`overflow-hidden h-full transition-all duration-300 ${historyVisible ? 'w-55' : 'w-0'}`}>
+      <div className={`overflow-hidden h-full transition-all duration-300 ${workspaceVisible ? 'w-55' : 'w-0'}`}>
         <div className="overflow-hidden p-4 w-55 h-full">
-          <div className="title-ter mb-8">历史对话</div>
+          <div className="title-ter mb-8">工作区</div>
           <Button
             onClick={() => setIsModalOpen(true)}
             className="w-full mb-2"
@@ -132,16 +133,16 @@ function HistoryPanel({ workspace, setWorkspace }) {
             新建对话
           </Button>
           <div
-            ref={historyRef}
+            ref={workspaceRef}
             className="overflow-y-auto h-[calc(100%-92px)]">
-            {HistoryCardList}
+            {WorkspaceCardList}
           </div>
         </div>
       </div>
       <div
         className="absolute top-[50%] right-[-32px] w-5 h-11 flex items-center justify-center bg-moon color-primary text-sm hover:text-base border border-ashen rounded text-gray-500 cursor-pointer"
-        onClick={() => setHistoryVisible(!historyVisible)}>
-        {historyVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
+        onClick={() => setWorkspaceVisible(!workspaceVisible)}>
+        {workspaceVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
       </div>
       <Modal
         title={`${form.getFieldValue('id') ? '编辑' : '新建'}对话`}
@@ -214,7 +215,7 @@ function ChatPanel({ workspace }) {
       ))
     : null
 
-  const handleSend = async () => {
+  const handleChat = async () => {
     if (!workspace || prompt.trim() === '') {
       return false
     }
@@ -223,10 +224,33 @@ function ChatPanel({ workspace }) {
     setLoading(true)
     const newConversation = [...conversation, { proposer: 'user', content }]
     setConversation(newConversation)
-    const [err, res] = await chatToWorkspace(workspace.id, { content, stream: false })
+    const [err, res] = await chatToWorkspace(workspace.id, content)
+    console.log('[API]::[chatToWorkspace]::', res, err)
     if (res) {
       setConversation([...newConversation, { proposer: 'assistant', content: res.data }])
     }
+    setLoading(false)
+  }
+
+  const handleStreamChat = async () => {
+    if (!workspace || prompt.trim() === '') {
+      return false
+    }
+    let content = prompt.trim()
+    setPrompt('')
+    setLoading(true)
+    const newConversation = [...conversation, { proposer: 'user', content }]
+    setConversation(newConversation)
+    const [err, res] = await streamChatToWorkspace(workspace.id, content, (e) => {
+      const { responseText } = e.event.target
+      const last = newConversation[newConversation.length - 1]
+      if (last.propose !== 'assistant') {
+        setConversation([...newConversation, { proposer: 'assistant', content: responseText }])
+      } else {
+        setConversation([...newConversation.slice(0, -1), { proposer: 'assistant', content: responseText }])
+      }
+    })
+    console.log('[API]::[streamChatToWorkspace]::', res, err)
     setLoading(false)
   }
 
@@ -235,6 +259,7 @@ function ChatPanel({ workspace }) {
       return false
     }
     const [err, res] = await getChatListByWorkspaceId(workspace.id)
+    console.log('[API]::[getChatListByWorkspaceId]::', res, err)
     if (res) {
       setConversation(res.data || [])
     }
@@ -287,7 +312,7 @@ function ChatPanel({ workspace }) {
             onChange={(v) => {
               setPrompt(v)
             }}
-            onSubmit={handleSend}
+            onSubmit={handleStreamChat}
             prefix={
               <Attachments
                 beforeUpload={() => false}
@@ -315,7 +340,7 @@ export default function Page({}) {
 
   return (
     <div className="flex w-full h-full">
-      <HistoryPanel
+      <WorkspacePanel
         workspace={workspace}
         setWorkspace={setWorkspace}
       />

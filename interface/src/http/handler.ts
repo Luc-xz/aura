@@ -1,7 +1,7 @@
 import { message } from 'antd'
 
 export const handleNetworkError = (errStatus: number) => {
-  console.debug('network-error', errStatus)
+  // console.log('[network-error]::', errStatus)
   let errMessage
   if (errStatus) {
     switch (errStatus) {
