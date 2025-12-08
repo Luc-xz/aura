@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router'
 import { Flex, Layout, Menu } from 'antd'
-import { OpenAIFilled, SettingFilled, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons'
+import { BookOutlined, OpenAIFilled, SettingFilled, MenuUnfoldOutlined, MenuFoldOutlined } from '@ant-design/icons'
 import ColumnGroup from 'antd/es/table/ColumnGroup'
 const { Header, Footer, Sider, Content } = Layout
 
@@ -9,9 +9,18 @@ const items = [
   { key: '1', icon: <OpenAIFilled />, label: 'Chat', path: '/chat' },
   {
     key: '2',
+    icon: <BookOutlined />,
+    label: 'Note',
+    children: [
+      { key: '2-1', label: 'New Note', path: '/note/new' },
+      { key: '2-2', label: 'My Notes', path: '/note' },
+    ],
+  },
+  {
+    key: '3',
     label: 'System',
     icon: <SettingFilled />,
-    children: [{ key: '2-1', label: 'Setting', path: '/setting' }],
+    children: [{ key: '3-1', label: 'Setting', path: '/setting' }],
   },
 ]
 

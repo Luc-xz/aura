@@ -8,7 +8,7 @@ const router = express.Router()
 function noteEndpoints(apiRouter) {
   apiRouter.use('/note', router)
 
-  router.get('/list', asyncHandler(async (req, res) => {
+  router.get('/page', asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await Note.findAll({
       filters: {
@@ -16,7 +16,10 @@ function noteEndpoints(apiRouter) {
         createdAt: rest?.createdAt?.split(',') || null,
         updatedAt: rest?.updatedAt?.split(',') || null,
       },
-      pagination: null,
+      pagination: {
+        page,
+        pageSize
+      },
       sort: {
         orderBy,
         orderDir

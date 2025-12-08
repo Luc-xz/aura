@@ -21,9 +21,9 @@ export default class Note {
       params.push(filters.updatedAt[0], filters.updatedAt[1])
     }
 
-    if (filters.title) {
-      baseSql += ' AND title LIKE ?'
-      params.push(`%${filters.title}%`)
+    if (filters.keyword) {
+      baseSql += ' AND (title LIKE ? OR description LIKE ?)'
+      params.push(`%${filters.keyword}%`, `%${filters.keyword}%`)
     }
 
     if (pagination) {

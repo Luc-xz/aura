@@ -6,6 +6,7 @@ import Login from './pages/login'
 import Layout from './pages/layout'
 import Setting from './pages/setting'
 import Chat from './pages/chat'
+import Note from './pages/note'
 
 function App() {
   return (
@@ -20,6 +21,14 @@ function App() {
             index
             element={<Navigate to="chat" />}
           />
+          <Route
+            path="note"
+            element={<Note />}>
+            <Route
+              path="new"
+              element={<Note />}
+            />
+          </Route>
           <Route
             path="setting"
             element={<Setting />}
