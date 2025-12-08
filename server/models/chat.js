@@ -1,9 +1,10 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
+import { formatResponse } from '../utils/formatter.js'
 
 export default class Chat {
   static filterFields(chat) {
-    return chat
+    return formatResponse(chat)
   }
 
   static async findByWorkspaceId(workspaceId, { filters = {}, pagination = {}, sort = {} } = {}) {

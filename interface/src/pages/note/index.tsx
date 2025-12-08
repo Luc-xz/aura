@@ -44,7 +44,7 @@ export default function Page({}) {
               style={{ margin: 0 }}>
               {item.title || '未命名记录'}
             </Typography.Title>
-            <Typography.Text type="secondary">{item['created_at']}</Typography.Text>
+            <Typography.Text type="secondary">{item.createdAt}</Typography.Text>
             <Typography.Paragraph>{item.description || '这是一个记录'}</Typography.Paragraph>
             <Button type="primary">View</Button>
           </Flex>

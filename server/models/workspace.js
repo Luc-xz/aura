@@ -1,9 +1,10 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
+import { formatResponse } from '../utils/formatter.js'
 
 export default class Workspace {
   static filterFields(workspace) {
-    return workspace
+    return formatResponse(workspace)
   }
 
   static async findAll({ filters = {}, pagination = {}, sort = {} } = {}) {
