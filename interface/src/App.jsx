@@ -7,6 +7,7 @@ import Layout from './pages/layout'
 import Setting from './pages/setting'
 import Chat from './pages/chat'
 import Note from './pages/note'
+import NewNote from './pages/note/new.tsx'
 
 function App() {
   return (
@@ -21,12 +22,14 @@ function App() {
             index
             element={<Navigate to="chat" />}
           />
-          <Route
-            path="note"
-            element={<Note />}>
+          <Route path="note">
+            <Route
+              index
+              element={<Note />}
+            />
             <Route
               path="new"
-              element={<Note />}
+              element={<NewNote />}
             />
           </Route>
           <Route

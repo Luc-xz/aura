@@ -33,8 +33,8 @@ function noteEndpoints(apiRouter) {
   }))
 
   router.post('/', asyncHandler(async (req, res) => {
-    const { title, content } = req.body
-    const data = await Note.create({ title, content })
+    const { title, content, description } = req.body
+    const data = await Note.create({ title, content, description })
     res.status(200).json({
       data,
       code: 1,
@@ -44,8 +44,8 @@ function noteEndpoints(apiRouter) {
 
   router.put('/:id', asyncHandler(async (req, res) => {
     const { id } = req.params
-    const { title, content } = req.body
-    const data = await Note.update(id, { title, content })
+    const { title, content, description } = req.body
+    const data = await Note.update(id, { title, content, description })
     res.status(200).json({
       data,
       code: 1,

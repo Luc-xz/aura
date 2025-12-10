@@ -65,9 +65,9 @@ export default class Note {
     return rows[0]
   }
 
-  static async create({ title, content } = {}) {
-    const baseSql = 'INSERT INTO note (title, content) VALUES (?, ?)'
-    const [result] = await db.query(baseSql, [title, content])
+  static async create({ title, content, description } = {}) {
+    const baseSql = 'INSERT INTO note (title, content, description) VALUES (?, ?, ?)'
+    const [result] = await db.query(baseSql, [title, content, description])
     return result.insertId
   }
 
@@ -80,7 +80,7 @@ export default class Note {
     let sql = ''
     let params = []
     for (const key in payload) {
-      if (['title', 'content'].includes(key) && payload[key]) {
+      if (['title', 'content', 'description'].includes(key) && payload[key]) {
         sql += `${key} = ?, `
         params.push(payload[key])
       }

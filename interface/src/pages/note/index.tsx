@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Layout, Form, Input, Pagination, Card, Flex, Button, Typography } from 'antd'
+import { Layout, Form, Input, Pagination, Card, Flex, Button, Typography, Tag } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import { getNotePage } from '@/api/note'
 
@@ -16,8 +16,20 @@ export default function Page({}) {
   }
 
   const cardList = list.map((item) => {
+    const tagList = item.keywords
+      ? item.keywords.map((keyword, idx) => (
+          <Tag
+            key={keyword}
+            color="blue"
+            variant="outlined"
+            style={{ marginRight: idx === item.keywords.length - 1 ? 0 : 8 }}>
+            {keyword}
+          </Tag>
+        ))
+      : []
     return (
       <Card
+        key={item.id}
         hoverable
         style={{
           width: '100%',
@@ -45,8 +57,12 @@ export default function Page({}) {
               {item.title || '未命名记录'}
             </Typography.Title>
             <Typography.Text type="secondary">{item.createdAt}</Typography.Text>
-            <Typography.Paragraph>{item.description || '这是一个记录'}</Typography.Paragraph>
-            <Button type="primary">View</Button>
+            <Typography.Paragraph style={{ margin: 0 }}>{item.description || '这是一个记录'}</Typography.Paragraph>
+            <Flex
+              wrap
+              gap="small">
+              {tagList}
+            </Flex>
           </Flex>
         </Flex>
       </Card>

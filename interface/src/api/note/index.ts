@@ -7,3 +7,11 @@ export const getNotePage = (params: any) => {
     params,
   })
 }
+
+export const createNote = (data: any) => {
+  return request({
+    url: '/api/note',
+    method: 'POST',
+    data,
+  })
+}
