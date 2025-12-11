@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router'
 import { Layout, Form, Input, Pagination, Card, Flex, Button, Typography, Tag } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import { getNotePage } from '@/api/note'
@@ -28,44 +29,48 @@ export default function Page({}) {
         ))
       : []
     return (
-      <Card
+      <Link
         key={item.id}
-        hoverable
-        style={{
-          width: '100%',
-          marginBottom: 16,
-        }}
-        styles={{ body: { padding: 0, height: 180, overflow: 'hidden' } }}>
-        <Flex justify="space-between">
-          <img
-            draggable={false}
-            alt="avatar"
-            src={item.cover || 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'}
-            style={{
-              display: 'block',
-              height: 180,
-            }}
-          />
-          <Flex
-            vertical
-            align="flex-end"
-            justify="space-between"
-            style={{ padding: 16 }}>
-            <Typography.Title
-              level={3}
-              style={{ margin: 0 }}>
-              {item.title || '未命名记录'}
-            </Typography.Title>
-            <Typography.Text type="secondary">{item.createdAt}</Typography.Text>
-            <Typography.Paragraph style={{ margin: 0 }}>{item.description || '这是一个记录'}</Typography.Paragraph>
+        to={`/note/edit/${item.id}`}>
+        <Card
+          key={item.id}
+          hoverable
+          style={{
+            width: '100%',
+            marginBottom: 16,
+          }}
+          styles={{ body: { padding: 0, height: 180, overflow: 'hidden' } }}>
+          <Flex justify="space-between">
+            <img
+              draggable={false}
+              alt="avatar"
+              src={item.cover || 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'}
+              style={{
+                display: 'block',
+                height: 180,
+              }}
+            />
             <Flex
-              wrap
-              gap="small">
-              {tagList}
+              vertical
+              align="flex-end"
+              justify="space-between"
+              style={{ padding: 16 }}>
+              <Typography.Title
+                level={3}
+                style={{ margin: 0 }}>
+                {item.title || '未命名记录'}
+              </Typography.Title>
+              <Typography.Text type="secondary">{item.createdAt}</Typography.Text>
+              <Typography.Paragraph style={{ margin: 0 }}>{item.description || '这是一个记录'}</Typography.Paragraph>
+              <Flex
+                wrap
+                gap="small">
+                {tagList}
+              </Flex>
             </Flex>
           </Flex>
-        </Flex>
-      </Card>
+        </Card>
+      </Link>
     )
   })
 

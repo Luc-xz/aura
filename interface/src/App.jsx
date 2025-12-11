@@ -6,8 +6,8 @@ import Login from './pages/login'
 import Layout from './pages/layout'
 import Setting from './pages/setting'
 import Chat from './pages/chat'
-import Note from './pages/note'
-import NewNote from './pages/note/new.tsx'
+import Note from './pages/note/index.tsx'
+import EditNote from './pages/note/edit.tsx'
 
 function App() {
   return (
@@ -28,8 +28,8 @@ function App() {
               element={<Note />}
             />
             <Route
-              path="new"
-              element={<NewNote />}
+              path="edit/:id?"
+              element={<EditNote />}
             />
           </Route>
           <Route

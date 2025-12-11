@@ -1,17 +1,35 @@
 import { Layout, Form, Input, Button, message } from 'antd'
-import { createNote } from '@/api/note'
+import { getNoteById, createNote, updateNote } from '@/api/note'
+import { useEffect } from 'react'
+import { useParams } from 'react-router'
 
 export default function Page() {
   const [form] = Form.useForm()
+  const { id } = useParams()
+
+  const getNoteDetail = async () => {
+    const [err, res] = await getNoteById(id)
+    if (res) {
+      form.setFieldsValue(res.data)
+    }
+  }
 
   const handleSubmit = async () => {
-    const [err, res] = await createNote(form.getFieldsValue())
-    console.log(err, res)
+    const api = id ? updateNote : createNote
+    const [err, res] = await api(form.getFieldsValue())
     if (res) {
       form.resetFields()
       message.success('提交成功')
     }
   }
+
+  useEffect(() => {
+    if (id) {
+      getNoteDetail()
+    } else {
+      form.resetFields()
+    }
+  }, [id])
 
   return (
     <Layout.Content

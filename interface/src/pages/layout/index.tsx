@@ -12,7 +12,7 @@ const items = [
     icon: <BookOutlined />,
     label: 'Note',
     children: [
-      { key: '2-1', label: 'New Note', path: '/note/new' },
+      { key: '2-1', label: 'New Note', path: '/note/edit' },
       { key: '2-2', label: 'My Notes', path: '/note' },
     ],
   },

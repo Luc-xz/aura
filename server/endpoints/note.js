@@ -32,6 +32,16 @@ function noteEndpoints(apiRouter) {
     })
   }))
 
+  router.get('/:id', asyncHandler(async (req, res) => {
+    const { id } = req.params
+    const data = await Note.findById(id)
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
+
   router.post('/', asyncHandler(async (req, res) => {
     const { title, content, description } = req.body
     const data = await Note.create({ title, content, description })
