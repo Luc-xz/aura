@@ -33,7 +33,7 @@ function chatEndpoints(apiRouter) {
 
   router.post('/:workspaceId', asyncHandler(async (req, res) => {
     const { workspaceId } = req.params
-    const { content, stream = true } = req.body
+    const { content, stream = true, think = true } = req.body
     await Chat.create({ workspaceId, content, proposer: 'user' })
     const response = await fetch('http://localhost:11434/api/chat', {
       method: 'POST',
@@ -44,6 +44,7 @@ function chatEndpoints(apiRouter) {
         model: 'deepseek-r1:7b',
         messages: [{ role: 'user', content }],
         stream,
+        think,
       })
     })
     if (!stream) {
@@ -64,6 +65,8 @@ function chatEndpoints(apiRouter) {
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let data = ''
+    let thinking = true
+    let thinkingStartedMarkerSent = false
 
     while (true) {
       const { done, value } = await reader.read()
@@ -72,12 +75,32 @@ function chatEndpoints(apiRouter) {
       for (const line of chunk.split('\n')) {
         if (!line.trim()) continue
         const obj = JSON.parse(line)
-        const piece = (obj?.message?.content ?? '')
-        if (piece) {
+        const thinkPiece = obj?.message?.thinking || ''
+        const piece = obj?.message?.content || ''
+
+        if (thinking && !thinkPiece && piece) {
+          thinking = false
+          if (thinkingStartedMarkerSent) {
+            res.write('[THINKING_END]\n')
+          }
+        }
+
+        if (thinking && thinkPiece) {
+          if (!thinkingStartedMarkerSent) {
+            res.write('[THINKING_START]\n')
+            thinkingStartedMarkerSent = true
+          }
+          data += thinkPiece
+          res.write(thinkPiece)
+        } else if (!thinking && piece) {
           data += piece
           res.write(piece)
         }
+
         if (obj?.done) {
+          if (thinking && thinkingStartedMarkerSent) {
+            res.write('[THINKING_END]')
+          }
           await Chat.create({ workspaceId, content: data, proposer: 'assistant' })
           res.end()
         }
