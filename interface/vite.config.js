@@ -1,6 +1,6 @@
 /** @type {import('vite').UserConfig} */
 import { defineConfig, loadEnv } from 'vite'
-import react from '@vitejs/plugin-react'
+import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
@@ -10,13 +10,16 @@ export default defineConfig((config) => {
 
   return {
     plugins: [
-      react(),
+      reactRouter(),
       tailwindcss()
     ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src')
       }
+    },
+    ssr: {
+      noExternal: ['antd', '@ant-design/icons', '@ant-design/x', 'rc-util', 'rc-pagination', 'rc-picker', 'rc-notification', 'rc-tooltip', 'rc-tree', 'rc-table']
     },
     server: {
       port: 5173,
