@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+html,
+body {
+  @apply w-screen h-screen;
+}
+
 @theme {
   --color-primary: #1890ff;
   --color-moon: #f0f3f9;

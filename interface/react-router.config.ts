@@ -8,5 +8,5 @@ export default {
     console.log("Build completed!");
   },
   ssr: false,
-  prerender: ["/"],
+  prerender: [],
 } satisfies Config;

@@ -1,5 +1,6 @@
 import { Outlet, Scripts, ScrollRestoration, Meta, Links } from 'react-router'
 import { XProvider } from '@ant-design/x'
+import './assets/styles/index.css'
 
 export default function App() {
   return (
