@@ -1,4 +1,4 @@
-import { Button, Card, Divider, Flex, Space, Modal, Form, Input, Dropdown, message } from 'antd'
+import { App, Button, Card, Divider, Flex, Space, Modal, Form, Input, Dropdown } from 'antd'
 import { Bubble, Attachments, Sender } from '@ant-design/x'
 import {
   PlusOutlined,
@@ -32,6 +32,8 @@ export async function clientLoader({ params }) {
 }
 
 function WorkspacePanel({ list, workspace, setWorkspace }) {
+  const { message, modal } = App.useApp()
+
   const [workspaceList, setWorkspaceList] = useState(list)
   const [workspaceVisible, setWorkspaceVisible] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -62,7 +64,7 @@ function WorkspacePanel({ list, workspace, setWorkspace }) {
             return
           }
           if (key === 'delete') {
-            Modal.confirm({
+            modal.confirm({
               title: '确定删除对话吗？',
               onOk: async () => {
                 const [err, res] = await deleteWorkspace(workspace.id)

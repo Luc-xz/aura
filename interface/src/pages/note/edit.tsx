@@ -1,9 +1,19 @@
-import { Layout, Form, Input, Button, message } from 'antd'
+import { Layout, Form, Input, Button, App } from 'antd'
 import { getNoteById, createNote, updateNote } from '@/api/note'
 import { useEffect } from 'react'
+import { useSubmit } from 'react-router'
 
 const getNoteDetail = async (id: string) => {
   const [err, res] = await getNoteById(id)
+  if (res) {
+    return res.data
+  }
+  return null
+}
+
+const submitNote = async (payload) => {
+  const api = payload.id ? updateNote : createNote
+  const [err, res] = await api(payload)
   if (res) {
     return res.data
   }
@@ -15,25 +25,30 @@ export async function clientLoader({ params }) {
   return await getNoteDetail(params.id)
 }
 
-export default function Page({ loaderData }) {
-  const [form] = Form.useForm()
+export async function clientAction({ request }) {
+  const formData = await request.formData()
+  const payload = Object.fromEntries(formData)
+  return await submitNote(payload)
+}
 
-  const handleSubmit = async () => {
-    const api = id ? updateNote : createNote
-    const [err, res] = await api(form.getFieldsValue())
-    if (res) {
-      form.resetFields()
-      message.success('提交成功')
-    }
+export default function Page({ loaderData, actionData }) {
+  const { message } = App.useApp()
+  const [form] = Form.useForm()
+  const submit = useSubmit()
+
+  const handleSubmit = (values) => {
+    submit(values, { method: 'post' })
   }
 
   useEffect(() => {
-    if (loaderData) {
-      form.setFieldsValue(loaderData)
-    } else {
-      form.resetFields()
-    }
+    loaderData ? form.setFieldsValue(loaderData) : form.resetFields()
   }, [loaderData])
+
+  useEffect(() => {
+    if (actionData) {
+      message.success('提交成功')
+    }
+  }, [actionData])
 
   return (
     <Layout.Content
@@ -48,6 +63,11 @@ export default function Page({ loaderData }) {
       <Form
         form={form}
         onFinish={handleSubmit}>
+        <Form.Item
+          name="id"
+          hidden>
+          <Input />
+        </Form.Item>
         <Form.Item
           label="标题"
           name="title"

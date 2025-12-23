@@ -1,5 +1,6 @@
 import { Outlet, Scripts, ScrollRestoration, Meta, Links } from 'react-router'
 import { XProvider } from '@ant-design/x'
+import { App as AntdApp } from 'antd'
 import './assets/styles/index.css'
 
 export default function App() {
@@ -17,7 +18,9 @@ export default function App() {
       </head>
       <body>
         <XProvider>
-          <Outlet />
+          <AntdApp className="h-full">
+            <Outlet />
+          </AntdApp>
         </XProvider>
         <ScrollRestoration />
         <Scripts />
