@@ -13,6 +13,7 @@ export default function App() {
         />
         <Meta />
         <Links />
+        <title>Aura</title>
       </head>
       <body>
         <XProvider>

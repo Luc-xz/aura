@@ -17,8 +17,22 @@ import { useState, useEffect, useRef } from 'react'
 import { getWorkspaceList, createWorkspace, updateWorkspace, deleteWorkspace } from '@/api/workspace'
 import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
 
-function WorkspacePanel({ workspace, setWorkspace }) {
-  const [workspaceList, setWorkspaceList] = useState([])
+const fetchWorkspaceList = async () => {
+  const [err, res] = await getWorkspaceList()
+  console.log('[API]::[fetchWorkspaceList]::', res, err)
+  if (res) {
+    let list = res.data || []
+    return list
+  }
+  return []
+}
+
+export async function clientLoader({ params }) {
+  return await fetchWorkspaceList()
+}
+
+function WorkspacePanel({ list, workspace, setWorkspace }) {
+  const [workspaceList, setWorkspaceList] = useState(list)
   const [workspaceVisible, setWorkspaceVisible] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [form] = Form.useForm()
@@ -54,7 +68,8 @@ function WorkspacePanel({ workspace, setWorkspace }) {
                 const [err, res] = await deleteWorkspace(workspace.id)
                 if (res) {
                   message.success('操作成功')
-                  fetchWorkspaceList()
+                  const list = await fetchWorkspaceList()
+                  setWorkspaceList(list)
                 }
               },
             })
@@ -95,24 +110,12 @@ function WorkspacePanel({ workspace, setWorkspace }) {
       setIsModalOpen(false)
       form.resetFields()
       setWorkspace(res.data)
-      fetchWorkspaceList()
+      const list = await fetchWorkspaceList()
+      setWorkspaceList(list)
     } else {
       message.error('操作失败：' + err.message)
     }
   }
-
-  const fetchWorkspaceList = async () => {
-    const [err, res] = await getWorkspaceList()
-    console.log('[API]::[fetchWorkspaceList]::', res, err)
-    if (res) {
-      let list = res.data || []
-      setWorkspaceList(list)
-    }
-  }
-
-  useEffect(() => {
-    fetchWorkspaceList()
-  }, [])
 
   useEffect(() => {
     if (!workspaceList?.length) return
@@ -341,12 +344,13 @@ function ChatPanel({ workspace }) {
   )
 }
 
-export default function Page({}) {
+export default function Page({ loaderData, actionData, params, matches }) {
   const [workspace, setWorkspace] = useState(null)
 
   return (
     <div className="flex w-full h-full">
       <WorkspacePanel
+        list={loaderData}
         workspace={workspace}
         setWorkspace={setWorkspace}
       />

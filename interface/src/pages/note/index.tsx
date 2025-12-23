@@ -4,14 +4,31 @@ import { Layout, Form, Input, Pagination, Card, Flex, Button, Typography, Tag } 
 import { SearchOutlined } from '@ant-design/icons'
 import { getNotePage } from '@/api/note'
 
-export default function Page({}) {
-  const [list, setList] = useState([])
-  const [form] = Form.useForm()
-  const [pagination, setPagination] = useState({
+const fetch = async (
+  payload = {
     page: 1,
     pageSize: 10,
-  })
-  const [total, setTotal] = useState(0)
+  }
+) => {
+  const [err, res] = await getNotePage(payload)
+  if (res) {
+    return res.data
+  }
+  return null
+}
+
+export async function clientLoader({ params }) {
+  const data = await fetch()
+  return {
+    list: data?.rows || [],
+    total: data?.total || 0,
+  }
+}
+
+export default function Page({ loaderData }) {
+  const [list, setList] = useState(loaderData.list)
+  const [form] = Form.useForm()
+  const [total, setTotal] = useState(loaderData.total)
   const showTotal = (total: number, range: [number, number]) => {
     return `${range[0]}-${range[1]} of ${total} items`
   }
@@ -74,29 +91,15 @@ export default function Page({}) {
     )
   })
 
-  const fetch = async () => {
-    const [err, res] = await getNotePage({
-      page: pagination.page,
-      pageSize: pagination.pageSize,
+  const handlePage = async (page, pageSize) => {
+    const { rows, total } = await fetch({
+      page: page || 1,
+      pageSize: pageSize || 10,
       ...form.getFieldsValue(),
     })
-    if (res) {
-      setList(res.data.rows)
-      setTotal(res.data.total)
-    }
+    setList(rows)
+    setTotal(total)
   }
-
-  const handlePage = (page, pageSize) => {
-    setPagination({
-      page: page || 1,
-      pageSize: pageSize || pagination.pageSize,
-    })
-    fetch()
-  }
-
-  useEffect(() => {
-    fetch()
-  }, [])
 
   return (
     <Layout.Content
@@ -132,8 +135,6 @@ export default function Page({}) {
       {cardList}
       <Pagination
         align="end"
-        current={pagination.page}
-        pageSize={pagination.pageSize}
         defaultCurrent={1}
         defaultPageSize={10}
         showTotal={showTotal}

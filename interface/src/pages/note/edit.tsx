@@ -1,18 +1,22 @@
 import { Layout, Form, Input, Button, message } from 'antd'
 import { getNoteById, createNote, updateNote } from '@/api/note'
 import { useEffect } from 'react'
-import { useParams } from 'react-router'
 
-export default function Page() {
-  const [form] = Form.useForm()
-  const { id } = useParams()
-
-  const getNoteDetail = async () => {
-    const [err, res] = await getNoteById(id)
-    if (res) {
-      form.setFieldsValue(res.data)
-    }
+const getNoteDetail = async (id: string) => {
+  const [err, res] = await getNoteById(id)
+  if (res) {
+    return res.data
   }
+  return null
+}
+
+export async function clientLoader({ params }) {
+  if (!params.id) return null
+  return await getNoteDetail(params.id)
+}
+
+export default function Page({ loaderData }) {
+  const [form] = Form.useForm()
 
   const handleSubmit = async () => {
     const api = id ? updateNote : createNote
@@ -24,12 +28,12 @@ export default function Page() {
   }
 
   useEffect(() => {
-    if (id) {
-      getNoteDetail()
+    if (loaderData) {
+      form.setFieldsValue(loaderData)
     } else {
       form.resetFields()
     }
-  }, [id])
+  }, [loaderData])
 
   return (
     <Layout.Content
