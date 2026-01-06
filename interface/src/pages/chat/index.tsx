@@ -16,6 +16,7 @@ import {
 import { useState, useEffect, useRef } from 'react'
 import { getWorkspaceList, createWorkspace, updateWorkspace, deleteWorkspace } from '@/api/workspace'
 import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
+import { useWorkspaceStore } from '@/store'
 
 const fetchWorkspaceList = async () => {
   const [err, res] = await getWorkspaceList()
@@ -31,8 +32,11 @@ export async function clientLoader({ params }) {
   return await fetchWorkspaceList()
 }
 
-function WorkspacePanel({ list, workspace, setWorkspace }) {
+function WorkspacePanel({ list }) {
   const { message, modal } = App.useApp()
+
+  const workspace = useWorkspaceStore((state) => state.workspace)
+  const setWorkspace = useWorkspaceStore((state) => state.setWorkspace)
 
   const [workspaceList, setWorkspaceList] = useState(list)
   const [workspaceVisible, setWorkspaceVisible] = useState(true)
@@ -347,15 +351,11 @@ function ChatPanel({ workspace }) {
 }
 
 export default function Page({ loaderData, actionData, params, matches }) {
-  const [workspace, setWorkspace] = useState(null)
+  const workspace = useWorkspaceStore((state) => state.workspace)
 
   return (
     <div className="flex w-full h-full">
-      <WorkspacePanel
-        list={loaderData}
-        workspace={workspace}
-        setWorkspace={setWorkspace}
-      />
+      <WorkspacePanel list={loaderData} />
       <ChatPanel workspace={workspace} />
     </div>
   )
