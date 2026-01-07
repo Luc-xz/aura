@@ -2,6 +2,7 @@ import express from 'express'
 import sql from '../sql/index.js'
 import User from '../models/user.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
+import Validator from '../utils/validator.js'
 
 const router = express.Router()
 
@@ -49,8 +50,20 @@ function userEndpoints(apiRouter) {
     })
   }))
 
-  router.post('/', asyncHandler(async (req, res) => {
-    const { name, email = null, password = null } = req.body
+  router.post('/register', asyncHandler(async (req, res) => {
+    const { name, email, password } = req.body
+    if (!name || !email || !password) {
+      throw new Error('name, email and password are required')
+    }
+    if (!Validator.isValidName(name)) {
+      throw new Error('name is invalid')
+    }
+    if (!Validator.isEmail(email)) {
+      throw new Error('email is invalid')
+    }
+    if (!Validator.isStrongPassword(password)) {
+      throw new Error('password is invalid')
+    }
     const data = await User.create({ name, email, password })
     res.status(200).json({
       data,

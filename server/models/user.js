@@ -1,6 +1,7 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
 import { formatResponse } from '../utils/formatter.js'
+import { hashPassword, comparePassword } from '../utils/bcrypt.js'
 
 export default class User {
   static filterFields(user) {
@@ -70,9 +71,18 @@ export default class User {
     return rows[0] && this.filterFields(rows[0])
   }
 
+  static async findByEmail(email) {
+    if (!email) {
+      throw new Error('email is required')
+    }
+    const baseSql = 'SELECT * FROM user WHERE email = ?'
+    const [rows] = await db.query(baseSql, [email])
+    return rows[0] && this.filterFields(rows[0])
+  }
+
   static async create({ name, email, password } = {}) {
     const baseSql = 'INSERT INTO user (name, email, password) VALUES (?, ?, ?)'
-    const [result] = await db.query(baseSql, [name, email, password])
+    const [result] = await db.query(baseSql, [name, email, await hashPassword(password)])
     return result.insertId
   }
 
@@ -87,7 +97,11 @@ export default class User {
     for (const key in payload) {
       if (['name', 'email', 'password'].includes(key) && payload[key]) {
         sql += `${key} = ?, `
-        params.push(payload[key])
+        if (key === 'password') {
+          params.push(await hashPassword(payload[key]))
+        } else {
+          params.push(payload[key])
+        }
       }
     }
     if (params.length < 1) {
