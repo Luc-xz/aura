@@ -77,7 +77,7 @@ export default class User {
     }
     const baseSql = 'SELECT * FROM user WHERE email = ?'
     const [rows] = await db.query(baseSql, [email])
-    return rows[0] && this.filterFields(rows[0])
+    return rows[0]
   }
 
   static async create({ name, email, password } = {}) {

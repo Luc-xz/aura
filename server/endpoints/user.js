@@ -3,13 +3,16 @@ import sql from '../sql/index.js'
 import User from '../models/user.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import Validator from '../utils/validator.js'
+import { comparePassword } from '../utils/bcrypt.js'
+import jwt from 'jsonwebtoken'
+import { authMiddleware } from '../middlewares/auth.js'
 
 const router = express.Router()
 
 function userEndpoints(apiRouter) {
   apiRouter.use('/user', router)
 
-  router.get('/list', asyncHandler(async (req, res) => {
+  router.get('/list', asyncHandler(authMiddleware), asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await User.findAll({
       filters: rest,
@@ -26,7 +29,7 @@ function userEndpoints(apiRouter) {
     })
   }))
 
-  router.get('/page', asyncHandler(async (req, res) => {
+  router.get('/page', asyncHandler(authMiddleware), asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await User.findAll({
       filters: {
@@ -72,7 +75,37 @@ function userEndpoints(apiRouter) {
     })
   }))
 
-  router.put('/:id', asyncHandler(async (req, res) => {
+  router.post('/login', asyncHandler(async (req, res) => {
+    const { email, password } = req.body
+    if (!email || !password) {
+      throw new Error('email and password are required')
+    }
+    const data = await User.findByEmail(email)
+    if (!data) {
+      throw new Error('user not found')
+    }
+    const isMatch = await comparePassword(password, data.password)
+    if (!isMatch) {
+      throw new Error('password is incorrect')
+    }
+    const { id, name } = data
+    const token = jwt.sign({ id, name, email }, process.env.JWT_SECRET, {
+      algorithm: 'HS256',
+      expiresIn: '3 days'
+    })
+
+    res.status(200).json({
+      data: {
+        name,
+        email,
+        token
+      },
+      code: 1,
+      message: 'success',
+    })
+  }))
+
+  router.put('/:id', asyncHandler(authMiddleware), asyncHandler(async (req, res) => {
     const { id } = req.params
     const { name, email, password } = req.body
 
@@ -84,7 +117,7 @@ function userEndpoints(apiRouter) {
     })
   }))
 
-  router.delete('/:id', asyncHandler(async (req, res) => {
+  router.delete('/:id', asyncHandler(authMiddleware), asyncHandler(async (req, res) => {
     const { id } = req.params
 
     const data = await User.delete(id)

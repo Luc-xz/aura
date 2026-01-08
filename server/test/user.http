@@ -3,23 +3,35 @@
 @port = 3000
 @baseApi = /api/user
 @baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NDgsIm5hbWUiOiJsdWNfeHoiLCJlbWFpbCI6Imx1Y194ekBxcS5jb20iLCJpYXQiOjE3Njc4NTgwMDgsImV4cCI6MTc2ODExNzIwOH0.71GyvtrUwejvG5kErQTaXnHDqxSnR17o6Wjq6o1fD60
 
 GET {{baseUrl}}/list HTTP/1.1
-
+Authorization: Bearer {{token}}
 ###
 
 GET {{baseUrl}}/page?page=1&pageSize=10&keyword=user1&createdAt=2025-11-24T00:00:00,2025-11-24T23:59:59 HTTP/1.1
-
+Authorization: Bearer {{token}}
 ###
 
-POST {{baseUrl}}/
+POST {{baseUrl}}/register
 content-type: application/json
 
 {
-    "name": "third_user",
-    "email": "test2@gmail.com",
-    "password": "123456"
+    "name": "luc_xz",
+    "email": "luc_xz@qq.com",
+    "password": "9712170320_xz"
 }
+
+###
+
+POST {{baseUrl}}/login
+content-type: application/json
+
+{
+    "email": "luc_xz@qq.com",
+    "password": "9712170320_xz"
+}
+
 
 ###
 

@@ -2,11 +2,12 @@ import express from 'express'
 import sql from '../sql/index.js'
 import Note from '../models/note.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
+import { authMiddleware } from '../middlewares/auth.js'
 
 const router = express.Router()
 
 function noteEndpoints(apiRouter) {
-  apiRouter.use('/note', router)
+  apiRouter.use('/note', asyncHandler(authMiddleware), router)
 
   router.get('/page', asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query

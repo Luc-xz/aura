@@ -2,11 +2,12 @@ import express from 'express'
 import sql from '../sql/index.js'
 import Chat from '../models/chat.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
+import { authMiddleware } from '../middlewares/auth.js'
 
 const router = express.Router()
 
 function chatEndpoints(apiRouter) {
-  apiRouter.use('/chat', router)
+  apiRouter.use('/chat', asyncHandler(authMiddleware), router)
 
   router.get('/list/:workspaceId', asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query

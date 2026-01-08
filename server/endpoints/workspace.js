@@ -2,11 +2,12 @@ import express from 'express'
 import sql from '../sql/index.js'
 import Workspace from '../models/workspace.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
+import { authMiddleware } from '../middlewares/auth.js'
 
 const router = express.Router()
 
 function workspaceEndpoints(apiRouter) {
-  apiRouter.use('/workspace', router)
+  apiRouter.use('/workspace', asyncHandler(authMiddleware), router)
 
   router.get('/list', asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query

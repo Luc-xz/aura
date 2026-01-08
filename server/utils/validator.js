@@ -10,7 +10,8 @@ class Validator {
   }
 
   static isStrongPassword(val) {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+    // 强密码校验：至少8个字符，包含字母、数字和特殊字符 (-_)
+    const regex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[-_])[A-Za-z\d-_]{8,}$/
     return regex.test(val)
   }
 }
