@@ -1,4 +1,10 @@
-import { message } from 'antd'
+// handler.ts
+import { App } from 'antd'
+
+let messageInstance = null
+export const setMessageInstance = (instance) => {
+  messageInstance = instance
+}
 
 export const handleNetworkError = (errStatus: number) => {
   // console.log('[network-error]::', errStatus)
@@ -51,5 +57,9 @@ export const handleNetworkError = (errStatus: number) => {
 }
 
 export const handleErrMsg = (msg: string) => {
-  msg && message.error(msg)
+  if (messageInstance) {
+    messageInstance.error(msg)
+  } else {
+    console.warn('Message instance not set:', msg)
+  }
 }

@@ -2,6 +2,17 @@ import { Outlet, Scripts, ScrollRestoration, Meta, Links } from 'react-router'
 import { XProvider } from '@ant-design/x'
 import { App as AntdApp } from 'antd'
 import './assets/styles/index.css'
+import { setMessageInstance } from './http/handler'
+import React from 'react'
+
+function MessageProvider({ children }: { children: React.ReactNode }) {
+  const { message } = AntdApp.useApp()
+  React.useEffect(() => {
+    setMessageInstance(message)
+  }, [message])
+
+  return <>{children}</>
+}
 
 export default function App() {
   return (
@@ -19,7 +30,9 @@ export default function App() {
       <body>
         <XProvider>
           <AntdApp className="h-full">
-            <Outlet />
+            <MessageProvider>
+              <Outlet />
+            </MessageProvider>
           </AntdApp>
         </XProvider>
         <ScrollRestoration />
