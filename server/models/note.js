@@ -8,9 +8,16 @@ export default class Note {
     return formatResponse(rest)
   }
 
-  static async findAll({ filters = {}, pagination = {}, sort = {} } = {}) {
+  static async findAll({ user, filters = {}, pagination = {}, sort = {} } = {}) {
+    if (!user?.id) {
+      throw new Error('userId is required')
+    }
+
     let baseSql = `SELECT * FROM note WHERE 1=1`
     const params = []
+
+    baseSql += ' AND user_id = ?'
+    params.push(user.id)
 
     if (filters.createdAt) {
       baseSql += ' AND created_at BETWEEN ? AND ?'
@@ -65,9 +72,12 @@ export default class Note {
     return rows[0]
   }
 
-  static async create({ title, content, description } = {}) {
-    const baseSql = 'INSERT INTO note (title, content, description) VALUES (?, ?, ?)'
-    const [result] = await db.query(baseSql, [title, content, description])
+  static async create(user, { title, content, description } = {}) {
+    if (!user?.id) {
+      throw new Error('userId is required')
+    }
+    const baseSql = 'INSERT INTO note (user_id, title, content, description) VALUES (?, ?, ?, ?)'
+    const [result] = await db.query(baseSql, [user.id, title, content, description])
     return result.insertId
   }
 

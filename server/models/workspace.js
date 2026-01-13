@@ -7,9 +7,16 @@ export default class Workspace {
     return formatResponse(workspace)
   }
 
-  static async findAll({ filters = {}, pagination = {}, sort = {} } = {}) {
+  static async findAll({ user, filters = {}, pagination = {}, sort = {} } = {}) {
+    if (!user?.id) {
+      throw new Error('userId is required')
+    }
+
     let baseSql = `SELECT * FROM workspace WHERE 1=1`
     const params = []
+
+    baseSql += ' AND user_id = ?'
+    params.push(user.id)
 
     if (filters.keyword) {
       baseSql += ' AND (title LIKE ? OR model LIKE ?)'
@@ -69,20 +76,25 @@ export default class Workspace {
     return rows[0] && this.filterFields(rows[0])
   }
 
-  static async create({ title, model } = {}) {
-    const baseSql = 'INSERT INTO workspace (title, model) VALUES (?, ?)'
-    const [result] = await db.query(baseSql, [title, model])
+  static async create(user, { title, model } = {}) {
+    if (!user?.id) {
+      throw new Error('userId is required')
+    }
+    const baseSql = 'INSERT INTO workspace (user_id, title, model) VALUES (?, ?, ?)'
+    const [result] = await db.query(baseSql, [user.id, title, model])
     return result.insertId
   }
 
-  static async update(id, payload) {
+  static async update(id, payload,) {
     if (!id) {
       throw new Error('id is required')
     }
+
     const baseSql = 'UPDATE workspace SET '
     const clause = ' WHERE id = ?'
     let sql = ''
     let params = []
+
     for (const key in payload) {
       if (['title', 'model'].includes(key) && payload[key]) {
         sql += `${key} = ?, `

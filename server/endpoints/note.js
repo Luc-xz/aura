@@ -12,6 +12,7 @@ function noteEndpoints(apiRouter) {
   router.get('/page', asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await Note.findAll({
+      user: req.user,
       filters: {
         ...rest,
         createdAt: rest?.createdAt?.split(',') || null,
@@ -45,7 +46,7 @@ function noteEndpoints(apiRouter) {
 
   router.post('/', asyncHandler(async (req, res) => {
     const { title, content, description } = req.body
-    const data = await Note.create({ title, content, description })
+    const data = await Note.create(req.user, { title, content, description })
     res.status(200).json({
       data,
       code: 1,

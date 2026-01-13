@@ -12,11 +12,12 @@ CREATE TABLE IF NOT EXISTS user (
 
 CREATE TABLE IF NOT EXISTS workspace (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL UNIQUE,
+    user_id INT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user (id),
+    title VARCHAR(255) NOT NULL,
     model VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_title (title),
     INDEX idx_created_at (created_at)
 );
 
@@ -33,6 +34,8 @@ CREATE TABLE IF NOT EXISTS chat (
 
 CREATE TABLE IF NOT EXISTS note (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user (id),
     title VARCHAR(50) NOT NULL,
     keywords JSON DEFAULT NULL,
     description VARCHAR(255) DEFAULT NULL,
