@@ -35,6 +35,28 @@ function chatEndpoints(apiRouter) {
   router.post('/:workspaceId', asyncHandler(async (req, res) => {
     const { workspaceId } = req.params
     const { content, stream = true, think = true } = req.body
+
+    const { rows } = await Chat.findByWorkspaceId(
+      workspaceId,
+      {
+        filters: {
+        },
+        pagination: {
+          page: 1,
+          pageSize: 20
+        },
+        sort: {
+          orderBy: 'created_at',
+          orderDir: 'asc'
+        }
+      })
+
+    const messages = [...rows, { workspaceId, content, proposer: 'user' }].map(item => {
+      return {
+        role: item.proposer,
+        content: item.content
+      }
+    })
     await Chat.create({ workspaceId, content, proposer: 'user' })
     const response = await fetch('http://localhost:11434/api/chat', {
       method: 'POST',
@@ -43,7 +65,7 @@ function chatEndpoints(apiRouter) {
       },
       body: JSON.stringify({
         model: 'deepseek-r1:7b',
-        messages: [{ role: 'user', content }],
+        messages,
         stream,
         think,
       })
