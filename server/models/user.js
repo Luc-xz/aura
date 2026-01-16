@@ -9,7 +9,7 @@ export default class User {
     return formatResponse(rest)
   }
 
-  static async findAll({ filters = {}, pagination = {}, sort = {} } = {}) {
+  static async findAll({ filters = {}, pagination = null, sort = {} } = {}) {
     let baseSql = `SELECT * FROM user WHERE 1=1`
     const params = []
 

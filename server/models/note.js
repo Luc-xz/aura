@@ -8,7 +8,7 @@ export default class Note {
     return formatResponse(rest)
   }
 
-  static async findAll({ user, filters = {}, pagination = {}, sort = {} } = {}) {
+  static async findAll({ user, filters = {}, pagination = null, sort = {} } = {}) {
     if (!user?.id) {
       throw new Error('userId is required')
     }

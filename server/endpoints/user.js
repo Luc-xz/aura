@@ -16,7 +16,6 @@ function userEndpoints(apiRouter) {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await User.findAll({
       filters: rest,
-      pagination: null,
       sort: {
         orderBy,
         orderDir

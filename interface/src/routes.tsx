@@ -6,6 +6,6 @@ export default [
   layout('./pages/layout/index.tsx', [
     route('chat', './pages/chat/index.tsx'),
     ...prefix('note', [index('./pages/note/index.tsx'), route('edit/:id?', './pages/note/edit.tsx')]),
-    route('setting', './pages/setting/index.tsx'),
+    ...prefix('setting', [index('./pages/setting/index.tsx'), route('model-config', './pages/setting/model-config.tsx')]),
   ]),
 ]

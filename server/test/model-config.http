@@ -1,0 +1,41 @@
+@proto = http
+@host = localhost
+@port = 3000
+@baseApi = /api/model-config
+@baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imx1Y194eiIsImVtYWlsIjoibHVjX3h6QHFxLmNvbSIsImlhdCI6MTc2ODQ2NjYwMSwiZXhwIjoxNzY4NzI1ODAxfQ.EjkDci4cRAjdKm8v8fVOPGLbjH2fX0hazoLRAhFqV2A
+
+GET {{baseUrl}}/list?groupBy=providerType HTTP/1.1
+Authorization: Bearer {{token}}
+
+###
+
+GET {{baseUrl}}/group HTTP/1.1
+Authorization: Bearer {{token}}
+
+###
+
+POST {{baseUrl}}/
+content-type: application/json
+
+{
+    "title": "test_note",
+    "content": "test_note_content",
+    "keywords": ["test_note_keywords"]
+}
+
+###
+
+PUT {{baseUrl}}/1
+content-type: application/json
+
+{
+    "title": "test_note",
+    "content": "test_note_content",
+    "keywords": ["keyword1", "keyword2"]
+}
+
+###
+
+DELETE {{baseUrl}}/2
+content-type: application/json

@@ -14,6 +14,10 @@ export const toCamelCase = (str) => {
   return str.replace(/_([a-z])/g, (g) => g[1].toUpperCase())
 }
 
+export const toSnakeCase = (str) => {
+  return str.replace(/([A-Z])/g, '_$1').toLowerCase()
+}
+
 export const formatResponse = (data) => {
   if (Array.isArray(data)) {
     return data.map(item => formatResponse(item))

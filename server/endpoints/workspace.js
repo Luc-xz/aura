@@ -18,7 +18,6 @@ function workspaceEndpoints(apiRouter) {
         createdAt: rest?.createdAt?.split(',') || null,
         updatedAt: rest?.updatedAt?.split(',') || null,
       },
-      pagination: null,
       sort: {
         orderBy,
         orderDir

@@ -20,7 +20,10 @@ const items = [
     key: '3',
     label: 'System',
     icon: <SettingFilled />,
-    children: [{ key: '3-1', label: 'Setting', path: '/setting' }],
+    children: [
+      { key: '3-1', label: 'Setting', path: '/setting' },
+      { key: '3-2', label: 'Model Config', path: '/setting/model-config' },
+    ],
   },
 ]
 

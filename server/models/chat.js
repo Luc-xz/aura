@@ -7,7 +7,7 @@ export default class Chat {
     return formatResponse(chat)
   }
 
-  static async findByWorkspaceId(workspaceId, { filters = {}, pagination = {}, sort = {} } = {}) {
+  static async findByWorkspaceId(workspaceId, { filters = {}, pagination = null, sort = {} } = {}) {
     if (!workspaceId) {
       throw new Error('workspaceId is required')
     }
