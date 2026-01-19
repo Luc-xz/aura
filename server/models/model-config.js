@@ -1,6 +1,7 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
 import { formatResponse, toSnakeCase } from '../utils/formatter.js'
+import { isDefined } from '../utils/index.js'
 
 export default class ModelConfig {
   static filterFields(modelConfig) {
@@ -71,7 +72,7 @@ export default class ModelConfig {
     let sql = ''
     let params = []
     for (const key in payload) {
-      if (['providerType', 'baseUrl', 'apiKey', 'modelName', 'temperature', 'maxTokens', 'isActive'].includes(key) && payload[key]) {
+      if (['providerType', 'baseUrl', 'apiKey', 'modelName', 'temperature', 'maxTokens', 'isActive'].includes(key) && isDefined(payload[key])) {
         sql += `${toSnakeCase(key)} = ?, `
         params.push(payload[key])
       }
