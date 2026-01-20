@@ -7,6 +7,7 @@ export const useWorkspaceStore = create(persist((set) => ({
 }), {
   name: 'workspace-store',
   storage: createJSONStorage(() => localStorage),
+  skipHydration: true,
 }))
 
 export const useUserStore = create(persist((set) => ({
@@ -15,4 +16,10 @@ export const useUserStore = create(persist((set) => ({
 }), {
   name: 'user-store',
   storage: createJSONStorage(() => localStorage),
+  skipHydration: true,
 }))
+
+export const rehydrateStores = () => {
+  useWorkspaceStore.persist.rehydrate()
+  useUserStore.persist.rehydrate()
+}
