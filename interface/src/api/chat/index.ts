@@ -7,12 +7,13 @@ export const getChatListByWorkspaceId = (workspaceId: string) => {
   })
 }
 
-export const chatToWorkspace = (workspaceId: string, content: string) => {
+export const chatToWorkspace = (workspaceId: string, content: string, modelId: string) => {
   return request({
     url: `/api/chat/${workspaceId}`,
     method: 'POST',
     data: {
       content,
+      modelId,
       stream: false,
     },
   })

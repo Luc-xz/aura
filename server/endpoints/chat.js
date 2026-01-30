@@ -1,8 +1,10 @@
 import express from 'express'
 import sql from '../sql/index.js'
 import Chat from '../models/chat.js'
+import ModelConfig from '../models/model-config.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
+import providers from '../adapters/index.js'
 
 const router = express.Router()
 
@@ -33,7 +35,34 @@ function chatEndpoints(apiRouter) {
 
   router.post('/:workspaceId', asyncHandler(async (req, res) => {
     const { workspaceId } = req.params
-    const { content, stream = true, think = true } = req.body
+    let { modelId, content, stream = true, think = true } = req.body
+
+    if (!modelId) {
+      const workspace = await Workspace.findById(workspaceId)
+      if (!workspace) {
+        throw new Error("Workspace not found");
+      }
+      modelId = workspace.modelId
+    }
+
+    const modelConfig = await ModelConfig.findById(modelId)
+    if (!modelConfig) {
+      throw new Error("Model not found");
+    }
+
+    const Provider = providers[modelConfig.providerType]
+    if (!Provider) {
+      throw new Error("Invalid provider type");
+    }
+
+    await Chat.create({
+      workspaceId,
+      modelId,
+      content,
+      proposer: 'user'
+    })
+
+    const provider = new Provider(modelConfig)
 
     const { rows } = await Chat.findByWorkspaceId(
       workspaceId,
@@ -56,78 +85,17 @@ function chatEndpoints(apiRouter) {
         content: item.content
       }
     })
-    await Chat.create({ workspaceId, content, proposer: 'user' })
-    const response = await fetch('http://localhost:11434/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'deepseek-r1:7b',
-        messages,
-        stream,
-        think,
-      })
+
+    const response = await provider.chat(messages, { stream, think })
+
+    await Chat.create({ workspaceId, modelId, content: response, proposer: 'assistant' })
+
+    res.status(200).json({
+      data: chat,
+      code: 1,
+      message: 'success'
     })
-    if (!stream) {
-      const data = await response.json()
-      await Chat.create({ workspaceId, content: data.message?.content, proposer: 'assistant' })
-      res.status(200).json({
-        data: data.message?.content,
-        code: 1,
-        message: 'success'
-      })
-      return
-    }
 
-    res.setHeader('Content-Type', 'text/event-stream')
-    res.setHeader('Cache-Control', 'no-cache')
-    res.setHeader('Connection', 'keep-alive')
-
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let data = ''
-    let thinking = true
-    let thinkingStartedMarkerSent = false
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      const chunk = decoder.decode(value, { stream: true })
-      for (const line of chunk.split('\n')) {
-        if (!line.trim()) continue
-        const obj = JSON.parse(line)
-        const thinkPiece = obj?.message?.thinking || ''
-        const piece = obj?.message?.content || ''
-
-        if (thinking && !thinkPiece && piece) {
-          thinking = false
-          if (thinkingStartedMarkerSent) {
-            res.write('[THINKING_END]\n')
-          }
-        }
-
-        if (thinking && thinkPiece) {
-          if (!thinkingStartedMarkerSent) {
-            res.write('[THINKING_START]\n')
-            thinkingStartedMarkerSent = true
-          }
-          data += thinkPiece
-          res.write(thinkPiece)
-        } else if (!thinking && piece) {
-          data += piece
-          res.write(piece)
-        }
-
-        if (obj?.done) {
-          if (thinking && thinkingStartedMarkerSent) {
-            res.write('[THINKING_END]')
-          }
-          await Chat.create({ workspaceId, content: data, proposer: 'assistant' })
-          res.end()
-        }
-      }
-    }
   }))
 }
 

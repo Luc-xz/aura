@@ -230,10 +230,10 @@ function ChatPanel({ workspace }) {
     setLoading(true)
     const newConversation = [...conversation, { proposer: 'user', content }]
     setConversation(newConversation)
-    const [err, res] = await chatToWorkspace(workspace.id, content)
+    const [err, res] = await chatToWorkspace(workspace.id, content, workspace.modelId)
     console.log('[API]::[chatToWorkspace]::', res, err)
     if (res) {
-      setConversation([...newConversation, { proposer: 'assistant', content: res.data }])
+      setConversation([...newConversation, { proposer: 'assistant', content: res.data.content }])
     }
     setLoading(false)
   }
