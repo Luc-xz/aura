@@ -51,7 +51,7 @@ export default class ModelConfig {
     }
     const baseSql = 'SELECT * FROM model_config WHERE id = ?'
     const [rows] = await db.query(baseSql, [id])
-    return rows[0]
+    return rows[0] && this.filterFields(rows[0])
   }
 
   static async create(user, { providerType, baseUrl, apiKey, modelName, temperature, maxTokens, isActive } = {}) {

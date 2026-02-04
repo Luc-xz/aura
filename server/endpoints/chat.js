@@ -4,7 +4,8 @@ import Chat from '../models/chat.js'
 import ModelConfig from '../models/model-config.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
-import providers from '../adapters/index.js'
+import { createModelInstance } from '../utils/model-factory.js'
+import { generateText, streamText } from 'ai'
 
 const router = express.Router()
 
@@ -50,19 +51,12 @@ function chatEndpoints(apiRouter) {
       throw new Error("Model not found");
     }
 
-    const Provider = providers[modelConfig.providerType]
-    if (!Provider) {
-      throw new Error("Invalid provider type");
-    }
-
     await Chat.create({
       workspaceId,
       modelId,
       content,
       proposer: 'user'
     })
-
-    const provider = new Provider(modelConfig)
 
     const { rows } = await Chat.findByWorkspaceId(
       workspaceId,
@@ -86,16 +80,37 @@ function chatEndpoints(apiRouter) {
       }
     })
 
-    const response = await provider.chat(messages, { stream, think })
+    const model = createModelInstance(modelConfig)
 
-    await Chat.create({ workspaceId, modelId, content: response, proposer: 'assistant' })
+    if (!stream) {
+      const result = await generateContent({
+        model,
+        prompt: messages,
+      });
+      await Chat.create({ workspaceId, content: result.text, proposer: 'assistant' })
+      res.status(200).json({
+        data: result.text,
+        code: 1,
+        message: 'success'
+      })
+      return
+    }
 
-    res.status(200).json({
-      data: chat,
-      code: 1,
-      message: 'success'
-    })
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
 
+    const result = streamText({
+      model,
+      prompt: messages,
+    });
+    let data = ''
+    for await (const textPart of result.textStream) {
+      data += textPart
+      res.write(textPart)
+    }
+    await Chat.create({ workspaceId, content: data, proposer: 'assistant' })
+    res.end()
   }))
 }
 

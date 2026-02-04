@@ -9,6 +9,7 @@ import workspaceEndpoints from './endpoints/workspace.js'
 import chatEndpoints from './endpoints/chat.js'
 import noteEndpoints from './endpoints/note.js'
 import modelConfigEndpoints from './endpoints/model-config.js'
+import modelsEndpoints from './endpoints/models.js'
 
 const app = express()
 const apiRouter = express.Router()
@@ -21,6 +22,7 @@ workspaceEndpoints(apiRouter)
 chatEndpoints(apiRouter)
 noteEndpoints(apiRouter)
 modelConfigEndpoints(apiRouter)
+modelsEndpoints(apiRouter)
 
 // Handle 404 - Catch all unmatched routes
 app.use((req, res, next) => {
