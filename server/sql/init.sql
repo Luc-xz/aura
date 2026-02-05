@@ -45,12 +45,12 @@ CREATE TABLE IF NOT EXISTS note (
 CREATE TABLE IF NOT EXISTS model_config (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    provider_type VARCHAR(50) NOT NULL,
-    base_url VARCHAR(255) NOT NULL,
-    api_key VARCHAR(255) NOT NULL,
+    provider VARCHAR(50) NOT NULL,
+    base_url VARCHAR(255),
+    api_key VARCHAR(255),
     model_name VARCHAR(100) NOT NULL,
-    temperature DECIMAL(3, 2) NOT NULL DEFAULT 0.7,
-    max_tokens INT NOT NULL DEFAULT 2048,
+    temperature DECIMAL(3, 2) DEFAULT 0.7,
+    max_tokens INT DEFAULT 2048,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

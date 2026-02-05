@@ -8,7 +8,7 @@ let providerList = []
 const fetchData = async () => {
   const res = await fetch('https://models.dev/api.json')
   data = await res.json()
-  providerList = Object.keys(data)
+  providerList = Object.keys(data || {})
 }
 
 const job = new CronJob(
@@ -45,7 +45,7 @@ function modelsEndpoints(apiRouter) {
   router.get('/:provider/model-list', asyncHandler(async (req, res) => {
     const { provider } = req.params
     res.status(200).json({
-      data: data[provider],
+      data: Object.keys(data[provider]?.models || {}),
       code: 1,
       message: 'success'
     })

@@ -1,4 +1,4 @@
-import { App, Button, Card, Divider, Flex, Space, Modal, Form, Input, Dropdown } from 'antd'
+import { App, Button, Card, Divider, Flex, Space, Modal, Form, Input, Dropdown, Select } from 'antd'
 import { Bubble, Attachments, Sender } from '@ant-design/x'
 import {
   PlusOutlined,
@@ -16,6 +16,7 @@ import {
 import { useState, useEffect, useRef } from 'react'
 import { getWorkspaceList, createWorkspace, updateWorkspace, deleteWorkspace } from '@/api/workspace'
 import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
+import { getModelConfigList } from '@/api/setting'
 import { useWorkspaceStore } from '@/store'
 
 const fetchWorkspaceList = async () => {
@@ -28,11 +29,20 @@ const fetchWorkspaceList = async () => {
   return []
 }
 
-export async function clientLoader({ params }) {
-  return await fetchWorkspaceList()
+const fetchModelList = async () => {
+  const [err, res] = await getModelConfigList()
+  if (res) {
+    let list = res.data || []
+    return list
+  }
+  return []
 }
 
-function WorkspacePanel({ list }) {
+export async function clientLoader({ params }) {
+  return [await fetchWorkspaceList(), await fetchModelList()]
+}
+
+function WorkspacePanel({ list, modelList }) {
   const { message, modal } = App.useApp()
 
   const workspace = useWorkspaceStore((state) => state.workspace)
@@ -62,7 +72,7 @@ function WorkspacePanel({ list }) {
             form.setFieldsValue({
               id: workspace.id,
               title: workspace.title,
-              model: workspace.model,
+              modelId: workspace.modelId,
             })
             setIsModalOpen(true)
             return
@@ -98,7 +108,7 @@ function WorkspacePanel({ list }) {
       <div className="flex items-center w-full">
         <div className="flex flex-col justify-between flex-1 overflow-hidden">
           <div className="truncate">{item.title}</div>
-          <div className="truncate text-sm text-gray-500">{item.model}</div>
+          <div className="truncate text-sm text-gray-500">{item.modelName}</div>
         </div>
         {item.id === (workspace && workspace.id) && dropdown}
       </div>
@@ -169,14 +179,19 @@ function WorkspacePanel({ list }) {
           <Form.Item
             name="title"
             label="对话名称"
-            rules={[{ required: true, message: '请输入对话名称' }]}>
+            rules={[{ required: true, message: '请输入' }]}>
             <Input />
           </Form.Item>
           <Form.Item
-            name="model"
+            name="modelId"
             label="对话模型"
-            rules={[{ required: true, message: '请输入对话模型' }]}>
-            <Input />
+            rules={[{ required: true, message: '请选择' }]}>
+            <Select
+              showSearch
+              options={modelList.map((item) => {
+                return { value: item.id, label: item.modelName }
+              })}
+            />
           </Form.Item>
         </Form>
       </Modal>
@@ -247,14 +262,16 @@ function ChatPanel({ workspace }) {
     setLoading(true)
     const newConversation = [...conversation, { proposer: 'user', content }]
     setConversation(newConversation)
-    const [err, res] = await streamChatToWorkspace(workspace.id, content, (e) => {
+    const [err, res] = await streamChatToWorkspace(workspace.id, content, (e: any) => {
       const { responseText } = e.event.target
-      const last = newConversation[newConversation.length - 1]
-      if (last.propose !== 'assistant') {
-        setConversation([...newConversation, { proposer: 'assistant', content: responseText }])
-      } else {
-        setConversation([...newConversation.slice(0, -1), { proposer: 'assistant', content: responseText }])
-      }
+      setConversation((prev) => {
+        const last = prev[prev.length - 1]
+        if (last?.proposer !== 'assistant') {
+          return [...prev, { proposer: 'assistant', content: responseText }]
+        } else {
+          return [...prev.slice(0, -1), { ...last, content: responseText }]
+        }
+      })
     })
     console.log('[API]::[streamChatToWorkspace]::', res, err)
     setLoading(false)
@@ -292,7 +309,7 @@ function ChatPanel({ workspace }) {
           className="relative z-1 flex-1 mx-10 my-1 max-w-210 h-14"
           size="small">
           <div className="flex items-center px-2 w-full h-8">
-            <span className="flex-1 text-md font-bold">{workspace?.model || ''}</span>
+            <span className="flex-1 text-md font-bold">{workspace?.modelName || ''}</span>
             <div className="text-gray cursor-pointer">
               <SwapOutlined />
             </div>
@@ -355,7 +372,10 @@ export default function Page({ loaderData, actionData, params, matches }) {
 
   return (
     <div className="flex w-full h-full">
-      <WorkspacePanel list={loaderData} />
+      <WorkspacePanel
+        list={loaderData[0]}
+        modelList={loaderData[1]}
+      />
       <ChatPanel workspace={workspace} />
     </div>
   )

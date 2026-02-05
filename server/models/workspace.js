@@ -18,11 +18,6 @@ export default class Workspace {
     baseSql += ' AND user_id = ?'
     params.push(user.id)
 
-    if (filters.keyword) {
-      baseSql += ' AND (title LIKE ? OR model LIKE ?)'
-      params.push(`%${filters.keyword}%`, `%${filters.keyword}%`)
-    }
-
     if (filters.createdAt) {
       baseSql += ' AND created_at BETWEEN ? AND ?'
       params.push(filters.createdAt[0], filters.createdAt[1])
@@ -38,16 +33,68 @@ export default class Workspace {
       params.push(filters.title)
     }
 
-    if (filters.model) {
-      baseSql += ' AND model = ?'
-      params.push(filters.model)
+    if (pagination) {
+      const options = {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        allowedSortFields: ['title', 'created_at', 'updated_at'],
+        orderBy: sort.orderBy || 'created_at',
+        orderDir: sort.orderDir || 'DESC',
+      }
+
+      const { rows, page, pageSize, offset, total, totalPage } = await getOffsetPage(baseSql, params, options)
+      return {
+        rows: rows.map(this.filterFields),
+        page,
+        pageSize,
+        offset,
+        total,
+        totalPage
+      }
+    } else {
+      const [rows] = await db.query(baseSql, params)
+      return rows.map(this.filterFields) || []
+    }
+  }
+
+  static async findWithDetails({ user, filters = {}, pagination = null, sort = {} } = {}) {
+    if (!user?.id) {
+      throw new Error('userId is required')
+    }
+
+    let baseSql = `
+    SELECT 
+      workspace.*, 
+      model_config.model_name, 
+      model_config.provider 
+    FROM workspace 
+    LEFT JOIN model_config ON workspace.model_id = model_config.id 
+    WHERE 1=1`
+    const params = []
+
+    baseSql += ' AND workspace.user_id = ?'
+    params.push(user.id)
+
+    if (filters.createdAt) {
+      baseSql += ' AND workspace.created_at BETWEEN ? AND ?'
+      params.push(filters.createdAt[0], filters.createdAt[1])
+    }
+
+    if (filters.updatedAt) {
+      baseSql += ' AND workspace.updated_at BETWEEN ? AND ?'
+      params.push(filters.updatedAt[0], filters.updatedAt[1])
+    }
+
+    if (filters.title) {
+      baseSql += ' AND workspace.title = ?'
+      params.push(filters.title)
     }
 
     if (pagination) {
       const options = {
         page: pagination.page,
         pageSize: pagination.pageSize,
-        allowedSortFields: ['title', 'model', 'created_at', 'updated_at'],
+        allowedSortFields: ['title', 'created_at', 'updated_at'],
         orderBy: sort.orderBy || 'created_at',
         orderDir: sort.orderDir || 'DESC',
       }
@@ -95,16 +142,17 @@ export default class Workspace {
     let sql = ''
     let params = []
 
-    for (const key in payload) {
-      if (['title', 'model'].includes(key) && payload[key]) {
-        sql += `${key} = ?, `
-        params.push(payload[key])
-      }
+    if (payload?.title) {
+      sql += 'title = ?, '
+      params.push(payload.title)
+    }
+    if (payload?.modelId) {
+      sql += 'model_id = ?, '
+      params.push(payload.modelId)
     }
     if (params.length < 1) {
       return true
     }
-    // Remove trailing comma and space
     sql = sql.slice(0, -2)
 
     const finalSql = baseSql + sql + clause

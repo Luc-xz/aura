@@ -54,12 +54,12 @@ export default class ModelConfig {
     return rows[0] && this.filterFields(rows[0])
   }
 
-  static async create(user, { providerType, baseUrl, apiKey, modelName, temperature, maxTokens, isActive } = {}) {
+  static async create(user, { provider, baseUrl, apiKey, modelName, temperature = 0.7, maxTokens = 2048, isActive } = {}) {
     if (!user?.id) {
       throw new Error('userId is required')
     }
-    const baseSql = 'INSERT INTO model_config (user_id, provider_type, base_url, api_key, model_name, temperature, max_tokens, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    const [result] = await db.query(baseSql, [user.id, providerType, baseUrl, apiKey, modelName, temperature, maxTokens, isActive])
+    const baseSql = 'INSERT INTO model_config (user_id, provider, base_url, api_key, model_name, temperature, max_tokens, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    const [result] = await db.query(baseSql, [user.id, provider, baseUrl, apiKey, modelName, temperature, maxTokens, isActive])
     return result.insertId
   }
 
@@ -72,7 +72,7 @@ export default class ModelConfig {
     let sql = ''
     let params = []
     for (const key in payload) {
-      if (['providerType', 'baseUrl', 'apiKey', 'modelName', 'temperature', 'maxTokens', 'isActive'].includes(key) && isDefined(payload[key])) {
+      if (['provider', 'baseUrl', 'apiKey', 'modelName', 'temperature', 'maxTokens', 'isActive'].includes(key) && isDefined(payload[key])) {
         sql += `${toSnakeCase(key)} = ?, `
         params.push(payload[key])
       }

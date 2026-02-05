@@ -18,6 +18,9 @@ service.interceptors.request.use(config => {
 
 service.interceptors.response.use(response => {
   // console.log('response-interceptors', response)
+  if (response.config?.data && JSON.parse(response.config.data).stream === true) {
+    return response
+  }
   if (response.data?.code !== 1) {
     handleErrMsg(response.data?.message)
     return Promise.reject(response.data)

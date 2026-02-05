@@ -1,11 +1,28 @@
-import { useState, useEffect } from 'react'
-import { App, Space, Card, Switch, Drawer, Form, Input, InputNumber, Button } from 'antd'
-import { SettingOutlined } from '@ant-design/icons'
-import { getModelConfigGroup, createModelConfig, updateModelConfig } from '@/api/setting'
+import React, { useState, useEffect } from 'react'
+import { App, Space, Card, Switch, Drawer, Form, Input, InputNumber, Button, Popconfirm, Select } from 'antd'
+import { SettingOutlined, DeleteOutlined } from '@ant-design/icons'
+import { getProviderList, getModelList, getModelConfigGroup, createModelConfig, updateModelConfig, deleteModelConfig } from '@/api/setting'
 
 export function ModelConfigPanel({ data = null, open, setOpen, refresh }) {
   const [form] = Form.useForm()
   const { message } = App.useApp()
+  const [providerList, setProviderList] = useState([])
+  const [modelList, setModelList] = useState([])
+  const [custom, setCustom] = useState(false)
+
+  const fetchProviderList = async () => {
+    const [err, res] = await getProviderList()
+    if (res) {
+      setProviderList(res.data || [])
+    }
+  }
+
+  const fetchModelList = async (provider: string) => {
+    const [err, res] = await getModelList(provider)
+    if (res) {
+      setModelList(res.data || [])
+    }
+  }
 
   const handleSubmit = async () => {
     await form.validateFields()
@@ -21,11 +38,23 @@ export function ModelConfigPanel({ data = null, open, setOpen, refresh }) {
     }
   }
 
+  const handleProviderChange = (value: string) => {
+    if (value) {
+      fetchModelList(value)
+    } else {
+      setModelList([])
+      form.setFieldValue('modelName', '')
+    }
+  }
+
   useEffect(() => {
+    fetchProviderList()
     if (data) {
       form.setFieldsValue(data)
+      data.provider && fetchModelList(data.provider)
     } else {
       form.resetFields()
+      setModelList([])
     }
   }, [data])
 
@@ -52,40 +81,52 @@ export function ModelConfigPanel({ data = null, open, setOpen, refresh }) {
         labelAlign="right"
         labelCol={{ span: 3 }}
         wrapperCol={{ span: 21 }}>
+        <Form.Item label="自定义">
+          <Switch
+            value={custom}
+            onChange={(checked) => setCustom(checked)}
+          />
+        </Form.Item>
         <Form.Item
           label="Provider"
-          name="providerType"
-          rules={[{ required: true, message: '请输入' }]}>
-          <Input />
+          name="provider"
+          rules={[{ required: true, message: '请选择' }]}>
+          {custom ? (
+            <Input />
+          ) : (
+            <Select
+              onChange={handleProviderChange}
+              showSearch
+              options={providerList.map((item) => {
+                return { value: item, label: item }
+              })}
+            />
+          )}
         </Form.Item>
         <Form.Item
           label="模型名称"
           name="modelName"
-          rules={[{ required: true, message: '请输入' }]}>
-          <Input />
+          rules={[{ required: true, message: '请选择' }]}>
+          {custom ? (
+            <Input />
+          ) : (
+            <Select
+              showSearch
+              options={modelList.map((item) => {
+                return { value: item, label: item }
+              })}
+            />
+          )}
         </Form.Item>
         <Form.Item
           label="Base URL"
-          name="baseUrl"
-          rules={[{ required: true, message: '请输入' }]}>
+          name="baseUrl">
           <Input />
         </Form.Item>
         <Form.Item
           label="API key"
-          name="apiKey"
-          rules={[{ required: true, message: '请输入' }]}>
+          name="apiKey">
           <Input />
-        </Form.Item>
-        <Form.Item
-          label="温度"
-          name="temperature"
-          rules={[{ required: true, message: '请输入' }]}>
-          <InputNumber
-            min={0}
-            max={1}
-            defaultValue={0.7}
-            style={{ width: '100%' }}
-          />
         </Form.Item>
         <Form.Item
           label="启用"
@@ -108,6 +149,13 @@ export default function ModelList({ editable = false, selectHander = () => {} })
     setOpen(true)
   }
 
+  const handleDelete = async (id: string) => {
+    const [err, res] = await deleteModelConfig(id)
+    if (res) {
+      fetchModelConfigGroup()
+    }
+  }
+
   const handleSwitch = async (checked: boolean, item: any) => {
     const payload = { isActive: Number(checked) }
     const [err, res] = await updateModelConfig(item.id, payload)
@@ -121,6 +169,7 @@ export default function ModelList({ editable = false, selectHander = () => {} })
     const modelList = list.map((item) => {
       return (
         <Card
+          key={item.id}
           style={{ width: 200 }}
           onClick={selectHander}
           actions={
@@ -130,6 +179,14 @@ export default function ModelList({ editable = false, selectHander = () => {} })
                     key="setting"
                     onClick={() => handleConfig(item)}
                   />,
+                  <Popconfirm
+                    title="删除配置"
+                    description="你确定要删除该配置吗"
+                    onConfirm={() => handleDelete(item.id)}
+                    okText="确定"
+                    cancelText="取消">
+                    <DeleteOutlined key="delete" />
+                  </Popconfirm>,
                   <Switch
                     size="small"
                     value={item.isActive}
@@ -143,14 +200,14 @@ export default function ModelList({ editable = false, selectHander = () => {} })
       )
     })
     return (
-      <>
+      <React.Fragment key={provider}>
         <h3 className="my-4 text-xl font-bold">{provider} </h3>
         <Space
           size={[8, 16]}
           wrap>
           {modelList}
         </Space>
-      </>
+      </React.Fragment>
     )
   })
 
@@ -168,6 +225,15 @@ export default function ModelList({ editable = false, selectHander = () => {} })
 
   return (
     <>
+      {editable && (
+        <Space className="w-full justify-end">
+          <Button
+            onClick={() => handleConfig(null)}
+            type="primary">
+            新增配置
+          </Button>
+        </Space>
+      )}
       {modelConfigGroup}
       <ModelConfigPanel
         data={data}

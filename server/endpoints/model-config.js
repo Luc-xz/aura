@@ -40,7 +40,7 @@ function modelConfigEndpoints(apiRouter) {
       }
     })
     const groupedData = data.reduce((acc, item) => {
-      const key = item.providerType
+      const key = item.provider
       if (!acc[key]) {
         acc[key] = []
       }
@@ -66,8 +66,8 @@ function modelConfigEndpoints(apiRouter) {
   }))
 
   router.post('/', asyncHandler(async (req, res) => {
-    const { providerType, baseUrl, apiKey, modelName, temperature, maxTokens, isActive } = req.body
-    const data = await ModelConfig.create(req.user, { providerType, baseUrl, apiKey, modelName, temperature, maxTokens, isActive })
+    const { provider, baseUrl, apiKey, modelName, temperature, maxTokens, isActive } = req.body
+    const data = await ModelConfig.create(req.user, { provider, baseUrl, apiKey, modelName, temperature, maxTokens, isActive })
     res.status(200).json({
       data,
       code: 1,
@@ -77,8 +77,8 @@ function modelConfigEndpoints(apiRouter) {
 
   router.put('/:id', asyncHandler(async (req, res) => {
     const { id } = req.params
-    const { providerType, baseUrl, apiKey, modelName, temperature, maxTokens, isActive } = req.body
-    const data = await ModelConfig.update(id, { providerType, baseUrl, apiKey, modelName, temperature, maxTokens, isActive })
+    const { provider, baseUrl, apiKey, modelName, temperature, maxTokens, isActive } = req.body
+    const data = await ModelConfig.update(id, { provider, baseUrl, apiKey, modelName, temperature, maxTokens, isActive })
     res.status(200).json({
       data,
       code: 1,

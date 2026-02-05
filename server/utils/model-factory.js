@@ -8,12 +8,27 @@ const PROVIDER_MAPPING = {
 }
 
 export function createModelInstance(modelConfig) {
-  const creator = PROVIDER_MAPPING[modelConfig.providerType] || createOpenAI
+  const provider = modelConfig.provider
 
-  const providerInstance = creator({
+  if (provider === 'ollama') {
+    const ollamaInstance = createOpenAI({
+      baseURL: modelConfig.baseUrl,
+      apiKey: 'ollama', // Ollama 不需要真实 apiKey，但 SDK 需要一个非空值
+    })
+    // 使用 .chat() 明确指定 Chat Completions API，而非默认的 Responses API
+    return ollamaInstance.chat(modelConfig.modelName)
+  }
+
+  const creator = PROVIDER_MAPPING[provider] || createOpenAI
+
+  const config = {
     baseURL: modelConfig.baseUrl,
-    apiKey: modelConfig.apiKey,
-  })
+  }
 
+  if (modelConfig.apiKey) {
+    config.apiKey = modelConfig.apiKey
+  }
+
+  const providerInstance = creator(config)
   return providerInstance(modelConfig.modelName)
 }
