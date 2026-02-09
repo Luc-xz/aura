@@ -3,7 +3,6 @@ import { XProvider } from '@ant-design/x'
 import { App as AntdApp } from 'antd'
 import './assets/styles/index.css'
 import { setMessageInstance } from './http/handler'
-import { rehydrateStores } from './store'
 import React from 'react'
 
 function MessageProvider({ children }: { children: React.ReactNode }) {
@@ -11,10 +10,6 @@ function MessageProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     setMessageInstance(message)
   }, [message])
-
-  React.useEffect(() => {
-    rehydrateStores()
-  }, [])
 
   return <>{children}</>
 }
