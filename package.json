@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:server": "pnpm --filter aura-server test",
+    "test:server:watch": "pnpm --filter aura-server test:watch",
     "start:server": "pnpm --filter aura-server start",
     "dev:server": "pnpm --filter aura-server dev",
     "dev:ui": "pnpm --filter aura-interface dev"

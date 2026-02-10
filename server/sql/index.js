@@ -5,8 +5,11 @@ import yaml from 'js-yaml'
 const yamlContent = fs.readFileSync('./config.yaml', 'utf8')
 const config = yaml.load(yamlContent)
 
+const dbName = process.env.NODE_ENV === 'test' ? 'aura_test' : config.db.database
+
 const pool = mysql.createPool({
   ...config.db,
+  database: dbName,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   waitForConnections: true,
