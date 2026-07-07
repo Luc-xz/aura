@@ -3,20 +3,14 @@ import { getOffsetPage } from '../utils/pager.js'
 import { formatResponse } from '../utils/formatter.js'
 import { hashPassword, comparePassword } from '../utils/bcrypt.js'
 
-export default class User {
-  static filterFields(user) {
-    const { password, ...rest } = user
-    return formatResponse(rest)
+export default class Role {
+  static filterFields(role) {
+    return formatResponse(role)
   }
 
   static async findAll({ filters = {}, pagination = null, sort = {} } = {}) {
-    let baseSql = `SELECT * FROM user WHERE 1=1`
+    let baseSql = `SELECT * FROM role WHERE 1=1`
     const params = []
-
-    if (filters.keyword) {
-      baseSql += ' AND (name LIKE ? OR email LIKE ?)'
-      params.push(`%${filters.keyword}%`, `%${filters.keyword}%`)
-    }
 
     if (filters.createdAt) {
       baseSql += ' AND created_at BETWEEN ? AND ?'
@@ -33,16 +27,16 @@ export default class User {
       params.push(filters.name)
     }
 
-    if (filters.email) {
-      baseSql += ' AND email = ?'
-      params.push(filters.email)
+    if (filters.code) {
+      baseSql += ' AND code = ?'
+      params.push(filters.code)
     }
 
     if (pagination) {
       const options = {
         page: pagination.page,
         pageSize: pagination.pageSize,
-        allowedSortFields: ['name', 'email', 'created_at', 'updated_at'],
+        allowedSortFields: ['name', 'code', 'created_at', 'updated_at'],
         orderBy: sort.orderBy || 'created_at',
         orderDir: sort.orderDir || 'DESC',
       }
@@ -66,40 +60,23 @@ export default class User {
     if (!id) {
       throw new Error('id is required')
     }
-    const baseSql = 'SELECT * FROM user WHERE id = ?'
+    const baseSql = 'SELECT * FROM role WHERE id = ?'
     const [rows] = await db.query(baseSql, [id])
-    const user = rows[0]
-    if (user) {
-      const [roles] = await db.query(`
-        SELECT
-          r.id,
-          r.name,
-          r.code,
-          r.description,
-          r.is_system
-        FROM user_role ur
-        LEFT JOIN role r ON ur.role_id = r.id 
-        WHERE ur.user_id = ?  
-      `, [id])
-      user.roles = roles
-      this.filterFields(user)
-    }
-    return user
+    return rows[0] && this.filterFields(rows[0])
   }
 
-  static async findByEmail(email) {
-    if (!email) {
-      throw new Error('email is required')
+  static async findByCode(code) {
+    if (!code) {
+      throw new Error('code is required')
     }
-    const baseSql = 'SELECT * FROM user WHERE email = ?'
-    const [rows] = await db.query(baseSql, [email])
+    const baseSql = 'SELECT * FROM role WHERE code = ?'
+    const [rows] = await db.query(baseSql, [code])
     return rows[0]
   }
 
-  static async create({ name, email, password } = {}) {
-    const baseSql = 'INSERT INTO user (name, email, password) VALUES (?, ?, ?)'
-    const [result] = await db.query(baseSql, [name, email, await hashPassword(password)])
-    await db.query('INSERT INTO user_role (user_id, role_id) VALUES (?, ?)', [result.insertId, 3])
+  static async create({ name, code, description } = {}) {
+    const baseSql = 'INSERT INTO role (name, code, description) VALUES (?, ?, ?)'
+    const [result] = await db.query(baseSql, [name, code, description])
     return result.insertId
   }
 
@@ -107,18 +84,14 @@ export default class User {
     if (!id) {
       throw new Error('id is required')
     }
-    const baseSql = 'UPDATE user SET '
+    const baseSql = 'UPDATE role SET '
     const clause = ' WHERE id = ?'
     let sql = ''
     let params = []
     for (const key in payload) {
-      if (['name', 'email', 'password'].includes(key) && payload[key]) {
+      if (['name', 'description'].includes(key) && payload[key] !== undefined) {
         sql += `${key} = ?, `
-        if (key === 'password') {
-          params.push(await hashPassword(payload[key]))
-        } else {
-          params.push(payload[key])
-        }
+        params.push(payload[key])
       }
     }
     if (params.length < 1) {
@@ -137,7 +110,8 @@ export default class User {
     if (!id) {
       throw new Error('id is required')
     }
-    const baseSql = 'DELETE FROM user WHERE id = ?'
+    // TODO: check related
+    const baseSql = 'DELETE FROM role WHERE id = ?'
     const [result] = await db.query(baseSql, [id])
     return result.affectedRows > 0
   }

@@ -9,6 +9,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await cleanTable('workspace')
+  await cleanTable('user_role')
   await cleanTable('user')
 })
 

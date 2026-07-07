@@ -61,6 +61,7 @@ export async function registerAndLogin(userData = {}) {
   }
 
   return {
+    id: loginRes.body.data.id,
     token: loginRes.body.data.token,
     name: loginRes.body.data.name,
     email: loginRes.body.data.email,

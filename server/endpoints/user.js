@@ -52,6 +52,16 @@ function userEndpoints(apiRouter) {
     })
   }))
 
+  router.get('/:id', asyncHandler(authMiddleware), asyncHandler(async (req, res) => {
+    const { id } = req.params
+    const data = await User.findById(id)
+    res.status(200).json({
+      data,
+      code: 1,
+      message: 'success'
+    })
+  }))
+
   router.post('/register', asyncHandler(async (req, res) => {
     const { name, email, password } = req.body
     if (!name || !email || !password) {
@@ -95,6 +105,7 @@ function userEndpoints(apiRouter) {
 
     res.status(200).json({
       data: {
+        id,
         name,
         email,
         token
