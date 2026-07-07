@@ -10,17 +10,16 @@ const PROVIDER_MAPPING = {
 export function createModelInstance(modelConfig) {
   const provider = modelConfig.provider
 
-  if (provider === 'ollama') {
-    const ollamaInstance = createOpenAI({
+  if (!PROVIDER_MAPPING[provider]) {
+    const openAICompatibleInstance = createOpenAI({
       baseURL: modelConfig.baseUrl,
-      apiKey: 'ollama', // Ollama 不需要真实 apiKey，但 SDK 需要一个非空值
+      apiKey: modelConfig.apiKey || 'openai-compatible',
     })
-    // 使用 .chat() 明确指定 Chat Completions API，而非默认的 Responses API
-    return ollamaInstance.chat(modelConfig.modelName)
+    // Most third-party OpenAI-compatible gateways only expose /chat/completions.
+    return openAICompatibleInstance.chat(modelConfig.modelName)
   }
 
-  const creator = PROVIDER_MAPPING[provider] || createOpenAI
-
+  const creator = PROVIDER_MAPPING[provider]
   const config = {
     baseURL: modelConfig.baseUrl,
   }
