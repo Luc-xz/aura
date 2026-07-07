@@ -12,6 +12,7 @@ beforeAll(async () => {
 })
 
 beforeEach(async () => {
+  await cleanTable('user_role')
   await cleanTable('user')
 })
 
@@ -84,6 +85,19 @@ describe('POST /api/user/register', () => {
 
     expect(res.status).toBe(200)
     expect(res.body.code).not.toBe(1)
+  })
+
+  it('新注册用户默认角色只有member', async () => {
+    const { token, id } = await registerAndLogin()
+
+    const res = await request
+      .get(`/api/user/${id}`)
+      .set(authHeader(token))
+
+    expect(res.status).toBe(200)
+    expect(res.body.code).toBe(1)
+    expect(res.body.data.roles.length).toBe(1)
+    expect(res.body.data.roles[0].code).toBe('member')
   })
 })
 
