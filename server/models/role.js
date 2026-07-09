@@ -1,7 +1,6 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
-import { formatResponse } from '../utils/formatter.js'
-import { hashPassword, comparePassword } from '../utils/bcrypt.js'
+import { formatResponse } from '../../shared/utils/formatter.js'
 
 export default class Role {
   static filterFields(role) {

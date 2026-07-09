@@ -1,7 +1,7 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
-import { formatResponse, toSnakeCase } from '../utils/formatter.js'
-import { isDefined } from '../utils/index.js'
+import { formatResponse, toSnakeCase } from '../../shared/utils/formatter.js'
+import { isDefined } from '../../shared/utils/index.js'
 
 export default class ModelConfig {
   static filterFields(modelConfig) {

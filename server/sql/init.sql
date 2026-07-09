@@ -23,9 +23,53 @@ CREATE TABLE IF NOT EXISTS role (
     INDEX idx_name (name)
 );
 
-INSERT IGNORE INTO role (id, name, code, description, is_system) VALUES (1, 'super_admin', 'super_admin', 'Super administrator', 1);
-INSERT IGNORE INTO role (id, name, code, description, is_system) VALUES (2, 'admin', 'admin', 'Administrator', 1);
-INSERT IGNORE INTO role (id, name, code, description, is_system) VALUES (3, 'member', 'member', 'Basic role', 1);
+INSERT IGNORE INTO
+    role (
+        id,
+        name,
+        code,
+        description,
+        is_system
+    )
+VALUES (
+        1,
+        'super_admin',
+        'super_admin',
+        'Super administrator',
+        1
+    );
+
+INSERT IGNORE INTO
+    role (
+        id,
+        name,
+        code,
+        description,
+        is_system
+    )
+VALUES (
+        2,
+        'admin',
+        'admin',
+        'Administrator',
+        1
+    );
+
+INSERT IGNORE INTO
+    role (
+        id,
+        name,
+        code,
+        description,
+        is_system
+    )
+VALUES (
+        3,
+        'member',
+        'member',
+        'Basic role',
+        1
+    );
 
 CREATE TABLE IF NOT EXISTS user_role (
     id INT AUTO_INCREMENT PRIMARY KEY,

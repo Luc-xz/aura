@@ -2,6 +2,8 @@ import express from 'express'
 import Role from '../models/role.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
+import Validator from '../../shared/utils/validator.js'
+import { BadRequest, NotFound, Conflict } from '../utils/appError.js'
 
 const router = express.Router()
 
@@ -55,7 +57,7 @@ function roleEndpoints(apiRouter) {
     const { id } = req.params
     const data = await Role.findById(id)
     if (!data) {
-      throw new Error('role not found')
+      throw NotFound('role not found')
     }
     res.status(200).json({
       data,
@@ -68,13 +70,22 @@ function roleEndpoints(apiRouter) {
   router.post('/', asyncHandler(async (req, res) => {
     const { name, code, description } = req.body
     if (!name || !code) {
-      throw new Error('name and code are required')
+      throw BadRequest('name and code are required')
     }
-    
+    if (!Validator.isValidCode(code)) {
+      throw BadRequest('code must be 2-64 characters, lowercase letters/digits/underscore, start with a letter')
+    }
+    if (!Validator.isLength(name, 2, 255)) {
+      throw BadRequest('name must be 2-255 characters')
+    }
+    if (description && !Validator.isLength(description, 0, 255)) {
+      throw BadRequest('description must be no more than 255 characters')
+    }
+
     // 检查 code 是否已存在
     const existing = await Role.findByCode(code)
     if (existing) {
-      throw new Error('role code already exists')
+      throw Conflict('role code already exists')
     }
 
     const id = await Role.create({ name, code, description })
@@ -90,11 +101,24 @@ function roleEndpoints(apiRouter) {
   router.put('/:id', asyncHandler(async (req, res) => {
     const { id } = req.params
     const { name, description } = req.body
-    
+
+    if (!name && description === undefined) {
+      throw BadRequest('at least one field (name, description) is required')
+    }
+    if (name && !Validator.isLength(name, 2, 255)) {
+      throw BadRequest('name must be 2-255 characters')
+    }
+    if (description && !Validator.isLength(description, 0, 255)) {
+      throw BadRequest('description must be no more than 255 characters')
+    }
+
     // 检查是否存在
     const existing = await Role.findById(id)
     if (!existing) {
-      throw new Error('role not found')
+      throw NotFound('role not found')
+    }
+    if (existing.isSystem) {
+      throw BadRequest('system role cannot be modified')
     }
 
     await Role.update(id, { name, description })
@@ -109,14 +133,13 @@ function roleEndpoints(apiRouter) {
   // 6. 删除角色
   router.delete('/:id', asyncHandler(async (req, res) => {
     const { id } = req.params
-    
-    // 检查是否存在
+
     const existing = await Role.findById(id)
     if (!existing) {
-      throw new Error('role not found')
+      throw NotFound('role not found')
     }
     if (existing.isSystem) {
-      throw new Error('system role cannot be deleted')
+      throw BadRequest('system role cannot be deleted')
     }
 
     const data = await Role.delete(id)
