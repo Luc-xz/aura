@@ -32,7 +32,7 @@ describe('GET /api/role/list', () => {
     const { token } = await registerAndLogin()
     const res = await request.get('/api/role/list').set(authHeader(token))
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data).toBeInstanceOf(Array)
     expect(res.body.data.length).toBe(3)
     const codes = res.body.data.map(r => r.code)
@@ -56,7 +56,7 @@ describe('GET /api/role/page', () => {
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data.rows).toBeInstanceOf(Array)
     expect(res.body.data.rows.length).toBe(2)
     expect(res.body.data.total).toBe(3)
@@ -68,15 +68,14 @@ describe('GET /api/role/:id', () => {
     const { token } = await registerAndLogin()
     const res = await request.get('/api/role/1').set(authHeader(token))
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data.code).toBe('super_admin')
   })
 
   it('不存在的角色应报错', async () => {
     const { token } = await registerAndLogin()
     const res = await request.get('/api/role/999').set(authHeader(token))
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(404)
   })
 })
 
@@ -93,7 +92,7 @@ describe('POST /api/role', () => {
       })
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data.code).toBe('custom_role')
     expect(res.body.data.name).toBe('自定义角色')
   })
@@ -107,8 +106,7 @@ describe('POST /api/role', () => {
         name: '缺少code的角色'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 
   it('创建重复code的角色应报错', async () => {
@@ -129,8 +127,7 @@ describe('POST /api/role', () => {
         code: 'duplicate_code'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(409)
   })
 })
 
@@ -161,7 +158,7 @@ describe('PUT /api/role/:id', () => {
       })
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data.name).toBe('新角色名')
     expect(res.body.data.description).toBe('新描述')
   })
@@ -174,8 +171,7 @@ describe('PUT /api/role/:id', () => {
         name: '随便改改'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(404)
   })
 })
 
@@ -201,7 +197,7 @@ describe('DELETE /api/role/:id', () => {
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data).toBe(true)
 
     // 确保列表中查不到了
@@ -215,8 +211,7 @@ describe('DELETE /api/role/:id', () => {
       .delete('/api/role/1') // super_admin 是系统内置角色
       .set(authHeader(token))
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 
   it('删除不存在的角色应报错', async () => {
@@ -224,7 +219,6 @@ describe('DELETE /api/role/:id', () => {
       .delete('/api/role/999')
       .set(authHeader(token))
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(404)
   })
 })

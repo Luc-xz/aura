@@ -27,7 +27,7 @@ describe('POST /api/user/register', () => {
       })
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.message).toBe('success')
   })
 
@@ -36,8 +36,7 @@ describe('POST /api/user/register', () => {
       .post('/api/user/register')
       .send({ name: 'test' })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 
   it('无效邮箱格式应报错', async () => {
@@ -49,8 +48,7 @@ describe('POST /api/user/register', () => {
         password: 'Test_123456'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 
   it('弱密码应报错', async () => {
@@ -62,8 +60,7 @@ describe('POST /api/user/register', () => {
         password: '123'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 
   it('重复注册同名用户应报错', async () => {
@@ -83,8 +80,7 @@ describe('POST /api/user/register', () => {
         password: 'Test_123456'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(409)
   })
 
   it('新注册用户默认角色只有member', async () => {
@@ -95,7 +91,7 @@ describe('POST /api/user/register', () => {
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data.roles.length).toBe(1)
     expect(res.body.data.roles[0].code).toBe('member')
   })
@@ -122,7 +118,7 @@ describe('POST /api/user/login', () => {
       })
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data).toHaveProperty('token')
     expect(res.body.data.name).toBe('login_user')
     expect(res.body.data.email).toBe('login@test.com')
@@ -136,8 +132,7 @@ describe('POST /api/user/login', () => {
         password: 'WrongPassword@123'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 
   it('不存在的用户应报错', async () => {
@@ -148,8 +143,7 @@ describe('POST /api/user/login', () => {
         password: 'Test_123456'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(404)
   })
 
   it('缺少字段应报错', async () => {
@@ -157,8 +151,7 @@ describe('POST /api/user/login', () => {
       .post('/api/user/login')
       .send({ email: 'login@test.com' })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 })
 
@@ -176,7 +169,7 @@ describe('GET /api/user/list', () => {
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(Array.isArray(res.body.data)).toBe(true)
     expect(res.body.data.length).toBeGreaterThanOrEqual(1)
   })
@@ -192,7 +185,7 @@ describe('GET /api/user/page', () => {
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data).toBeDefined()
   })
 
@@ -205,7 +198,7 @@ describe('GET /api/user/page', () => {
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
   })
 })
 
@@ -229,7 +222,7 @@ describe('PUT /api/user/:id', () => {
       })
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
   })
 })
 
@@ -258,6 +251,6 @@ describe('DELETE /api/user/:id', () => {
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
   })
 })

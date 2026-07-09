@@ -96,6 +96,15 @@ export default class User {
     return rows[0]
   }
 
+  static async findByName(name) {
+    if (!name) {
+      throw new Error('name is required')
+    }
+    const baseSql = 'SELECT * FROM user WHERE name = ?'
+    const [rows] = await db.query(baseSql, [name])
+    return rows[0]
+  }
+
   static async create({ name, email, password } = {}) {
     const baseSql = 'INSERT INTO user (name, email, password) VALUES (?, ?, ?)'
     const [result] = await db.query(baseSql, [name, email, await hashPassword(password)])

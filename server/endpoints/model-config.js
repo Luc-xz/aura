@@ -29,7 +29,7 @@ function modelConfigEndpoints(apiRouter) {
     })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -54,7 +54,7 @@ function modelConfigEndpoints(apiRouter) {
 
     res.status(200).json({
       data: groupedData,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -67,7 +67,7 @@ function modelConfigEndpoints(apiRouter) {
     }
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -96,7 +96,7 @@ function modelConfigEndpoints(apiRouter) {
     const data = await ModelConfig.create(req.user, { provider, baseUrl, apiKey, modelName, temperature, maxTokens, isActive })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -132,7 +132,7 @@ function modelConfigEndpoints(apiRouter) {
     const data = await ModelConfig.update(id, { provider, baseUrl, apiKey, modelName, temperature, maxTokens, isActive })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -146,7 +146,7 @@ function modelConfigEndpoints(apiRouter) {
     const data = await ModelConfig.delete(id)
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))

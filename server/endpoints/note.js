@@ -31,7 +31,7 @@ function noteEndpoints(apiRouter) {
     })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -44,7 +44,7 @@ function noteEndpoints(apiRouter) {
     }
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -67,7 +67,7 @@ function noteEndpoints(apiRouter) {
     const data = await Note.create(req.user, { title, content, description })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -94,7 +94,7 @@ function noteEndpoints(apiRouter) {
     const data = await Note.update(id, { title, content, description })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -108,7 +108,7 @@ function noteEndpoints(apiRouter) {
     const data = await Note.delete(id)
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))

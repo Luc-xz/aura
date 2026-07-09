@@ -33,7 +33,7 @@ function chatEndpoints(apiRouter) {
       })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -108,7 +108,7 @@ function chatEndpoints(apiRouter) {
       await Chat.create({ workspaceId, content: result.text, proposer: 'assistant' })
       res.status(200).json({
         data: result.text,
-        code: 1,
+        code: 200,
         message: 'success'
       })
       return

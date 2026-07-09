@@ -22,7 +22,7 @@ function roleEndpoints(apiRouter) {
     })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -47,7 +47,7 @@ function roleEndpoints(apiRouter) {
     })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -61,7 +61,7 @@ function roleEndpoints(apiRouter) {
     }
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -92,7 +92,7 @@ function roleEndpoints(apiRouter) {
     const data = await Role.findById(id)
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -125,7 +125,7 @@ function roleEndpoints(apiRouter) {
     const data = await Role.findById(id)
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -145,7 +145,7 @@ function roleEndpoints(apiRouter) {
     const data = await Role.delete(id)
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))

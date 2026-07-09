@@ -27,7 +27,7 @@ function workspaceEndpoints(apiRouter) {
     })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -48,7 +48,7 @@ function workspaceEndpoints(apiRouter) {
     const data = await Workspace.findById(id)
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -75,7 +75,7 @@ function workspaceEndpoints(apiRouter) {
     const data = await Workspace.update(id, { title, modelId })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -89,7 +89,7 @@ function workspaceEndpoints(apiRouter) {
     const data = await Workspace.delete(id)
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))

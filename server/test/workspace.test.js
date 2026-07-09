@@ -23,7 +23,7 @@ describe('GET /api/workspace/list', () => {
     const { token } = await registerAndLogin()
     const res = await request.get('/api/workspace/list').set(authHeader(token))
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data).toBeInstanceOf(Array)
   })
 })
@@ -42,7 +42,7 @@ describe('POST /api/workspace/', () => {
       .send({ title: 'test workspace', modelId: 123456 })
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data).toBeInstanceOf(Object)
     expect(res.body.data.id).toBeDefined()
   })
@@ -80,7 +80,7 @@ describe('PUT /api/workspace/:id', () => {
       .set(authHeader(token))
       .send({ title: 'updated title' })
 
-    expect(updateRes.body.code).toBe(1)
+    expect(updateRes.body.code).toBe(200)
 
     const listRes = await request.get('/api/workspace/list').set(authHeader(token))
     const found = listRes.body.data.find(w => w.id === workspaceId)
@@ -117,7 +117,7 @@ describe('DELETE /api/workspace/:id', () => {
       .delete(`/api/workspace/${workspaceId}`)
       .set(authHeader(token))
 
-    expect(deleteRes.body.code).toBe(1)
+    expect(deleteRes.body.code).toBe(200)
     expect(deleteRes.body.data).toBe(true)
   })
 

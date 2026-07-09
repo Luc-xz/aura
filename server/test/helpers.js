@@ -44,7 +44,7 @@ export async function registerAndLogin(userData = {}) {
     .post('/api/user/register')
     .send(defaultUser)
 
-  if (registerRes.body.code !== 1) {
+  if (!registerRes.ok) {
     throw new Error(`Register failed: ${registerRes.body.message}`)
   }
 
@@ -56,7 +56,7 @@ export async function registerAndLogin(userData = {}) {
       password: defaultUser.password
     })
 
-  if (loginRes.body.code !== 1) {
+  if (!loginRes.ok) {
     throw new Error(`Login failed: ${loginRes.body.message}`)
   }
 

@@ -24,7 +24,7 @@ function userEndpoints(apiRouter) {
     })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -48,7 +48,7 @@ function userEndpoints(apiRouter) {
     })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -61,7 +61,7 @@ function userEndpoints(apiRouter) {
     }
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -84,10 +84,14 @@ function userEndpoints(apiRouter) {
     if (existing) {
       throw Conflict('email already registered')
     }
+    const existingName = await User.findByName(name)
+    if (existingName) {
+      throw Conflict('name already registered')
+    }
     const data = await User.create({ name, email, password })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success',
     })
   }))
@@ -121,7 +125,7 @@ function userEndpoints(apiRouter) {
         email,
         token
       },
-      code: 1,
+      code: 200,
       message: 'success',
     })
   }))
@@ -158,7 +162,7 @@ function userEndpoints(apiRouter) {
     const data = await User.update(id, { name, email, password })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success',
     })
   }))
@@ -172,7 +176,7 @@ function userEndpoints(apiRouter) {
     const data = await User.delete(id)
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
