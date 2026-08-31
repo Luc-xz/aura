@@ -3,6 +3,7 @@ import sql from '../sql/index.js'
 import ModelConfig from '../models/model-config.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
+import { requireOwnership } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound } from '../utils/appError.js'
 
@@ -59,7 +60,7 @@ function modelConfigEndpoints(apiRouter) {
     })
   }))
 
-  router.get('/:id', asyncHandler(async (req, res) => {
+  router.get('/:id', asyncHandler(requireOwnership({ resource: 'model_config' })), asyncHandler(async (req, res) => {
     const { id } = req.params
     const data = await ModelConfig.findById(id)
     if (!data) {
@@ -101,7 +102,7 @@ function modelConfigEndpoints(apiRouter) {
     })
   }))
 
-  router.put('/:id', asyncHandler(async (req, res) => {
+  router.put('/:id', asyncHandler(requireOwnership({ resource: 'model_config' })), asyncHandler(async (req, res) => {
     const { id } = req.params
     const { provider, baseUrl, apiKey, modelName, temperature, maxTokens, isActive } = req.body
 
@@ -137,7 +138,7 @@ function modelConfigEndpoints(apiRouter) {
     })
   }))
 
-  router.delete('/:id', asyncHandler(async (req, res) => {
+  router.delete('/:id', asyncHandler(requireOwnership({ resource: 'model_config' })), asyncHandler(async (req, res) => {
     const { id } = req.params
     const existing = await ModelConfig.findById(id)
     if (!existing) {

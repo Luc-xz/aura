@@ -1,17 +1,19 @@
 import express from 'express'
 import Role from '../models/role.js'
+import Rbac from '../models/rbac.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
+import { loadAuthContext, requirePermission } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound, Conflict } from '../utils/appError.js'
 
 const router = express.Router()
 
 function roleEndpoints(apiRouter) {
-  apiRouter.use('/role', asyncHandler(authMiddleware), router)
+  apiRouter.use('/role', asyncHandler(authMiddleware), asyncHandler(loadAuthContext), router)
 
   // 1. 获取非分页角色列表
-  router.get('/list', asyncHandler(async (req, res) => {
+  router.get('/list', requirePermission('role:list'), asyncHandler(async (req, res) => {
     const { orderBy, orderDir, ...rest } = req.query
     const data = await Role.findAll({
       filters: rest,
@@ -28,7 +30,7 @@ function roleEndpoints(apiRouter) {
   }))
 
   // 2. 获取分页角色列表
-  router.get('/page', asyncHandler(async (req, res) => {
+  router.get('/page', requirePermission('role:list'), asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await Role.findAll({
       filters: {
@@ -53,7 +55,7 @@ function roleEndpoints(apiRouter) {
   }))
 
   // 3. 获取角色详情
-  router.get('/:id', asyncHandler(async (req, res) => {
+  router.get('/:id', requirePermission('role:list'), asyncHandler(async (req, res) => {
     const { id } = req.params
     const data = await Role.findById(id)
     if (!data) {
@@ -67,7 +69,7 @@ function roleEndpoints(apiRouter) {
   }))
 
   // 4. 创建角色
-  router.post('/', asyncHandler(async (req, res) => {
+  router.post('/', requirePermission('role:create'), asyncHandler(async (req, res) => {
     const { name, code, description } = req.body
     if (!name || !code) {
       throw BadRequest('name and code are required')
@@ -98,7 +100,7 @@ function roleEndpoints(apiRouter) {
   }))
 
   // 5. 更新角色
-  router.put('/:id', asyncHandler(async (req, res) => {
+  router.put('/:id', requirePermission('role:update'), asyncHandler(async (req, res) => {
     const { id } = req.params
     const { name, description } = req.body
 
@@ -131,7 +133,7 @@ function roleEndpoints(apiRouter) {
   }))
 
   // 6. 删除角色
-  router.delete('/:id', asyncHandler(async (req, res) => {
+  router.delete('/:id', requirePermission('role:delete'), asyncHandler(async (req, res) => {
     const { id } = req.params
 
     const existing = await Role.findById(id)
@@ -142,9 +144,52 @@ function roleEndpoints(apiRouter) {
       throw BadRequest('system role cannot be deleted')
     }
 
+    // delete 内部会清理 role_menu / user_role 关联
     const data = await Role.delete(id)
     res.status(200).json({
       data,
+      code: 200,
+      message: 'success'
+    })
+  }))
+
+  // 7. 获取角色关联的菜单 ID 列表
+  router.get('/:id/menus', requirePermission('role:list'), asyncHandler(async (req, res) => {
+    const { id } = req.params
+
+    const existing = await Role.findById(id)
+    if (!existing) {
+      throw NotFound('role not found')
+    }
+
+    const data = await Rbac.getRoleMenuIds(id)
+    res.status(200).json({
+      data,
+      code: 200,
+      message: 'success'
+    })
+  }))
+
+  // 8. 给角色分配菜单/权限（全量替换）
+  router.put('/:id/menus', requirePermission('role:assign_permission'), asyncHandler(async (req, res) => {
+    const { id } = req.params
+    const { menuIds } = req.body
+
+    if (!Array.isArray(menuIds)) {
+      throw BadRequest('menuIds must be an array')
+    }
+    if (menuIds.some(menuId => !Validator.isPositiveInt(menuId))) {
+      throw BadRequest('menuIds must be an array of positive integers')
+    }
+
+    const existing = await Role.findById(id)
+    if (!existing) {
+      throw NotFound('role not found')
+    }
+
+    await Rbac.assignMenusToRole(id, menuIds)
+    res.status(200).json({
+      data: true,
       code: 200,
       message: 'success'
     })

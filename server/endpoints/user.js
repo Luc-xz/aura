@@ -1,19 +1,26 @@
 import express from 'express'
 import sql from '../sql/index.js'
 import User from '../models/user.js'
+import Role from '../models/role.js'
+import Rbac from '../models/rbac.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import Validator from '../../shared/utils/validator.js'
 import { AppError, BadRequest, NotFound, Conflict } from '../utils/appError.js'
 import { comparePassword } from '../utils/bcrypt.js'
 import jwt from 'jsonwebtoken'
 import { authMiddleware } from '../middlewares/auth.js'
+import { loadAuthContext, requirePermission, requireSelfOrPermission } from '../middlewares/rbac.js'
+import { toTree } from '../../shared/utils/formatter.js'
 
 const router = express.Router()
+
+// 需要登录且加载权限上下文的公共中间件链（register/login 保持公开）
+const withAuthContext = [asyncHandler(authMiddleware), asyncHandler(loadAuthContext)]
 
 function userEndpoints(apiRouter) {
   apiRouter.use('/user', router)
 
-  router.get('/list', asyncHandler(authMiddleware), asyncHandler(async (req, res) => {
+  router.get('/list', ...withAuthContext, requirePermission('user:list'), asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await User.findAll({
       filters: rest,
@@ -29,7 +36,7 @@ function userEndpoints(apiRouter) {
     })
   }))
 
-  router.get('/page', asyncHandler(authMiddleware), asyncHandler(async (req, res) => {
+  router.get('/page', ...withAuthContext, requirePermission('user:list'), asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await User.findAll({
       filters: {
@@ -53,7 +60,31 @@ function userEndpoints(apiRouter) {
     })
   }))
 
-  router.get('/:id', asyncHandler(authMiddleware), asyncHandler(async (req, res) => {
+  // 当前用户 Profile（含角色/权限/菜单树，登录即可访问，须注册在 /:id 之前）
+  router.get('/profile', ...withAuthContext, asyncHandler(async (req, res) => {
+    const userId = req.user.id
+    const user = await User.findById(userId)
+    if (!user) {
+      throw NotFound('user not found')
+    }
+
+    const roles = await Rbac.getUserRoles(userId)
+    const permissions = await Rbac.getUserPermissions(userId)
+    const menus = toTree(await Rbac.getUserMenus(userId))
+
+    res.status(200).json({
+      data: {
+        ...user,
+        roles,
+        permissions,
+        menus
+      },
+      code: 200,
+      message: 'success'
+    })
+  }))
+
+  router.get('/:id', ...withAuthContext, requireSelfOrPermission('user:read'), asyncHandler(async (req, res) => {
     const { id } = req.params
     const data = await User.findById(id)
     if (!data) {
@@ -130,7 +161,8 @@ function userEndpoints(apiRouter) {
     })
   }))
 
-  router.put('/:id', asyncHandler(authMiddleware), asyncHandler(async (req, res) => {
+  // 更新用户：本人可自助修改，修改他人需要 user:update 权限
+  router.put('/:id', ...withAuthContext, requireSelfOrPermission('user:update'), asyncHandler(async (req, res) => {
     const { id } = req.params
     const { name, email, password } = req.body
 
@@ -167,7 +199,8 @@ function userEndpoints(apiRouter) {
     })
   }))
 
-  router.delete('/:id', asyncHandler(authMiddleware), asyncHandler(async (req, res) => {
+  // 删除用户（仅管理员）
+  router.delete('/:id', ...withAuthContext, requirePermission('user:delete'), asyncHandler(async (req, res) => {
     const { id } = req.params
     const existing = await User.findById(id)
     if (!existing) {
@@ -176,6 +209,38 @@ function userEndpoints(apiRouter) {
     const data = await User.delete(id)
     res.status(200).json({
       data,
+      code: 200,
+      message: 'success'
+    })
+  }))
+
+  // 给用户分配角色（全量替换，仅管理员）
+  router.put('/:id/roles', ...withAuthContext, requirePermission('user:assign_role'), asyncHandler(async (req, res) => {
+    const { id } = req.params
+    const { roleIds } = req.body
+
+    if (!Array.isArray(roleIds)) {
+      throw BadRequest('roleIds must be an array')
+    }
+    if (roleIds.some(roleId => !Validator.isPositiveInt(roleId))) {
+      throw BadRequest('roleIds must be an array of positive integers')
+    }
+
+    const existing = await User.findById(id)
+    if (!existing) {
+      throw NotFound('user not found')
+    }
+
+    for (const roleId of roleIds) {
+      const role = await Role.findById(roleId)
+      if (!role) {
+        throw BadRequest(`role ${roleId} not found`)
+      }
+    }
+
+    await Rbac.assignRolesToUser(id, roleIds)
+    res.status(200).json({
+      data: true,
       code: 200,
       message: 'success'
     })

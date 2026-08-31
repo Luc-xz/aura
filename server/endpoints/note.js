@@ -3,6 +3,7 @@ import sql from '../sql/index.js'
 import Note from '../models/note.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
+import { requireOwnership } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound } from '../utils/appError.js'
 
@@ -36,7 +37,7 @@ function noteEndpoints(apiRouter) {
     })
   }))
 
-  router.get('/:id', asyncHandler(async (req, res) => {
+  router.get('/:id', asyncHandler(requireOwnership({ resource: 'note' })), asyncHandler(async (req, res) => {
     const { id } = req.params
     const data = await Note.findById(id)
     if (!data) {
@@ -72,7 +73,7 @@ function noteEndpoints(apiRouter) {
     })
   }))
 
-  router.put('/:id', asyncHandler(async (req, res) => {
+  router.put('/:id', asyncHandler(requireOwnership({ resource: 'note' })), asyncHandler(async (req, res) => {
     const { id } = req.params
     const { title, content, description } = req.body
 
@@ -99,7 +100,7 @@ function noteEndpoints(apiRouter) {
     })
   }))
 
-  router.delete('/:id', asyncHandler(async (req, res) => {
+  router.delete('/:id', asyncHandler(requireOwnership({ resource: 'note' })), asyncHandler(async (req, res) => {
     const { id } = req.params
     const existing = await Note.findById(id)
     if (!existing) {

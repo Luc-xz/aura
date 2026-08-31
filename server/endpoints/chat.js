@@ -5,6 +5,7 @@ import ModelConfig from '../models/model-config.js'
 import Workspace from '../models/workspace.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
+import { requireOwnership } from '../middlewares/rbac.js'
 import { createModelInstance } from '../utils/model-factory.js'
 import { generateText, streamText } from 'ai'
 import Validator from '../../shared/utils/validator.js'
@@ -15,7 +16,7 @@ const router = express.Router()
 function chatEndpoints(apiRouter) {
   apiRouter.use('/chat', asyncHandler(authMiddleware), router)
 
-  router.get('/list/:workspaceId', asyncHandler(async (req, res) => {
+  router.get('/list/:workspaceId', asyncHandler(requireOwnership({ resource: 'chat_workspace', idFrom: 'params.workspaceId' })), asyncHandler(async (req, res) => {
     const { workspaceId } = req.params
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await Chat.findByWorkspaceId(
@@ -38,7 +39,7 @@ function chatEndpoints(apiRouter) {
     })
   }))
 
-  router.post('/:workspaceId', asyncHandler(async (req, res) => {
+  router.post('/:workspaceId', asyncHandler(requireOwnership({ resource: 'chat_workspace', idFrom: 'params.workspaceId' })), asyncHandler(async (req, res) => {
     const { workspaceId } = req.params
     let { modelId, content, stream = true, think = true } = req.body
 

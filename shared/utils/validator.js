@@ -36,12 +36,21 @@ class Validator {
   // ==================== 通用标识符 ====================
 
   /**
-   * 业务编码（role.code, menu.code, permission.code 等）
+   * 业务编码（role.code, menu.code 等）
    * 2-64位，小写字母数字下划线，以字母开头
    */
   static isValidCode(val) {
     if (typeof val !== 'string') return false
     return /^[a-z][a-z0-9_]{1,63}$/.test(val)
+  }
+
+  /**
+   * 权限标识（menu.permission，如 user:create、user:assign_role）
+   * 冒号分段（至少两段），每段 2-64 位小写字母数字下划线，以字母开头
+   */
+  static isValidPermissionCode(val) {
+    if (typeof val !== 'string') return false
+    return /^[a-z][a-z0-9_]{1,63}(?::[a-z][a-z0-9_]{1,63})+$/.test(val)
   }
 
   // ==================== 字符串通用 ====================

@@ -3,6 +3,7 @@ import sql from '../sql/index.js'
 import Workspace from '../models/workspace.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
+import { requireOwnership } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound } from '../utils/appError.js'
 
@@ -53,7 +54,7 @@ function workspaceEndpoints(apiRouter) {
     })
   }))
 
-  router.put('/:id', asyncHandler(async (req, res) => {
+  router.put('/:id', asyncHandler(requireOwnership({ resource: 'workspace' })), asyncHandler(async (req, res) => {
     const { id } = req.params
     const { title, modelId } = req.body
 
@@ -80,7 +81,7 @@ function workspaceEndpoints(apiRouter) {
     })
   }))
 
-  router.delete('/:id', asyncHandler(async (req, res) => {
+  router.delete('/:id', asyncHandler(requireOwnership({ resource: 'workspace' })), asyncHandler(async (req, res) => {
     const { id } = req.params
     const existing = await Workspace.findById(id)
     if (!existing) {

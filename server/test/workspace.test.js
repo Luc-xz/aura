@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
-import { getRequest, registerAndLogin, authHeader, cleanTable } from './helpers.js'
+import { getRequest, registerAndLogin, registerAndLoginAdmin, authHeader, cleanTable } from './helpers.js'
 
 let request
 
@@ -127,5 +127,68 @@ describe('DELETE /api/workspace/:id', () => {
     const listRes = await request.get('/api/workspace/list').set(authHeader(token))
     const found = listRes.body.data.find(w => w.id === workspaceId)
     expect(found).toBeUndefined()
+  })
+})
+
+describe('横向越权防护（requireOwnership）', () => {
+  it('用户不能修改他人的工作区', async () => {
+    const alice = await registerAndLogin()
+    const createRes = await request
+      .post('/api/workspace')
+      .set(authHeader(alice.token))
+      .send({ title: 'alice workspace' })
+    const workspaceId = createRes.body.data.id
+
+    const bob = await registerAndLogin()
+    const res = await request
+      .put(`/api/workspace/${workspaceId}`)
+      .set(authHeader(bob.token))
+      .send({ title: 'hacked title' })
+
+    expect(res.status).toBe(403)
+  })
+
+  it('用户不能删除他人的工作区', async () => {
+    const alice = await registerAndLogin()
+    const createRes = await request
+      .post('/api/workspace')
+      .set(authHeader(alice.token))
+      .send({ title: 'alice workspace 2' })
+    const workspaceId = createRes.body.data.id
+
+    const bob = await registerAndLogin()
+    const res = await request
+      .delete(`/api/workspace/${workspaceId}`)
+      .set(authHeader(bob.token))
+
+    expect(res.status).toBe(403)
+  })
+
+  it('super_admin 可以管理任何工作区', async () => {
+    const alice = await registerAndLogin()
+    const createRes = await request
+      .post('/api/workspace')
+      .set(authHeader(alice.token))
+      .send({ title: 'alice workspace 3' })
+    const workspaceId = createRes.body.data.id
+
+    const admin = await registerAndLoginAdmin()
+    const res = await request
+      .put(`/api/workspace/${workspaceId}`)
+      .set(authHeader(admin.token))
+      .send({ title: 'admin edited' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.code).toBe(200)
+  })
+
+  it('操作不存在的工作区应返回 404', async () => {
+    const { token } = await registerAndLogin()
+    const res = await request
+      .put('/api/workspace/999999')
+      .set(authHeader(token))
+      .send({ title: 'not found' })
+
+    expect(res.status).toBe(404)
   })
 })

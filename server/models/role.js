@@ -1,4 +1,5 @@
 import db from '../sql/index.js'
+import Rbac from './rbac.js'
 import { getOffsetPage } from '../utils/pager.js'
 import { formatResponse } from '../../shared/utils/formatter.js'
 
@@ -109,7 +110,15 @@ export default class Role {
     if (!id) {
       throw new Error('id is required')
     }
-    // TODO: check related
+    const [roleRows] = await db.query('SELECT is_system FROM role WHERE id = ?', [id])
+    if (!roleRows.length) {
+      throw new Error('role not found')
+    }
+    if (roleRows[0].is_system === 1) {
+      throw new Error('system role cannot be deleted')
+    }
+    // 清理 role_menu / user_role 关联
+    await Rbac.cleanRoleRelations(id)
     const baseSql = 'DELETE FROM role WHERE id = ?'
     const [result] = await db.query(baseSql, [id])
     return result.affectedRows > 0
