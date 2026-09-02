@@ -166,6 +166,16 @@ INSERT IGNORE INTO role_menu (role_id, menu_id)
 SELECT r.id, m.id FROM role r, menu m
 WHERE r.code = 'super_admin';
 
+-- 3. 初始化首个 super_admin 用户
+--    默认密码 Admin_123456（bcrypt 加密存储），首次登录后请及时修改
+INSERT IGNORE INTO user (id, name, email, password) VALUES
+(1, 'admin', 'admin@aura.com', '$2b$10$AfSPWLHuNeqny89grp.U6.9aNXg7cHJXKYhX9zY2CGLpNXLSa2/x6');
+
+INSERT IGNORE INTO user_role (user_id, role_id)
+SELECT 1, r.id FROM role r
+WHERE r.code = 'super_admin'
+  AND EXISTS (SELECT 1 FROM user WHERE id = 1);
+
 CREATE TABLE IF NOT EXISTS workspace (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

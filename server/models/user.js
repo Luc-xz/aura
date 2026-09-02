@@ -79,13 +79,12 @@ export default class User {
           r.description,
           r.is_system
         FROM user_role ur
-        LEFT JOIN role r ON ur.role_id = r.id 
-        WHERE ur.user_id = ?  
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE ur.user_id = ?
       `, [id])
       user.roles = roles
-      this.filterFields(user)
+      return this.filterFields(user)
     }
-    return user
   }
 
   static async findByEmail(email) {

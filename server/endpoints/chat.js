@@ -102,7 +102,7 @@ function chatEndpoints(apiRouter) {
     const model = createModelInstance(modelConfig)
 
     if (!stream) {
-      const result = await generateContent({
+      const result = await generateText({
         model,
         prompt: messages,
       });
