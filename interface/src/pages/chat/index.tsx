@@ -278,7 +278,7 @@ function ChatPanel({ workspace }) {
   }
 
   const fetchConversation = async () => {
-    if (!workspace) {
+    if (!workspace?.id) {
       return false
     }
     const [err, res] = await getChatListByWorkspaceId(workspace.id)

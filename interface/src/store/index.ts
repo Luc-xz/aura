@@ -62,18 +62,11 @@ const getStorage = () => {
   return localStorage
 }
 
-export const useWorkspaceStore = create<WorkspaceState>()(
-  persist(
-    (set) => ({
-      workspace: null,
-      setWorkspace: (workspace) => set({ workspace }),
-    }),
-    {
-      name: 'workspace-store',
-      storage: createJSONStorage(getStorage),
-    }
-  )
-)
+// workspace 引用数据库记录，不持久化：每次进入页面由 workspaceList 自动选中
+export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
+  workspace: null,
+  setWorkspace: (workspace) => set({ workspace }),
+}))
 
 export const useUserStore = create<UserState>()(
   persist(

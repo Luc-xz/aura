@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Navigate, Outlet, useNavigate, useLocation } from 'react-router'
-import { Flex, Layout, Menu } from 'antd'
-import { LogoutOutlined, MenuUnfoldOutlined, MenuFoldOutlined, BookOutlined, OpenAIFilled, SettingFilled, TeamOutlined } from '@ant-design/icons'
+import { Flex, Layout, Menu, Avatar, Tooltip } from 'antd'
+import {
+  LogoutOutlined,
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
+  BookOutlined,
+  OpenAIFilled,
+  SettingFilled,
+  TeamOutlined,
+} from '@ant-design/icons'
 import { useUserStore } from '@/store'
 import { profile } from '@/api/user'
 const { Header, Footer, Sider, Content } = Layout
@@ -95,6 +103,9 @@ export default function MyLayout() {
     )
   }
 
+  const username = user?.name || 'U'
+  const CollapseIcon = collapsed ? MenuUnfoldOutlined : MenuFoldOutlined
+
   return (
     <Flex className="w-full h-full">
       <Layout>
@@ -102,8 +113,35 @@ export default function MyLayout() {
           className="relative"
           collapsed={collapsed}
           theme="light">
+          {/* 品牌区：悬浮 Logo 时交叉淡变为折叠/展开图标；折叠时 Logo 水平居中 */}
+          <Tooltip title={collapsed ? '展开' : '折叠'}>
+            <div
+              className="brand group relative flex items-center h-16 border-b border-ashen/70 cursor-pointer select-none overflow-hidden px-5"
+              onClick={() => setCollapsed(!collapsed)}>
+              <span
+                className={`flex-none w-7 h-7 ${
+                  collapsed
+                    ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+                    : 'relative'
+                }`}>
+                <span className="absolute inset-0 rounded-full bg-primary/30 blur-[6px] transition-opacity duration-300 group-hover:opacity-0" />
+                <span className="relative flex w-7 h-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-blue-400 text-white text-sm font-bold shadow-sm transition-opacity duration-200 group-hover:opacity-0">
+                  A
+                </span>
+                <CollapseIcon className="absolute inset-0 flex w-7 h-7 items-center justify-center text-base text-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+              </span>
+              <span
+                className={`absolute left-16 text-[17px] font-semibold tracking-wide whitespace-nowrap transition-all duration-300 ease-out ${
+                  collapsed ? 'opacity-0 -translate-x-2' : 'opacity-100 translate-x-0'
+                }`}>
+                Aura
+              </span>
+            </div>
+          </Tooltip>
+
           <Menu
-            className="mb-10"
+            className="!border-inline-end-none"
+            style={{ height: 'calc(100% - 16rem)' }}
             selectedKeys={selectedKeys}
             items={menuItems}
             onClick={handleMenuClick}
@@ -111,17 +149,40 @@ export default function MyLayout() {
             mode="inline"
             theme="light"
           />
-          <div className="absolute bottom-0 left-0 px-8 py-2 h-10 w-full border-t border-ashen">
-            <div
-              className="text-base cursor-pointer hover:text-blue-500"
-              onClick={() => setCollapsed(!collapsed)}>
-              {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+
+          {/* 用户区：头像 + 用户名 + 退出（悬浮用户栏时浮现退出按钮） */}
+          <div className="absolute bottom-0 left-0 w-full border-t border-ashen/70 bg-white">
+            <div className="user-bar group relative flex items-center h-16 overflow-hidden px-5">
+              <span
+                className={`flex-none w-7 h-7 ${
+                  collapsed
+                    ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+                    : 'relative'
+                }`}>
+                <Avatar
+                  size={28}
+                  className="bg-gradient-to-br from-primary to-blue-400"
+                  style={{ color: '#fff' }}>
+                  {username.charAt(0).toUpperCase()}
+                </Avatar>
+              </span>
+              <span
+                className={`absolute left-16 text-sm text-gray-700 truncate transition-all duration-300 ease-out ${
+                  collapsed ? 'opacity-0 -translate-x-2' : 'opacity-100 translate-x-0'
+                }`}>
+                {username}
+              </span>
+              <Tooltip title="退出登录">
+                <LogoutOutlined
+                  className={`absolute right-4 text-base text-gray-400 transition-all duration-300 ease-out hover:!text-red-500 ${
+                    collapsed
+                      ? 'opacity-0'
+                      : 'opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0'
+                  }`}
+                  onClick={handleLogout}
+                />
+              </Tooltip>
             </div>
-            <LogoutOutlined
-              className="text-base cursor-pointer hover:text-blue-500"
-              title="退出登录"
-              onClick={handleLogout}
-            />
           </div>
         </Sider>
         <Layout>
