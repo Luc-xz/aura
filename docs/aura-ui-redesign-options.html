@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aura UI Redesign Directions</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16202a;
+        --muted: #607080;
+        --line: #dce3ea;
+        --panel: #ffffff;
+        --bg: #eef2f5;
+        --blue: #2266d1;
+        --green: #2f7d5c;
+        --amber: #ad6d18;
+        --red: #b64848;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+      }
+
+      main {
+        width: min(1180px, calc(100vw - 40px));
+        margin: 0 auto;
+        padding: 36px 0 52px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 30px;
+        line-height: 1.2;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        margin: 0 0 28px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .option {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 12px 28px rgba(25, 39, 52, 0.08);
+      }
+
+      .option-head {
+        padding: 16px 16px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 999px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .tag.blue { background: var(--blue); }
+      .tag.green { background: var(--green); }
+      .tag.amber { background: var(--amber); }
+
+      h2 {
+        margin: 10px 0 6px;
+        font-size: 18px;
+        line-height: 1.3;
+        letter-spacing: 0;
+      }
+
+      .desc {
+        margin: 0;
+        min-height: 42px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .mock {
+        height: 430px;
+        background: #f7f9fb;
+        display: grid;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .a .mock { grid-template-columns: 72px 126px 1fr; }
+      .b .mock { grid-template-columns: 190px 1fr 132px; }
+      .c .mock { grid-template-columns: 164px 1fr; grid-template-rows: 76px 1fr; }
+
+      .rail {
+        padding: 12px 10px;
+        background: #18222d;
+        color: #dce8f2;
+      }
+
+      .brand {
+        width: 34px;
+        height: 34px;
+        margin: 0 auto 22px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        color: #18222d;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+      }
+
+      .nav-dot {
+        width: 38px;
+        height: 38px;
+        margin: 0 auto 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,.18);
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+      }
+
+      .nav-dot.active { background: rgba(255,255,255,.16); }
+
+      .sidebar, .rightbar {
+        padding: 14px;
+        background: #ffffff;
+        border-right: 1px solid var(--line);
+      }
+
+      .rightbar {
+        border-right: 0;
+        border-left: 1px solid var(--line);
+      }
+
+      .side-title {
+        font-size: 13px;
+        font-weight: 800;
+        margin-bottom: 12px;
+      }
+
+      .project {
+        padding: 10px;
+        margin-bottom: 8px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #f9fbfd;
+      }
+
+      .project.active { border-color: #80aeea; background: #eef6ff; }
+
+      .line {
+        height: 8px;
+        border-radius: 20px;
+        background: #d8e1ea;
+        margin-bottom: 7px;
+      }
+
+      .line.short { width: 58%; }
+      .line.mid { width: 76%; }
+      .line.green { background: #b8d8cb; }
+      .line.amber { background: #ead2ae; }
+      .line.blue { background: #b9d0ef; }
+
+      .workspace-home {
+        padding: 16px;
+        overflow: hidden;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .title-block { min-width: 0; }
+
+      .title-line {
+        width: 160px;
+        height: 13px;
+        border-radius: 20px;
+        background: #223041;
+        margin-bottom: 8px;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 7px;
+      }
+
+      .tool {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: #f8fafc;
+      }
+
+      .dashboard {
+        display: grid;
+        grid-template-columns: 1.2fr .8fr;
+        gap: 12px;
+      }
+
+      .panel {
+        padding: 12px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+      }
+
+      .panel.large { height: 142px; }
+      .panel.stack { height: 68px; margin-bottom: 10px; }
+      .panel.chat { height: 245px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+      .panel.note { height: 102px; }
+
+      .bubble {
+        width: 78%;
+        padding: 9px;
+        border-radius: 8px;
+        background: #e9f1fb;
+      }
+      .bubble.user { margin-left: auto; background: #e8f4ec; }
+
+      .composer {
+        height: 44px;
+        border-radius: 7px;
+        border: 1px solid #cfd9e3;
+        background: #fff;
+        margin-top: 12px;
+      }
+
+      .tabbar {
+        display: flex;
+        gap: 6px;
+        padding: 12px 16px 0;
+        background: #fff;
+      }
+
+      .tab {
+        height: 30px;
+        padding: 7px 12px;
+        border: 1px solid var(--line);
+        border-bottom: 0;
+        border-radius: 6px 6px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .tab.active { color: var(--ink); background: #f7f9fb; font-weight: 700; }
+
+      .body-copy {
+        padding: 14px 16px;
+      }
+
+      .callout {
+        border-left: 3px solid var(--green);
+        padding: 10px;
+        background: #f3faf6;
+        margin-bottom: 10px;
+      }
+
+      .foot {
+        padding: 14px 16px 16px;
+      }
+
+      .foot h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .recommend {
+        margin-top: 22px;
+        padding: 16px 18px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .recommend strong { color: var(--blue); }
+
+      @media (max-width: 980px) {
+        .grid { grid-template-columns: 1fr; }
+        .mock { height: 360px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Aura 前端改造方向草图</h1>
+      <p class="lead">这不是最终视觉稿，而是先把“功能更聚合、布局更新、体验更顺”的三种产品结构放在一起比较。</p>
+      <section class="grid">
+        <article class="option a">
+          <div class="option-head">
+            <span class="tag blue">A</span>
+            <h2>项目工作台优先</h2>
+            <p class="desc">把 workspace 作为主对象：左侧是项目，主区是项目概览，聊天/笔记/任务都围绕当前项目展开。</p>
+          </div>
+          <div class="mock">
+            <div class="rail">
+              <div class="brand">A</div>
+              <div class="nav-dot active">台</div>
+              <div class="nav-dot">聊</div>
+              <div class="nav-dot">记</div>
+              <div class="nav-dot">设</div>
+            </div>
+            <div class="sidebar">
+              <div class="side-title">项目</div>
+              <div class="project active"><div class="line blue"></div><div class="line short"></div></div>
+              <div class="project"><div class="line"></div><div class="line short"></div></div>
+              <div class="project"><div class="line"></div><div class="line mid"></div></div>
+            </div>
+            <div class="workspace-home">
+              <div class="topbar" style="margin:-16px -16px 14px">
+                <div class="title-block"><div class="title-line"></div><div class="line short"></div></div>
+                <div class="toolbar"><div class="tool"></div><div class="tool"></div><div class="tool"></div></div>
+              </div>
+              <div class="dashboard">
+                <div class="panel large"><div class="line green mid"></div><div class="line"></div><div class="line short"></div></div>
+                <div><div class="panel stack"><div class="line amber"></div><div class="line short"></div></div><div class="panel stack"><div class="line blue"></div><div class="line mid"></div></div></div>
+                <div class="panel note"><div class="line"></div><div class="line mid"></div><div class="line short"></div></div>
+                <div class="panel note"><div class="line green"></div><div class="line mid"></div><div class="line"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="foot">
+            <h3>适合解决</h3>
+            <ul><li>功能松散</li><li>workspace 不像项目容器</li><li>新用户不知道从哪里开始</li></ul>
+          </div>
+        </article>
+
+        <article class="option b">
+          <div class="option-head">
+            <span class="tag green">B</span>
+            <h2>三栏沉浸式推进</h2>
+            <p class="desc">左项目，中间对话，右侧项目记忆/笔记/待办。核心体验是“一边聊，一边沉淀”。</p>
+          </div>
+          <div class="mock">
+            <div class="sidebar">
+              <div class="side-title">Workspace</div>
+              <div class="project active"><div class="line green"></div><div class="line short"></div></div>
+              <div class="project"><div class="line"></div><div class="line mid"></div></div>
+              <div class="project"><div class="line"></div><div class="line short"></div></div>
+            </div>
+            <div>
+              <div class="topbar"><div><div class="title-line"></div><div class="line short"></div></div><div class="toolbar"><div class="tool"></div><div class="tool"></div></div></div>
+              <div class="body-copy">
+                <div class="panel chat">
+                  <div class="bubble"><div class="line mid"></div><div class="line short"></div></div>
+                  <div class="bubble user"><div class="line green mid"></div></div>
+                  <div class="bubble"><div class="line"></div><div class="line mid"></div></div>
+                </div>
+                <div class="composer"></div>
+              </div>
+            </div>
+            <div class="rightbar">
+              <div class="side-title">沉淀</div>
+              <div class="callout"><div class="line green mid"></div><div class="line short"></div></div>
+              <div class="panel stack"><div class="line amber"></div><div class="line mid"></div></div>
+              <div class="panel stack"><div class="line blue"></div><div class="line short"></div></div>
+            </div>
+          </div>
+          <div class="foot">
+            <h3>适合解决</h3>
+            <ul><li>聊天和笔记断开</li><li>对话结果没有资产化</li><li>每天使用效率低</li></ul>
+          </div>
+        </article>
+
+        <article class="option c">
+          <div class="option-head">
+            <span class="tag amber">C</span>
+            <h2>文档化项目空间</h2>
+            <p class="desc">把 Aura 更靠近“项目档案”：顶部切换概览/聊天/笔记/任务，信息稳定、可归档。</p>
+          </div>
+          <div class="mock">
+            <div class="sidebar" style="grid-row: 1 / span 2">
+              <div class="side-title">项目库</div>
+              <div class="project active"><div class="line amber"></div><div class="line short"></div></div>
+              <div class="project"><div class="line"></div><div class="line mid"></div></div>
+              <div class="project"><div class="line"></div><div class="line short"></div></div>
+            </div>
+            <div>
+              <div class="topbar"><div><div class="title-line"></div><div class="line mid"></div></div><div class="toolbar"><div class="tool"></div><div class="tool"></div></div></div>
+              <div class="tabbar"><div class="tab active">概览</div><div class="tab">聊天</div><div class="tab">笔记</div><div class="tab">任务</div></div>
+            </div>
+            <div class="body-copy">
+              <div class="panel large"><div class="line amber mid"></div><div class="line"></div><div class="line"></div><div class="line short"></div></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+                <div class="panel note"><div class="line blue"></div><div class="line short"></div></div>
+                <div class="panel note"><div class="line green"></div><div class="line mid"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="foot">
+            <h3>适合解决</h3>
+            <ul><li>长期项目资料管理</li><li>清晰、克制、稳定</li><li>降低布局复杂度</li></ul>
+          </div>
+        </article>
+      </section>
+
+      <section class="recommend">
+        <strong>我的初步推荐：B 为主，A 为入口。</strong>
+        首页进入“项目工作台”，选中项目后进入三栏推进界面。这样既能解决功能松散，又能把 Aura 的产品主线变成“对话 -> 沉淀 -> 下次继续”。
+      </section>
+    </main>
+  </body>
+</html>
