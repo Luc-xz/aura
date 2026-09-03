@@ -1,5 +1,8 @@
 # Aura RBAC 角色权限系统改造详细执行计划
 
+> ⚠️ **已废弃**：本文档为早期 4 表（独立 permission 表）设计，已被 `rbac_redesign.md`（menu 即权限）取代。
+> 当前实现请以 `rbac_redesign.md` 与 `rbac_completion_guide.md` 为准。仅保留作历史参考。
+
 本项目旨在解决 Aura 笔记系统中的横向越权问题与垂直权限缺失问题，通过引入统一的资源归属校验 (Owner Check) 和基于角色的访问控制 (RBAC) 来构建完备的安全边界。本文档为详细的改造步骤和可以直接使用的代码模板。
 
 ---
