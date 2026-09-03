@@ -7,6 +7,16 @@ beforeAll(async () => {
   request = await getRequest()
 })
 
+// 创建一个属于指定用户的模型配置，返回其 id
+const createModelConfig = async (token) => {
+  const res = await request
+    .post('/api/model-config')
+    .set(authHeader(token))
+    .send({ provider: 'openai', modelName: 'gpt-test' })
+  expect(res.status).toBe(200)
+  return res.body.data?.id ?? res.body.data
+}
+
 beforeEach(async () => {
   await cleanTable('workspace')
   await cleanTable('user_role')
@@ -36,10 +46,11 @@ describe('POST /api/workspace/', () => {
 
   it('应成功创建工作区', async () => {
     const { token } = await registerAndLogin()
+    const modelId = await createModelConfig(token)
     const res = await request
       .post('/api/workspace')
       .set(authHeader(token))
-      .send({ title: 'test workspace', modelId: 123456 })
+      .send({ title: 'test workspace', modelId })
 
     expect(res.status).toBe(200)
     expect(res.body.code).toBe(200)
@@ -88,14 +99,37 @@ describe('PUT /api/workspace/:id', () => {
   })
 
   it('编辑后 modelId 应更新', async () => {
-    await request
+    const modelId = await createModelConfig(token)
+
+    const updateRes = await request
       .put(`/api/workspace/${workspaceId}`)
       .set(authHeader(token))
-      .send({ modelId: 999 })
+      .send({ modelId })
+
+    expect(updateRes.body.code).toBe(200)
 
     const listRes = await request.get('/api/workspace/list').set(authHeader(token))
     const found = listRes.body.data.find(w => w.id === workspaceId)
-    expect(found.modelId).toBe(999)
+    expect(found.modelId).toBe(modelId)
+  })
+
+  it('不能挂载他人的模型配置', async () => {
+    const alice = await registerAndLogin()
+    const aliceModelId = await createModelConfig(alice.token)
+
+    const res = await request
+      .put(`/api/workspace/${workspaceId}`)
+      .set(authHeader(token))
+      .send({ modelId: aliceModelId })
+    expect(res.status).toBe(403)
+  })
+
+  it('挂载不存在的模型配置应返回 404', async () => {
+    const res = await request
+      .put(`/api/workspace/${workspaceId}`)
+      .set(authHeader(token))
+      .send({ modelId: 999999 })
+    expect(res.status).toBe(404)
   })
 })
 
