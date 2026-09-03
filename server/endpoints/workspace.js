@@ -1,11 +1,12 @@
 import express from 'express'
 import sql from '../sql/index.js'
 import Workspace from '../models/workspace.js'
+import ModelConfig from '../models/model-config.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
 import { requireOwnership } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
-import { BadRequest, NotFound } from '../utils/appError.js'
+import { BadRequest, NotFound, Forbidden } from '../utils/appError.js'
 
 const router = express.Router()
 
@@ -45,6 +46,17 @@ function workspaceEndpoints(apiRouter) {
       throw BadRequest('modelId must be a positive integer')
     }
 
+    // 挂载校验：配置必须属于创建者
+    if (modelId) {
+      const modelConfig = await ModelConfig.findById(modelId)
+      if (!modelConfig) {
+        throw NotFound('model config not found')
+      }
+      if (modelConfig.userId !== req.user.id) {
+        throw Forbidden('model config does not belong to you')
+      }
+    }
+
     const id = await Workspace.create(req.user, { title, modelId })
     const data = await Workspace.findById(id)
     res.status(200).json({
@@ -71,6 +83,18 @@ function workspaceEndpoints(apiRouter) {
     const existing = await Workspace.findById(id)
     if (!existing) {
       throw NotFound('workspace not found')
+    }
+
+    // modelId 挂载校验：配置必须属于工作区属主（唯一校验点，chat 只读工作区挂载的配置）
+    // 校验对象是属主而非操作者，防止 super_admin 代管时把自己的配置挂进他人工作区
+    if (modelId) {
+      const modelConfig = await ModelConfig.findById(modelId)
+      if (!modelConfig) {
+        throw NotFound('model config not found')
+      }
+      if (modelConfig.userId !== existing.userId) {
+        throw Forbidden('model config does not belong to the workspace owner')
+      }
     }
 
     const data = await Workspace.update(id, { title, modelId })

@@ -54,7 +54,7 @@ export default class ModelConfig {
     return rows[0] && this.filterFields(rows[0])
   }
 
-  static async create(user, { provider, baseUrl, apiKey, modelName, temperature = 0.7, maxTokens = 2048, isActive } = {}) {
+  static async create(user, { provider, baseUrl, apiKey, modelName, temperature = 0.7, maxTokens = 2048, isActive = 1 } = {}) {
     if (!user?.id) {
       throw new Error('userId is required')
     }

@@ -3,9 +3,9 @@ import Role from '../models/role.js'
 import Rbac from '../models/rbac.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
-import { loadAuthContext, requirePermission } from '../middlewares/rbac.js'
+import { loadAuthContext, requirePermission, isSuperAdmin } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
-import { BadRequest, NotFound, Conflict } from '../utils/appError.js'
+import { BadRequest, NotFound, Conflict, Forbidden } from '../utils/appError.js'
 
 const router = express.Router()
 
@@ -185,6 +185,23 @@ function roleEndpoints(apiRouter) {
     const existing = await Role.findById(id)
     if (!existing) {
       throw NotFound('role not found')
+    }
+
+    // ===== 提权防护 =====
+    const isSuper = await isSuperAdmin(req.user.id)
+
+    // R2: 系统角色（super_admin/admin/member）的权限仅 super_admin 可改
+    if (existing.isSystem && !isSuper) {
+      throw Forbidden('only super_admin can modify a system role')
+    }
+
+    // R3: 非 super_admin 只能授予自己拥有的菜单/权限，防止向自定义角色自我提权
+    if (!isSuper) {
+      const ownMenuIds = await Rbac.getUserMenuIds(req.user.id)
+      const illegal = menuIds.filter((menuId) => !ownMenuIds.includes(menuId))
+      if (illegal.length > 0) {
+        throw Forbidden('cannot grant permissions beyond your own')
+      }
     }
 
     await Rbac.assignMenusToRole(id, menuIds)

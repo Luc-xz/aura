@@ -41,7 +41,7 @@ function chatEndpoints(apiRouter) {
 
   router.post('/:workspaceId', asyncHandler(requireOwnership({ resource: 'chat_workspace', idFrom: 'params.workspaceId' })), asyncHandler(async (req, res) => {
     const { workspaceId } = req.params
-    let { modelId, content, stream = true, think = true } = req.body
+    const { content, stream = true, think = true } = req.body
 
     if (!content) {
       throw BadRequest('content is required')
@@ -49,23 +49,15 @@ function chatEndpoints(apiRouter) {
     if (!Validator.isNonEmptyString(content)) {
       throw BadRequest('content cannot be empty')
     }
-    if (modelId && !Validator.isPositiveInt(modelId)) {
-      throw BadRequest('modelId must be a positive integer')
+
+    // 模型固定取工作区挂载的配置（requireOwnership 已确保工作区存在且属于当前用户，
+    // 配置归属在挂载时已校验，见 workspace PUT），请求体传入的任何 modelId 一律忽略
+    const workspace = await Workspace.findById(workspaceId)
+    if (!workspace.modelId) {
+      throw BadRequest('no model configured for this workspace, please set a model first')
     }
 
-    if (!modelId) {
-      const workspace = await Workspace.findById(workspaceId)
-      if (!workspace) {
-        throw NotFound('workspace not found')
-      }
-      modelId = workspace.modelId
-    }
-
-    if (!modelId) {
-      throw BadRequest('no model configured for this workspace, please specify modelId')
-    }
-
-    const modelConfig = await ModelConfig.findById(modelId)
+    const modelConfig = await ModelConfig.findById(workspace.modelId)
     if (!modelConfig) {
       throw NotFound('model config not found')
     }

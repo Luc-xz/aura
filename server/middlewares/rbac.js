@@ -63,6 +63,15 @@ export const requireSelfOrPermission = (permissionCode, idFrom = 'params.id') =>
 }
 
 /**
+ * 判断指定用户是否为 super_admin（高危操作的提权防护用）
+ */
+export const isSuperAdmin = async (userId) => {
+  if (!userId) return false
+  const roles = await Rbac.getUserRoles(userId)
+  return roles.includes('super_admin')
+}
+
+/**
  * 资源归属校验中间件（防横向越权）
  * @param {string} resource 资源类型：note | workspace | model_config | chat | chat_workspace
  * @param {string} idFrom 资源 ID 来源，如 'params.id'、'params.workspaceId'

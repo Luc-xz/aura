@@ -5,11 +5,11 @@ import Role from '../models/role.js'
 import Rbac from '../models/rbac.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import Validator from '../../shared/utils/validator.js'
-import { AppError, BadRequest, NotFound, Conflict } from '../utils/appError.js'
+import { AppError, BadRequest, NotFound, Conflict, Forbidden } from '../utils/appError.js'
 import { comparePassword } from '../utils/bcrypt.js'
 import jwt from 'jsonwebtoken'
 import { authMiddleware } from '../middlewares/auth.js'
-import { loadAuthContext, requirePermission, requireSelfOrPermission } from '../middlewares/rbac.js'
+import { loadAuthContext, requirePermission, requireSelfOrPermission, isSuperAdmin } from '../middlewares/rbac.js'
 import { toTree } from '../../shared/utils/formatter.js'
 
 const router = express.Router()
@@ -90,8 +90,10 @@ function userEndpoints(apiRouter) {
     if (!data) {
       throw NotFound('user not found')
     }
+    // 附带角色 ID 列表，供管理后台「分配角色」回显
+    const roleIds = await Rbac.getUserRoleIds(id)
     res.status(200).json({
-      data,
+      data: { ...data, roleIds },
       code: 200,
       message: 'success'
     })
@@ -206,6 +208,11 @@ function userEndpoints(apiRouter) {
     if (!existing) {
       throw NotFound('user not found')
     }
+    // 提权防护 R4：super_admin 用户仅 super_admin 可删
+    const targetRoles = await Rbac.getUserRoles(id)
+    if (targetRoles.includes('super_admin') && !(await isSuperAdmin(req.user.id))) {
+      throw Forbidden('only super_admin can delete a super_admin user')
+    }
     const data = await User.delete(id)
     res.status(200).json({
       data,
@@ -236,6 +243,12 @@ function userEndpoints(apiRouter) {
       if (!role) {
         throw BadRequest(`role ${roleId} not found`)
       }
+    }
+
+    // 提权防护 R1：super_admin 角色只能由 super_admin 分配，防止 admin 自我提权
+    const superAdminRole = await Role.findByCode('super_admin')
+    if (superAdminRole && roleIds.includes(superAdminRole.id) && !(await isSuperAdmin(req.user.id))) {
+      throw Forbidden('only super_admin can assign the super_admin role')
     }
 
     await Rbac.assignRolesToUser(id, roleIds)

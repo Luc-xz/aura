@@ -21,8 +21,17 @@ export default class Rbac {
 
   /**
    * 获取用户的所有权限码（通过 role → menu.permission 链路）
+   * super_admin 直接返回全量权限码，与 requirePermission 的放行口径对齐，
+   * 前端 profile 拿到的集合即后端真实授权范围（前端不感知角色特判）
    */
   static async getUserPermissions(userId) {
+    const roles = await this.getUserRoles(userId)
+    if (roles.includes('super_admin')) {
+      const [all] = await db.query(
+        'SELECT DISTINCT permission FROM menu WHERE permission IS NOT NULL AND status = 1'
+      )
+      return all.map(row => row.permission)
+    }
     const [rows] = await db.query(
       `SELECT DISTINCT m.permission FROM menu m
        JOIN role_menu rm ON m.id = rm.menu_id
@@ -37,8 +46,18 @@ export default class Rbac {
 
   /**
    * 获取用户可见的菜单列表（平铺，接口层自行 toTree）
+   * super_admin 直接返回全部可见菜单：新建菜单未绑定角色时超管也可见
    */
   static async getUserMenus(userId) {
+    const roles = await this.getUserRoles(userId)
+    if (roles.includes('super_admin')) {
+      const [all] = await db.query(
+        `SELECT * FROM menu
+         WHERE type IN ('directory', 'menu') AND visible = 1 AND status = 1
+         ORDER BY sort_order ASC, id ASC`
+      )
+      return all.map(formatResponse)
+    }
     const [rows] = await db.query(
       `SELECT DISTINCT m.* FROM menu m
        JOIN role_menu rm ON m.id = rm.menu_id
@@ -51,6 +70,27 @@ export default class Rbac {
       [userId]
     )
     return rows.map(formatResponse)
+  }
+
+  /**
+   * 获取用户的所有角色 ID（管理后台回显用）
+   */
+  static async getUserRoleIds(userId) {
+    const [rows] = await db.query('SELECT role_id FROM user_role WHERE user_id = ?', [userId])
+    return rows.map(row => row.role_id)
+  }
+
+  /**
+   * 获取用户拥有的所有菜单 ID（提权防护 R3 用）
+   */
+  static async getUserMenuIds(userId) {
+    const [rows] = await db.query(
+      `SELECT DISTINCT rm.menu_id FROM role_menu rm
+       JOIN user_role ur ON rm.role_id = ur.role_id
+       WHERE ur.user_id = ?`,
+      [userId]
+    )
+    return rows.map(row => row.menu_id)
   }
 
   /**

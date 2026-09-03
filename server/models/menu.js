@@ -81,7 +81,8 @@ export default class Menu {
     return rows[0] && this.filterFields(rows[0])
   }
 
-  static async create({ parentId, name, code, permission, path, icon, sortOrder, type, visible, status } = {}) {
+  // visible/status 必须有默认值：INSERT 显式传 NULL 会绕过列默认值，产生永远不可见的菜单
+  static async create({ parentId, name, code, permission, path, icon, sortOrder = 0, type = 'menu', visible = 1, status = 1 } = {}) {
     if (parentId) {
       const [rows] = await db.query('SELECT * FROM menu WHERE id = ?', [parentId])
       if (!rows.length) {
