@@ -119,46 +119,53 @@ CREATE TABLE IF NOT EXISTS role_menu (
 -- ===================== RBAC 种子数据 =====================
 
 -- 1. 菜单/权限树（directory 无权限码，menu 页面级权限，button 操作级权限）
+--    业务菜单与前端侧边栏对应：Chat / Note(New Note, My Notes) / System(Setting, Model Config)
+--    icon 存 antd 图标组件名，前端按 ICON_MAP[icon] 渲染；name 为纯展示字段，可随意改名
+--    id 分配：业务菜单 1-99，管理菜单 100 起，各管理页间隔 20 预留扩展
 INSERT IGNORE INTO menu (id, parent_id, name, code, permission, path, icon, sort_order, type, visible) VALUES
--- 一级菜单
-(1,  NULL, '对话',     'chat',    NULL,            '/chat',    NULL, 1,  'menu', 1),
-(2,  NULL, '笔记',     'note',    NULL,            '/note',    NULL, 2,  'menu', 1),
-(3,  NULL, '设置',     'setting', NULL,            '/setting', NULL, 3,  'menu', 1),
+-- 业务菜单
+(1,  NULL, 'Chat',         'chat',         NULL, '/chat',                 'OpenAIFilled',  1, 'menu',      1),
+(10, NULL, 'Note',         'note',         NULL, NULL,                    'BookOutlined',  2, 'directory', 1),
+(11, 10,   'New Note',     'note_new',     NULL, '/note/edit',            NULL,            1, 'menu',      1),
+(12, 10,   'My Notes',     'note_list',    NULL, '/note',                 NULL,            2, 'menu',      1),
+(20, NULL, 'System',       'config',       NULL, NULL,                    'SettingFilled', 3, 'directory', 1),
+(21, 20,   'Setting',      'setting',      NULL, '/setting',              NULL,            1, 'menu',      1),
+(22, 20,   'Model Config', 'model_config', NULL, '/setting/model-config', NULL,            2, 'menu',      1),
 -- 系统管理（目录）
-(10, NULL, '系统管理', 'system',  NULL,            NULL,       NULL, 10, 'directory', 1),
+(100, NULL, '系统管理', 'admin', NULL, NULL, NULL, 10, 'directory', 1),
 -- 用户管理（菜单页 + 按钮）
-(11, 10,   '用户管理', 'user',       'user:list',         '/admin/users', NULL, 1, 'menu', 1),
-(12, 11,   '查看用户', 'user_read',       'user:read',         NULL, NULL, 1, 'button', 1),
-(13, 11,   '新增用户', 'user_create',     'user:create',       NULL, NULL, 2, 'button', 1),
-(14, 11,   '编辑用户', 'user_update',     'user:update',       NULL, NULL, 3, 'button', 1),
-(15, 11,   '删除用户', 'user_delete',     'user:delete',       NULL, NULL, 4, 'button', 1),
-(16, 11,   '分配角色', 'user_assign_role','user:assign_role',  NULL, NULL, 5, 'button', 1),
+(101, 100, '用户管理', 'user',       'user:list',              '/admin/users', NULL, 1, 'menu', 1),
+(102, 101, '查看用户', 'user_read',       'user:read',              NULL, NULL, 1, 'button', 1),
+(103, 101, '新增用户', 'user_create',     'user:create',            NULL, NULL, 2, 'button', 1),
+(104, 101, '编辑用户', 'user_update',     'user:update',            NULL, NULL, 3, 'button', 1),
+(105, 101, '删除用户', 'user_delete',     'user:delete',            NULL, NULL, 4, 'button', 1),
+(106, 101, '分配角色', 'user_assign_role','user:assign_role',       NULL, NULL, 5, 'button', 1),
 -- 角色管理（菜单页 + 按钮）
-(20, 10,   '角色管理', 'role',       'role:list',              '/admin/roles', NULL, 2, 'menu', 1),
-(21, 20,   '新增角色', 'role_create',     'role:create',              NULL, NULL, 1, 'button', 1),
-(22, 20,   '编辑角色', 'role_update',     'role:update',              NULL, NULL, 2, 'button', 1),
-(23, 20,   '删除角色', 'role_delete',     'role:delete',              NULL, NULL, 3, 'button', 1),
-(24, 20,   '分配权限', 'role_assign_perm','role:assign_permission',   NULL, NULL, 4, 'button', 1),
+(120, 100, '角色管理', 'role',       'role:list',              '/admin/roles', NULL, 2, 'menu', 1),
+(121, 120, '新增角色', 'role_create',     'role:create',            NULL, NULL, 1, 'button', 1),
+(122, 120, '编辑角色', 'role_update',     'role:update',            NULL, NULL, 2, 'button', 1),
+(123, 120, '删除角色', 'role_delete',     'role:delete',            NULL, NULL, 3, 'button', 1),
+(124, 120, '分配权限', 'role_assign_perm','role:assign_permission', NULL, NULL, 4, 'button', 1),
 -- 菜单管理（菜单页 + 按钮）
-(30, 10,   '菜单管理', 'menu',       'menu:list',              '/admin/menus', NULL, 3, 'menu', 1),
-(31, 30,   '新增菜单', 'menu_create',     'menu:create',              NULL, NULL, 1, 'button', 1),
-(32, 30,   '编辑菜单', 'menu_update',     'menu:update',              NULL, NULL, 2, 'button', 1),
-(33, 30,   '删除菜单', 'menu_delete',     'menu:delete',              NULL, NULL, 3, 'button', 1);
+(140, 100, '菜单管理', 'menu',       'menu:list',              '/admin/menus', NULL, 3, 'menu', 1),
+(141, 140, '新增菜单', 'menu_create',     'menu:create',            NULL, NULL, 1, 'button', 1),
+(142, 140, '编辑菜单', 'menu_update',     'menu:update',            NULL, NULL, 2, 'button', 1),
+(143, 140, '删除菜单', 'menu_delete',     'menu:delete',            NULL, NULL, 3, 'button', 1);
 
 -- 2. 角色-菜单关联
--- member：基础菜单可见（对话、笔记、设置）
+-- member：业务菜单（目录必须与子菜单一并授权，否则子菜单会脱离树结构）
 INSERT IGNORE INTO role_menu (role_id, menu_id)
 SELECT r.id, m.id FROM role r, menu m
-WHERE r.code = 'member' AND m.code IN ('chat', 'note', 'setting');
+WHERE r.code = 'member' AND m.id IN (1, 10, 11, 12, 20, 21, 22);
 
 -- admin：系统管理目录 + 用户/角色/菜单管理（含所有 button）
 INSERT IGNORE INTO role_menu (role_id, menu_id)
 SELECT r.id, m.id FROM role r, menu m
 WHERE r.code = 'admin' AND m.id IN (
-  10,
-  11, 12, 13, 14, 15, 16,
-  20, 21, 22, 23, 24,
-  30, 31, 32, 33
+  100,
+  101, 102, 103, 104, 105, 106,
+  120, 121, 122, 123, 124,
+  140, 141, 142, 143
 );
 
 -- super_admin：拥有所有菜单（代码层面对 super_admin 全局放行，此处兜底）
