@@ -5,5 +5,6 @@ logs/
 *.rdb
 
 .ace-tool/
+.claude
 .omc
 .workbuddy

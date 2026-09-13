@@ -8,9 +8,12 @@ import rateLimit from '../middlewares/rate-limit.js'
 import { authMiddleware } from '../middlewares/auth.js'
 import { requireOwnership } from '../middlewares/rbac.js'
 import { createModelInstance } from '../utils/model-factory.js'
-import { generateText, streamText } from 'ai'
+import { generateText, streamText, stepCountIs } from 'ai'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound } from '../utils/appError.js'
+import { buildNoteTools, NOTE_TOOLS_SYSTEM_PROMPT } from '../tool/index.js'
+
+const TOOL_MAX_STEPS = 5
 
 const router = express.Router()
 
@@ -97,14 +100,26 @@ function chatEndpoints(apiRouter) {
 
       const model = createModelInstance(modelConfig)
 
+      const references = []
+      const tools = buildNoteTools(req.user, {
+        onNoteFound: (ref) => {
+          if (!references.some((r) => r.id === ref.id)) {
+            references.push(ref)
+          }
+        },
+      })
+
       if (!stream) {
         const result = await generateText({
           model,
-          prompt: messages,
+          messages,
+          system: NOTE_TOOLS_SYSTEM_PROMPT,
+          tools,
+          stopWhen: stepCountIs(TOOL_MAX_STEPS),
         });
         await Chat.create({ workspaceId, content: result.text, proposer: 'assistant' })
         res.status(200).json({
-          data: result.text,
+          data: { content: result.text, references },
           code: 200,
           message: 'success'
         })
