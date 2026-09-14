@@ -9,7 +9,7 @@ export function getNoteDetailTool(user, hooks = {}) {
   return tool({
     description:
       '按笔记 id 获取笔记全文。仅当 search_notes 返回的摘要不足以回答问题时才调用，不要对同一个 id 重复调用。',
-    parameters: z.object({
+    inputSchema: z.object({
       noteId: z.number().int().describe('笔记 id，来自 search_notes 返回的列表'),
     }),
     execute: async ({ noteId }) => {
