@@ -1,4 +1,4 @@
-import { App, Button, Card, Divider, Flex, Space, Modal, Form, Input, Dropdown, Select } from 'antd'
+import { App, Button, Card, Divider, Flex, Space, Modal, Form, Input, Dropdown, Select, Tag } from 'antd'
 import { Bubble, Attachments, Sender } from '@ant-design/x'
 import {
   PlusOutlined,
@@ -14,10 +14,12 @@ import {
   LinkOutlined,
 } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router'
 import { getWorkspaceList, createWorkspace, updateWorkspace, deleteWorkspace } from '@/api/workspace'
 import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
 import { getModelConfigList } from '@/api/setting'
 import { useWorkspaceStore } from '@/store'
+import { createSSEParser } from '@/utils/sse'
 
 const fetchWorkspaceList = async () => {
   const [err, res] = await getWorkspaceList()
@@ -204,31 +206,57 @@ function ChatPanel({ workspace }) {
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
   const chatBubbleList = workspace
     ? conversation?.map?.((item, index) => (
         <Bubble
           placement={item.proposer === 'user' ? 'end' : 'start'}
-          content={<div className="whitespace-pre-wrap">{item.content}</div>}
+          content={
+            <div className="whitespace-pre-wrap">
+              {/* 工具调用期间正文还没来，用 status 占位（正在检索笔记…）；正文到了就只显示正文 */}
+              {item.proposer !== 'user' && item.status && !item.content ? (
+                <span className="text-sm text-gray-400">{item.status}</span>
+              ) : (
+                item.content
+              )}
+            </div>
+          }
           typing={item.proposer !== 'user' && !item.id ? true : false}
           avatar={{ icon: item.proposer === 'user' ? <UserOutlined /> : <MehOutlined /> }}
           variant={item.proposer === 'user' ? 'filled' : 'shadow'}
           key={index}
           footer={
             item.proposer === 'user' ? null : (
-              <Space>
-                <Button
-                  color="default"
-                  variant="text"
-                  size="small"
-                  icon={<SyncOutlined />}
-                />
-                <Button
-                  color="default"
-                  variant="text"
-                  size="small"
-                  icon={<CopyOutlined />}
-                />
+              <Space direction="vertical" size={4}>
+                <Space>
+                  <Button
+                    color="default"
+                    variant="text"
+                    size="small"
+                    icon={<SyncOutlined />}
+                  />
+                  <Button
+                    color="default"
+                    variant="text"
+                    size="small"
+                    icon={<CopyOutlined />}
+                  />
+                </Space>
+                {item.references?.length ? (
+                  <Space wrap size={4}>
+                    {item.references.map((ref) => (
+                      <Tag
+                        key={ref.id}
+                        icon={<LinkOutlined />}
+                        color="blue"
+                        className="cursor-pointer"
+                        onClick={() => navigate(`/note/edit/${ref.id}`)}>
+                        {ref.title}
+                      </Tag>
+                    ))}
+                  </Space>
+                ) : null}
               </Space>
             )
           }
@@ -248,7 +276,8 @@ function ChatPanel({ workspace }) {
     const [err, res] = await chatToWorkspace(workspace.id, content)
     console.log('[API]::[chatToWorkspace]::', res, err)
     if (res) {
-      setConversation([...newConversation, { proposer: 'assistant', content: res.data.content }])
+      // 非流式响应同样是 { content, references } 信封
+      setConversation([...newConversation, { proposer: 'assistant', content: res.data.content, references: res.data.references || [] }])
     }
     setLoading(false)
   }
@@ -257,23 +286,26 @@ function ChatPanel({ workspace }) {
     if (!workspace || prompt.trim() === '') {
       return false
     }
-    let content = prompt.trim()
+    const content = prompt.trim()
     setPrompt('')
     setLoading(true)
     const newConversation = [...conversation, { proposer: 'user', content }]
-    setConversation(newConversation)
-    const [err, res] = await streamChatToWorkspace(workspace.id, content, (e: any) => {
-      const { responseText } = e.event.target
+    setConversation([...newConversation, { proposer: 'assistant', content: '', references: [] }])
+    const feed = createSSEParser((evt) => {
       setConversation((prev) => {
-        const last = prev[prev.length - 1]
-        if (last?.proposer !== 'assistant') {
-          return [...prev, { proposer: 'assistant', content: responseText }]
-        } else {
-          return [...prev.slice(0, -1), { ...last, content: responseText }]
-        }
+        const last = { ...prev[prev.length - 1] }
+        const rest = prev.slice(0, -1)
+        if (evt.type === 'text') last.content += evt.value
+        if (evt.type === 'status') last.status = evt.value
+        if (evt.type === 'references') last.references = evt.notes
+        if (evt.type === 'error') last.content += `\n[出错了] ${evt.message}`
+        return [...rest, last]
       })
     })
-    console.log('[API]::[streamChatToWorkspace]::', res, err)
+
+    await streamChatToWorkspace(workspace.id, content, (e: any) => {
+      feed(e.event.target.responseText)
+    })
     setLoading(false)
   }
 

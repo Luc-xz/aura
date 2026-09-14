@@ -495,18 +495,18 @@ if (!stream) {
 
 ### 2.5 测试：模拟"先调工具、再回答"
 
-`MockLanguageModelV3` 的 `doGenerate` 传**数组** = 按调用次序依次返回。第一次返回 tool-call，SDK 会真的执行我们的 `execute`（查测试库），第二次返回文本：
+`MockLanguageModelV3` 的 `doGenerate` 配合 `mockValues` = 按调用次序依次返回（裸数组没有这个语义）。第一次返回 tool-call，SDK 会真的执行我们的 `execute`（查测试库），第二次返回文本：
 
 ```js
 // server/test/chat-tools.test.js
 import { vi, beforeAll, describe, expect, it } from 'vitest'
-import { MockLanguageModelV3 } from 'ai/test'
+import { MockLanguageModelV3, mockValues } from 'ai/test'
 
 vi.mock('../utils/model-factory.js', () => {
   return {
     createModelInstance: () =>
       new MockLanguageModelV3({
-        doGenerate: [
+        doGenerate: mockValues(
           {
             finishReason: 'tool-calls',
             usage: { inputTokens: 10, outputTokens: 5 },
@@ -522,7 +522,7 @@ vi.mock('../utils/model-factory.js', () => {
             usage: { inputTokens: 50, outputTokens: 20 },
             content: [{ type: 'text', text: '根据你的笔记《Redis 学习计划》……' }],
           },
-        ],
+        ),
       }),
   }
 })
@@ -776,7 +776,7 @@ item.references?.length ? (
 | `streamText({...同上})` → `result.fullStream` | `'ai'` | 流式；`fullStream` 吐 `text-delta` / `tool-call` / `tool-result` / `finish-step` 等分片 |
 | `result.textStream` | `'ai'` | 只吐正文文本的便捷流（本计划升级为 fullStream 后不再用） |
 | `stepCountIs(n)` | `'ai'` | 传给 `stopWhen`，限制工具循环最大步数 |
-| `MockLanguageModelV3` | `'ai/test'` | 测试假模型；`doGenerate` 传对象或**数组**（按次序返回） |
+| `MockLanguageModelV3` | `'ai/test'` | 测试假模型；`doGenerate` 传单个结果对象，或用 `mockValues(a, b, …)` 包装实现"第 N 次调用返回第 N 个"（**裸数组不是按序出队**，实测首次调用会拿到末位元素） |
 | `simulateReadableStream` | `'ai/test'` | 模拟 doStream 的分片流（测流式用，同思路） |
 
 mock 工具调用时，content 里的 tool-call 分片长这样（v6 字段名是 `input`，JSON 字符串）：

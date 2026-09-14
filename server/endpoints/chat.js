@@ -130,17 +130,35 @@ function chatEndpoints(apiRouter) {
       res.setHeader('Cache-Control', 'no-cache')
       res.setHeader('Connection', 'keep-alive')
 
+      const sendEvent = (payload) => res.write(`data: ${JSON.stringify(payload)}\n\n`)
+
       const result = streamText({
         model,
-        prompt: messages,
+        messages,
+        system: NOTE_TOOLS_SYSTEM_PROMPT,
+        tools,
+        stopWhen: stepCountIs(TOOL_MAX_STEPS),
       });
-      let data = ''
-      for await (const textPart of result.textStream) {
-        data += textPart
-        res.write(textPart)
+      let full = ''
+
+      try {
+        for await (const part of result.fullStream) {
+          if (part.type === 'text-delta') {
+            full += part.text
+            sendEvent({ type: 'text', value: part.text })
+          } else if (part.type === 'tool-call') {
+            if (part.toolName === 'search_notes') sendEvent({ type: 'status', value: '正在检索笔记…' })
+            if (part.toolName === 'get_note_detail') sendEvent({ type: 'status', value: '正在读取笔记…' })
+          }
+        }
+        sendEvent({ type: 'references', notes: references })
+        sendEvent({ type: 'done' })
+        await Chat.create({ workspaceId, content: full, proposer: 'assistant' })
+      } catch (err) {
+        sendEvent({ type: 'error', message: err.message })
+      } finally {
+        res.end()
       }
-      await Chat.create({ workspaceId, content: data, proposer: 'assistant' })
-      res.end()
     }))
 }
 
