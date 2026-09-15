@@ -8,9 +8,12 @@ import rateLimit from '../middlewares/rate-limit.js'
 import { authMiddleware } from '../middlewares/auth.js'
 import { requireOwnership } from '../middlewares/rbac.js'
 import { createModelInstance } from '../utils/model-factory.js'
-import { generateText, streamText } from 'ai'
+import { generateText, streamText, stepCountIs } from 'ai'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound } from '../utils/appError.js'
+import { buildNoteTools, NOTE_TOOLS_SYSTEM_PROMPT } from '../tool/index.js'
+
+const TOOL_MAX_STEPS = 5
 
 const router = express.Router()
 
@@ -68,7 +71,7 @@ function chatEndpoints(apiRouter) {
 
       await Chat.create({
         workspaceId,
-        modelId: modelConfig.modelId,
+        modelId: modelConfig.id,
         content,
         proposer: 'user'
       })
@@ -97,14 +100,26 @@ function chatEndpoints(apiRouter) {
 
       const model = createModelInstance(modelConfig)
 
+      const references = []
+      const tools = buildNoteTools(req.user, {
+        onNoteFound: (ref) => {
+          if (!references.some((r) => r.id === ref.id)) {
+            references.push(ref)
+          }
+        },
+      })
+
       if (!stream) {
         const result = await generateText({
           model,
-          prompt: messages,
+          messages,
+          system: NOTE_TOOLS_SYSTEM_PROMPT,
+          tools,
+          stopWhen: stepCountIs(TOOL_MAX_STEPS),
         });
         await Chat.create({ workspaceId, content: result.text, proposer: 'assistant' })
         res.status(200).json({
-          data: result.text,
+          data: { content: result.text, references },
           code: 200,
           message: 'success'
         })
@@ -115,17 +130,35 @@ function chatEndpoints(apiRouter) {
       res.setHeader('Cache-Control', 'no-cache')
       res.setHeader('Connection', 'keep-alive')
 
+      const sendEvent = (payload) => res.write(`data: ${JSON.stringify(payload)}\n\n`)
+
       const result = streamText({
         model,
-        prompt: messages,
+        messages,
+        system: NOTE_TOOLS_SYSTEM_PROMPT,
+        tools,
+        stopWhen: stepCountIs(TOOL_MAX_STEPS),
       });
-      let data = ''
-      for await (const textPart of result.textStream) {
-        data += textPart
-        res.write(textPart)
+      let full = ''
+
+      try {
+        for await (const part of result.fullStream) {
+          if (part.type === 'text-delta') {
+            full += part.text
+            sendEvent({ type: 'text', value: part.text })
+          } else if (part.type === 'tool-call') {
+            if (part.toolName === 'search_notes') sendEvent({ type: 'status', value: '正在检索笔记…' })
+            if (part.toolName === 'get_note_detail') sendEvent({ type: 'status', value: '正在读取笔记…' })
+          }
+        }
+        sendEvent({ type: 'references', notes: references })
+        sendEvent({ type: 'done' })
+        await Chat.create({ workspaceId, content: full, proposer: 'assistant' })
+      } catch (err) {
+        sendEvent({ type: 'error', message: err.message })
+      } finally {
+        res.end()
       }
-      await Chat.create({ workspaceId, content: data, proposer: 'assistant' })
-      res.end()
     }))
 }
 

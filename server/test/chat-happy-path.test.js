@@ -52,7 +52,9 @@ describe('对话 happy path', () => {
       .send({ content: 'hi', stream: false })
 
     expect(chatRes.status).toBe(200)
-    expect(chatRes.body.data).toBe('mocked reply')
+    // 阶段 2 起响应升级为 { content, references }
+    expect(chatRes.body.data.content).toBe('mocked reply')
+    expect(chatRes.body.data.references).toEqual([])
 
     const listRes = await request
       .get(`/api/chat/list/${workspaceId}`)
