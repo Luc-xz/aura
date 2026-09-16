@@ -1,6 +1,6 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
-import { formatResponse } from '../../shared/utils/formatter.js'
+import { formatResponse, toSnakeCase } from '../../shared/utils/formatter.js'
 
 export default class Note {
   static filterFields(note) {
@@ -32,6 +32,11 @@ export default class Note {
     if (filters.keyword) {
       baseSql += ' AND (title LIKE ? OR description LIKE ?)'
       params.push(`%${filters.keyword}%`, `%${filters.keyword}%`)
+    }
+
+    if (filters.workspaceId) {
+      baseSql += ' AND workspace_id = ?'
+      params.push(filters.workspaceId)
     }
 
     if (pagination) {
@@ -105,12 +110,17 @@ export default class Note {
     return rows[0] || null
   }
 
-  static async create(user, { title, content, description, keywords } = {}) {
+  static async create(user, { title, content, description, keywords, workspaceId, sourceChatId } = {}) {
     if (!user?.id) {
       throw new Error('userId is required')
     }
-    const baseSql = 'INSERT INTO note (user_id, title, content, description, keywords) VALUES (?, ?, ?, ?, ?)'
-    const [result] = await db.query(baseSql, [user.id, title, content, description, keywords ? JSON.stringify(keywords) : null])
+    const baseSql = `INSERT INTO note
+      (user_id, workspace_id, source_chat_id, title, content, description, keywords)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`
+    const [result] = await db.query(baseSql, [
+      user.id, workspaceId ?? null, sourceChatId ?? null,
+      title, content, description, keywords ? JSON.stringify(keywords) : null,
+    ])
     return result.insertId
   }
 
@@ -123,9 +133,9 @@ export default class Note {
     let sql = ''
     let params = []
     for (const key in payload) {
-      if (['title', 'content', 'description', 'keywords'].includes(key) && payload[key]) {
+      if (['title', 'content', 'description', 'keywords', 'workspaceId', 'sourceChatId'].includes(key) && payload[key] !== undefined) {
         const value = key === 'keywords' ? JSON.stringify(payload[key]) : payload[key]
-        sql += `${key} = ?, `
+        sql += `${toSnakeCase(key)} = ?, `
         params.push(value)
       }
     }
