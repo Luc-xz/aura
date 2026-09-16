@@ -9,7 +9,6 @@ import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
 import { beforeAll, afterAll } from 'vitest'
 import mysql from 'mysql2/promise'
-import yaml from 'js-yaml'
 
 // 确保测试环境
 process.env.NODE_ENV = 'test'
@@ -22,11 +21,9 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') })
 
 // 在加载 sql/index.js 之前，先连接 MySQL 并确保测试数据库 (aura_test) 存在
 try {
-  const configPath = path.resolve(__dirname, '../config.yaml')
-  const config = yaml.load(fs.readFileSync(configPath, 'utf8'))
   const initConn = await mysql.createConnection({
-    host: config.db.host,
-    port: config.db.port,
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: Number(process.env.DB_PORT || 3306),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
   })

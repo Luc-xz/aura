@@ -51,15 +51,20 @@ export async function cacheDel(...keys) {
 
 export async function scanDel(pattern) {
   if (!redis) return
-  const prefix = redis.options?.keyPrefix || ''
-  let cursor = '0'
-  do {
-    const [next, keys] = await redis.scan(cursor, 'MATCH', prefix + pattern, 'COUNT', 100)
-    cursor = next
-    if (keys.length) {
-      await redis.del(...keys.map(k => (k.startsWith(prefix) ? k.slice(prefix.length) : k)))
-    }
-  } while (cursor !== '0')
+  try {
+    const prefix = redis.options?.keyPrefix || ''
+    let cursor = '0'
+    do {
+      const [next, keys] = await redis.scan(cursor, 'MATCH', prefix + pattern, 'COUNT', 100)
+      cursor = next
+      if (keys.length) {
+        await redis.del(...keys.map(k => (k.startsWith(prefix) ? k.slice(prefix.length) : k)))
+      }
+    } while (cursor !== '0')
+  } catch (err) {
+    // 失效失败只意味着缓存多活到 TTL，不应拖垮触发失效的写请求
+    logger.warn(`[redis] SCAN/DEL ${pattern} failed: ${err.message}`)
+  }
 }
 
 export default redis
