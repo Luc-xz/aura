@@ -17,7 +17,7 @@ export default class Chat {
       const options = {
         page: pagination.page,
         pageSize: pagination.pageSize,
-        allowedSortFields: ['proposer', 'created_at', 'updated_at'],
+        allowedSortFields: ['id', 'proposer', 'created_at', 'updated_at'],
         orderBy: sort.orderBy || 'created_at',
         orderDir: sort.orderDir || 'DESC',
       }

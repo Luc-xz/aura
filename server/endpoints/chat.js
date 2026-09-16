@@ -69,7 +69,7 @@ function chatEndpoints(apiRouter) {
         throw NotFound('model config not found')
       }
 
-      await Chat.create({
+      const sourceChatId = await Chat.create({
         workspaceId,
         modelId: modelConfig.id,
         content,
@@ -86,12 +86,14 @@ function chatEndpoints(apiRouter) {
             pageSize: 20
           },
           sort: {
-            orderBy: 'created_at',
+            // 时间线以自增 id 为准：created_at 只有秒级精度，同一秒插入的消息
+            // 按 created_at 排序是并列键，顺序不确定，reverse 后会时序错乱
+            orderBy: 'id',
             orderDir: 'desc'
           }
         })
 
-      const messages = [...rows, { workspaceId, content, proposer: 'user' }].map(item => {
+      const messages = rows.reverse().map(item => {
         return {
           role: item.proposer,
           content: item.content
