@@ -2,8 +2,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import Note from '../../models/note.js'
 
-export function searchNotesTool(user, hooks = {}) {
-  const { onNoteFound } = hooks
+export function searchNotesTool(user, onNoteFound) {
   return tool({
     description:
       '在当前用户的笔记库中按关键词检索笔记，返回匹配的笔记摘要列表（标题、描述、关键词、更新时间）。' +

@@ -11,6 +11,7 @@ import {
   SyncOutlined,
   CopyOutlined,
   BookOutlined,
+  FileDoneOutlined,
   CloudUploadOutlined,
   LinkOutlined,
 } from '@ant-design/icons'
@@ -236,8 +237,8 @@ function ChatPanel({ workspace }) {
   }
 
   const openSave = (e, item) => {
-    const bubbleEl = (e.currentTarget as HTMLElement).closest('.ant-bubble-content')
-    const selected = bubbleEl ? getSelectionInside(bubbleEl) : ''
+    const bubbleEl = (e.currentTarget as HTMLElement).closest('.ant-bubble')?.querySelector('.ant-bubble-content')
+    const selected = bubbleEl ? getSelectionInside(bubbleEl as HTMLElement) : ''
     const content = selected || item.content
     setSaveTarget({ content, chatId: item.id })
     saveForm.setFieldsValue({ title: deriveTitle(content), content })
@@ -261,7 +262,7 @@ function ChatPanel({ workspace }) {
   }
 
   const handleCopy = (content) => {
-    navigator.clipboard.writeText()
+    navigator.clipboard.writeText(content)
     message.success('已复制')
   }
 
@@ -300,13 +301,15 @@ function ChatPanel({ workspace }) {
                     icon={<CopyOutlined />}
                     onClick={() => handleCopy(item.content)}
                   />
-                  <Button
-                    color="default"
-                    variant="text"
-                    size="small"
-                    icon={<BookOutlined />}
-                    onClick={(e) => openSave(e, item)}
-                  />
+                  {item.id ? (
+                    <Button
+                      color="default"
+                      variant="text"
+                      size="small"
+                      icon={<BookOutlined />}
+                      onClick={(e) => openSave(e, item)}
+                    />
+                  ) : null}
                 </Space>
                 {item.references?.length ? (
                   <Space
@@ -320,6 +323,22 @@ function ChatPanel({ workspace }) {
                         className="cursor-pointer"
                         onClick={() => toNote(ref.id)}>
                         {ref.title}
+                      </Tag>
+                    ))}
+                  </Space>
+                ) : null}
+                {item.savedNotes?.length ? (
+                  <Space
+                    wrap
+                    size={4}>
+                    {item.savedNotes.map((n) => (
+                      <Tag
+                        key={n.id}
+                        icon={<FileDoneOutlined />}
+                        color="green"
+                        className="cursor-pointer"
+                        onClick={() => toNote(n.id)}>
+                        已保存：{n.title}
                       </Tag>
                     ))}
                   </Space>
@@ -367,6 +386,7 @@ function ChatPanel({ workspace }) {
         if (evt.type === 'references') last.references = evt.notes
         if (evt.type === 'error') last.content += `\n[出错了] ${evt.message}`
         if (evt.type === 'done' && evt.chatId) last.id = evt.chatId
+        if (evt.type === 'note-saved') last.savedNotes = [...(last.savedNotes || []), evt.note]
         return [...rest, last]
       })
     })
@@ -481,7 +501,8 @@ function ChatPanel({ workspace }) {
           </Form.Item>
           <Form.Item
             name="description"
-            label="描述">
+            label="描述"
+            rules={[{ max: 255, message: '不超过 255 字' }]}>
             <Input.TextArea
               rows={2}
               maxLength={255}

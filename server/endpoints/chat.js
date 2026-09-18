@@ -1,5 +1,4 @@
 import express from 'express'
-import sql from '../sql/index.js'
 import Chat from '../models/chat.js'
 import ModelConfig from '../models/model-config.js'
 import Workspace from '../models/workspace.js'
@@ -57,8 +56,6 @@ function chatEndpoints(apiRouter) {
         throw BadRequest('content cannot be empty')
       }
 
-      // 模型固定取工作区挂载的配置（requireOwnership 已确保工作区存在且属于当前用户，
-      // 配置归属在挂载时已校验，见 workspace PUT），请求体传入的任何 modelId 一律忽略
       const workspace = await Workspace.findById(workspaceId)
       if (!workspace.modelId) {
         throw BadRequest('no model configured for this workspace, please set a model first')
@@ -86,8 +83,6 @@ function chatEndpoints(apiRouter) {
             pageSize: 20
           },
           sort: {
-            // 时间线以自增 id 为准：created_at 只有秒级精度，同一秒插入的消息
-            // 按 created_at 排序是并列键，顺序不确定，reverse 后会时序错乱
             orderBy: 'id',
             orderDir: 'desc'
           }
@@ -101,14 +96,22 @@ function chatEndpoints(apiRouter) {
       })
 
       const model = createModelInstance(modelConfig)
+      const sendEvent = (payload) => res.write(`data: ${JSON.stringify(payload)}\n\n`)
 
       const references = []
+      const savedNotes = []
       const tools = buildNoteTools(req.user, {
+        workspaceId: Number(workspaceId),
+        sourceChatId,
         onNoteFound: (ref) => {
           if (!references.some((r) => r.id === ref.id)) {
             references.push(ref)
           }
         },
+        onNoteSaved: (note) => {
+          if (!savedNotes.some((n) => n.id === note.id)) savedNotes.push(note)
+          if (stream) sendEvent({ type: 'note-saved', note })
+        }
       })
 
       if (!stream) {
@@ -124,6 +127,7 @@ function chatEndpoints(apiRouter) {
           data: {
             content: result.text,
             references,
+            savedNotes,
             chatId
           },
           code: 200,
@@ -136,7 +140,7 @@ function chatEndpoints(apiRouter) {
       res.setHeader('Cache-Control', 'no-cache')
       res.setHeader('Connection', 'keep-alive')
 
-      const sendEvent = (payload) => res.write(`data: ${JSON.stringify(payload)}\n\n`)
+
 
       const result = streamText({
         model,
@@ -155,6 +159,7 @@ function chatEndpoints(apiRouter) {
           } else if (part.type === 'tool-call') {
             if (part.toolName === 'search_notes') sendEvent({ type: 'status', value: '正在检索笔记…' })
             if (part.toolName === 'get_note_detail') sendEvent({ type: 'status', value: '正在读取笔记…' })
+            if (part.toolName === 'save_note') sendEvent({ type: 'status', value: '正在保存笔记…' })
           }
         }
         const chatId = await Chat.create({ workspaceId, content: full, proposer: 'assistant' })

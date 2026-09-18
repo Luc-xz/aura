@@ -35,7 +35,38 @@ vi.mock('../utils/model-factory.js', () => ({
       },
       textStop,
     )
-    return new MockLanguageModelV3({ doGenerate: mockState.mode === 'search' ? searchThenText : textStop })
+    const saveThenText = mockValues(
+      {
+        finishReason: 'tool-calls',
+        usage: { inputTokens: 10, outputTokens: 5 },
+        content: [{
+          type: 'tool-call',
+          toolCallId: 'call-save-1',
+          toolName: 'save_note',
+          input: JSON.stringify({ title: '缓存结论', content: 'cache-aside 适合读多写少场景' }),
+        }],
+      },
+      textStop,
+    )
+    const saveLongThenText = mockValues(
+      {
+        finishReason: 'tool-calls',
+        usage: { inputTokens: 10, outputTokens: 5 },
+        content: [{
+          type: 'tool-call',
+          toolCallId: 'call-save-long',
+          toolName: 'save_note',
+          input: JSON.stringify({ title: 'T'.repeat(80), content: '超长标题也应落库' }),
+        }],
+      },
+      textStop,
+    )
+    const doGenerate =
+      mockState.mode === 'search' ? searchThenText
+      : mockState.mode === 'save' ? saveThenText
+      : mockState.mode === 'save-long' ? saveLongThenText
+      : textStop
+    return new MockLanguageModelV3({ doGenerate })
   },
 }))
 
@@ -107,6 +138,50 @@ describe('工具循环（HTTP + mock 模型）', () => {
 
     expect(res.status).toBe(200)
     expect(res.body.data.references).toEqual([])
+    expect(res.body.data.savedNotes).toEqual([])
+  })
+
+  it('模型调 save_note 后回答：笔记落库且带来源字段，savedNotes 回传', async () => {
+    mockState.mode = 'save'
+    const user = await registerAndLogin()
+    const workspaceId = await setupChatWorkspace(user)
+
+    const res = await request
+      .post(`/api/chat/${workspaceId}`)
+      .set(authHeader(user.token))
+      .send({ content: '把这个结论记成笔记', stream: false })
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.savedNotes).toEqual([
+      expect.objectContaining({ title: '缓存结论' }),
+    ])
+
+    const page = await request.get('/api/note/page').set(authHeader(user.token))
+    const saved = page.body.data.rows.find((n) => n.title === '缓存结论')
+    expect(saved).toBeTruthy()
+    expect(saved.workspaceId).toBe(workspaceId)
+
+    const listRes = await request.get(`/api/chat/list/${workspaceId}`).set(authHeader(user.token))
+    const userMsg = listRes.body.data.find((row) => row.proposer === 'user')
+    expect(saved.sourceChatId).toBe(userMsg.id)
+    expect(listRes.body.data.map((row) => row.proposer)).toContain('assistant')
+  })
+
+  it('超长标题不会把对话打成 500，落库标题不超过 50 字', async () => {
+    mockState.mode = 'save-long'
+    const user = await registerAndLogin()
+    const workspaceId = await setupChatWorkspace(user)
+
+    const res = await request
+      .post(`/api/chat/${workspaceId}`)
+      .set(authHeader(user.token))
+      .send({ content: '记下来', stream: false })
+
+    expect(res.status).toBe(200)
+    const page = await request.get('/api/note/page').set(authHeader(user.token))
+    for (const note of page.body.data.rows) {
+      expect(note.title.length).toBeLessThanOrEqual(50)
+    }
   })
 })
 
@@ -186,5 +261,42 @@ describe('工具直测（绕过 HTTP，真实入口就是被 SDK 调用的 execu
 
     // 严格断言整个返回值：除了 found: false 不能带出任何内容
     expect(result).toEqual({ found: false })
+  })
+
+  it('save_note：user 来自闭包，workspaceId/sourceChatId 由服务端注入', async () => {
+    const alice = await registerAndLogin()
+    const bob = await registerAndLogin()
+    const { buildNoteTools } = await import('../tool/index.js')
+    const tools = buildNoteTools({ id: alice.id }, { workspaceId: 1, sourceChatId: 2 })
+
+    const result = await tools.save_note.execute(
+      { title: '闭包归属', content: 'alice only' },
+      { toolCallId: 't5', messages: [] },
+    )
+    expect(result).toMatchObject({ saved: true, title: '闭包归属' })
+
+    const alicePage = await request.get('/api/note/page').set(authHeader(alice.token))
+    const saved = alicePage.body.data.rows.find((n) => n.id === result.id)
+    expect(saved.workspaceId).toBe(1)
+    expect(saved.sourceChatId).toBe(2)
+
+    const bobPage = await request.get('/api/note/page').set(authHeader(bob.token))
+    expect(bobPage.body.data.rows.find((n) => n.id === result.id)).toBeUndefined()
+  })
+
+  it('save_note：超长标题在 execute 内截断到 50 字', async () => {
+    const user = await registerAndLogin()
+    const { buildNoteTools } = await import('../tool/index.js')
+    const tools = buildNoteTools({ id: user.id })
+    const result = await tools.save_note.execute(
+      { title: 'T'.repeat(80), content: 'body' },
+      { toolCallId: 't6', messages: [] },
+    )
+    expect(result.saved).toBe(true)
+    expect(result.title).toHaveLength(50)
+
+    const page = await request.get('/api/note/page').set(authHeader(user.token))
+    const saved = page.body.data.rows.find((n) => n.id === result.id)
+    expect(saved.title).toHaveLength(50)
   })
 })

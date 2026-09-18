@@ -3,6 +3,7 @@
 -- Description:
 --   1. Add workspace_id: 项目归属（roadmap 任务 2.3 提前落列）
 --   2. Add source_chat_id: 来源消息追溯（roadmap 任务 1.2）
+USE `aura`;
 
 ALTER TABLE note
     ADD COLUMN workspace_id INT DEFAULT NULL AFTER user_id,

@@ -1,5 +1,4 @@
 import express from 'express'
-import sql from '../sql/index.js'
 import ModelConfig from '../models/model-config.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'

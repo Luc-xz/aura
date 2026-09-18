@@ -1,5 +1,4 @@
 import express from 'express'
-import sql from '../sql/index.js'
 import User from '../models/user.js'
 import Role from '../models/role.js'
 import Rbac from '../models/rbac.js'

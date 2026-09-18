@@ -4,8 +4,7 @@ import Note from '../../models/note.js'
 
 const MAX_CHARS = 4000
 
-export function getNoteDetailTool(user, hooks = {}) {
-  const { onNoteFound } = hooks
+export function getNoteDetailTool(user, onNoteFound) {
   return tool({
     description:
       '按笔记 id 获取笔记全文。仅当 search_notes 返回的摘要不足以回答问题时才调用，不要对同一个 id 重复调用。',
