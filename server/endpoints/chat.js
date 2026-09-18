@@ -119,9 +119,13 @@ function chatEndpoints(apiRouter) {
           tools,
           stopWhen: stepCountIs(TOOL_MAX_STEPS),
         });
-        await Chat.create({ workspaceId, content: result.text, proposer: 'assistant' })
+        const chatId = await Chat.create({ workspaceId, content: result.text, proposer: 'assistant' })
         res.status(200).json({
-          data: { content: result.text, references },
+          data: {
+            content: result.text,
+            references,
+            chatId
+          },
           code: 200,
           message: 'success'
         })
@@ -153,9 +157,9 @@ function chatEndpoints(apiRouter) {
             if (part.toolName === 'get_note_detail') sendEvent({ type: 'status', value: '正在读取笔记…' })
           }
         }
+        const chatId = await Chat.create({ workspaceId, content: full, proposer: 'assistant' })
         sendEvent({ type: 'references', notes: references })
-        sendEvent({ type: 'done' })
-        await Chat.create({ workspaceId, content: full, proposer: 'assistant' })
+        sendEvent({ type: 'done', chatId })
       } catch (err) {
         sendEvent({ type: 'error', message: err.message })
       } finally {

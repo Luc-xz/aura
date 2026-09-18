@@ -10,6 +10,7 @@ import {
   MehOutlined,
   SyncOutlined,
   CopyOutlined,
+  BookOutlined,
   CloudUploadOutlined,
   LinkOutlined,
 } from '@ant-design/icons'
@@ -17,6 +18,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { getWorkspaceList, createWorkspace, updateWorkspace, deleteWorkspace } from '@/api/workspace'
 import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
+import { createNote } from '@/api/note'
 import { getModelConfigList } from '@/api/setting'
 import { useWorkspaceStore } from '@/store'
 import { createSSEParser } from '@/utils/sse'
@@ -53,6 +55,7 @@ function WorkspacePanel({ list, modelList }) {
   const [workspaceList, setWorkspaceList] = useState(list)
   const [workspaceVisible, setWorkspaceVisible] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditWorkspace, setIsEditWorkspace] = useState(false)
   const [form] = Form.useForm()
   const workspaceRef = useRef(null)
 
@@ -71,12 +74,13 @@ function WorkspacePanel({ list, modelList }) {
         ],
         onClick: ({ key }) => {
           if (key === 'edit') {
+            setIsEditWorkspace(true)
+            setIsModalOpen(true)
             form.setFieldsValue({
               id: workspace.id,
               title: workspace.title,
               modelId: workspace.modelId,
             })
-            setIsModalOpen(true)
             return
           }
           if (key === 'delete') {
@@ -152,7 +156,11 @@ function WorkspacePanel({ list, modelList }) {
         <div className="overflow-hidden p-4 w-55 h-full">
           <div className="title-ter mb-8">工作区</div>
           <Button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              form.resetFields()
+              setIsEditWorkspace(false)
+              setIsModalOpen(true)
+            }}
             className="w-full mb-2"
             color="default"
             variant="outlined"
@@ -172,11 +180,15 @@ function WorkspacePanel({ list, modelList }) {
         {workspaceVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
       </div>
       <Modal
-        title={`${form.getFieldValue('id') ? '编辑' : '新建'}对话`}
+        title={`${isEditWorkspace ? '编辑' : '新建'}对话`}
         closable={true}
+        forceRender
         open={isModalOpen}
         onOk={handleEditWorkspace}
-        onCancel={() => setIsModalOpen(false)}>
+        onCancel={() => {
+          setIsModalOpen(false)
+          form.resetFields()
+        }}>
         <Form form={form}>
           <Form.Item
             name="title"
@@ -205,8 +217,55 @@ function ChatPanel({ workspace }) {
   const [conversation, setConversation] = useState<any[]>([])
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
+  const [saveTarget, setSaveTarget] = useState(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const [saveForm] = Form.useForm()
+  const { message } = App.useApp()
+
+  const deriveTitle = (text: string) => {
+    const firstLine = text.split('\n').find((l) => l.trim()) ?? '对话笔记'
+    return firstLine.replace(/^#+\s*|^[-*]\s*|^>\s*/g, '').slice(0, 50)
+  }
+
+  const getSelectionInside = (bubbleEl: HTMLElement) => {
+    const sel = window.getSelection()
+    if (!sel || sel.isCollapsed) return ''
+    const range = sel.getRangeAt(0)
+    return bubbleEl.contains(range.commonAncestorContainer) ? sel.toString() : ''
+  }
+
+  const openSave = (e, item) => {
+    const bubbleEl = (e.currentTarget as HTMLElement).closest('.ant-bubble-content')
+    const selected = bubbleEl ? getSelectionInside(bubbleEl) : ''
+    const content = selected || item.content
+    setSaveTarget({ content, chatId: item.id })
+    saveForm.setFieldsValue({ title: deriveTitle(content), content })
+  }
+
+  const handleSave = async () => {
+    await saveForm.validateFields()
+    const values = saveForm.getFieldsValue()
+    const [err, res] = await createNote({
+      ...values,
+      workspaceId: workspace.id,
+      sourceChatId: saveTarget.chatId,
+    })
+    if (res) {
+      message.success('已保存为笔记')
+      setSaveTarget(null)
+      saveForm.resetFields()
+    } else {
+      message.error('保存失败：' + err.message)
+    }
+  }
+
+  const handleCopy = (content) => {
+    navigator.clipboard.writeText()
+    message.success('已复制')
+  }
+
+  const toNote = (id) => navigate(`/note/edit/${id}`)
 
   const chatBubbleList = workspace
     ? conversation?.map?.((item, index) => (
@@ -215,11 +274,7 @@ function ChatPanel({ workspace }) {
           content={
             <div className="whitespace-pre-wrap">
               {/* 工具调用期间正文还没来，用 status 占位（正在检索笔记…）；正文到了就只显示正文 */}
-              {item.proposer !== 'user' && item.status && !item.content ? (
-                <span className="text-sm text-gray-400">{item.status}</span>
-              ) : (
-                item.content
-              )}
+              {item.proposer !== 'user' && item.status && !item.content ? <span className="text-sm text-gray-400">{item.status}</span> : item.content}
             </div>
           }
           typing={item.proposer !== 'user' && !item.id ? true : false}
@@ -228,7 +283,9 @@ function ChatPanel({ workspace }) {
           key={index}
           footer={
             item.proposer === 'user' ? null : (
-              <Space direction="vertical" size={4}>
+              <Space
+                direction="vertical"
+                size={4}>
                 <Space>
                   <Button
                     color="default"
@@ -241,17 +298,27 @@ function ChatPanel({ workspace }) {
                     variant="text"
                     size="small"
                     icon={<CopyOutlined />}
+                    onClick={() => handleCopy(item.content)}
+                  />
+                  <Button
+                    color="default"
+                    variant="text"
+                    size="small"
+                    icon={<BookOutlined />}
+                    onClick={(e) => openSave(e, item)}
                   />
                 </Space>
                 {item.references?.length ? (
-                  <Space wrap size={4}>
+                  <Space
+                    wrap
+                    size={4}>
                     {item.references.map((ref) => (
                       <Tag
                         key={ref.id}
                         icon={<LinkOutlined />}
                         color="blue"
                         className="cursor-pointer"
-                        onClick={() => navigate(`/note/edit/${ref.id}`)}>
+                        onClick={() => toNote(ref.id)}>
                         {ref.title}
                       </Tag>
                     ))}
@@ -299,6 +366,7 @@ function ChatPanel({ workspace }) {
         if (evt.type === 'status') last.status = evt.value
         if (evt.type === 'references') last.references = evt.notes
         if (evt.type === 'error') last.content += `\n[出错了] ${evt.message}`
+        if (evt.type === 'done' && evt.chatId) last.id = evt.chatId
         return [...rest, last]
       })
     })
@@ -395,6 +463,39 @@ function ChatPanel({ workspace }) {
           />
         </div>
       </div>
+      <Modal
+        title="保存为笔记"
+        open={!!saveTarget}
+        forceRender
+        onCancel={() => {
+          setSaveTarget(null)
+          saveForm.resetFields()
+        }}
+        onOk={handleSave}>
+        <Form form={saveForm}>
+          <Form.Item
+            name="title"
+            label="标题"
+            rules={[{ required: true }, { max: 50, message: '不超过 50 字' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="描述">
+            <Input.TextArea
+              rows={2}
+              maxLength={255}
+            />
+          </Form.Item>
+          <Form.Item
+            name="content"
+            label="内容"
+            rules={[{ required: true }]}
+            initialValue={saveTarget?.content}>
+            <Input.TextArea autoSize={{ minRows: 10 }} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   )
 }
