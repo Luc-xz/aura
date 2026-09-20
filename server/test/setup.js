@@ -52,6 +52,22 @@ beforeEach(async () => {
 
 beforeAll(async () => {
   try {
+    // 先按 information_schema 清空所有表，再执行 init.sql。
+    // 不能只依赖 CREATE TABLE IF NOT EXISTS：它对已存在的表是空操作，
+    // init.sql 新增的列/索引到不了上一轮遗留的旧表，跑起来全是
+    // "Unknown column 'xxx'" 且看不出是 schema 陈旧（afterAll 只 TRUNCATE 不 DROP）
+    const [existing] = await pool.execute(
+      'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()'
+    )
+    if (existing.length) {
+      await pool.execute('SET FOREIGN_KEY_CHECKS = 0')
+      for (const { TABLE_NAME } of existing) {
+        await pool.execute(`DROP TABLE IF EXISTS \`${TABLE_NAME}\``)
+      }
+      await pool.execute('SET FOREIGN_KEY_CHECKS = 1')
+      console.log(`♻️  dropped ${existing.length} stale test tables`)
+    }
+
     // 读取并执行 init.sql 初始化表结构
     const initSql = fs.readFileSync(
       path.resolve(__dirname, '../sql/init.sql'),
