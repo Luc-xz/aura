@@ -1,0 +1,105 @@
+<!--# title: 11 模型配置 · 方案B -->
+<!--# desc: 左设置导航 + 模型列表与默认模型设置 -->
+<!--# body: data-setnav="model" -->
+<section class="screen">
+  <!-- @include setnav-b.html -->
+
+  <main class="main">
+    <div class="page-head">
+      <div class="page-head__text">
+        <span class="t-title">模型配置</span>
+        <span class="t-body t-muted">配置可用模型、密钥与默认调用策略</span>
+      </div>
+      <button class="btn btn--primary">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+          <path d="M7 1.5v11M1.5 7h11" />
+        </svg>
+        新增模型
+      </button>
+    </div>
+
+    <div class="spec-card" style="background: var(--primary-bg); border-color: var(--primary-line)">
+      <div class="row-between">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span class="t-body w-semi">当前默认模型：GPT-4o</span>
+          <span class="t-sm" style="color: #3d6ba8">新建会话将默认使用该模型，可在会话内临时切换</span>
+        </div>
+        <button class="btn btn--ghost btn--sm">更换默认</button>
+      </div>
+    </div>
+
+    <div class="table">
+      <div class="table__head">
+        <span style="width: 260px">模型</span>
+        <span style="width: 160px">供应商</span>
+        <span style="width: 120px">状态</span>
+        <span class="cell-grow">用途</span>
+        <span style="width: 140px">操作</span>
+      </div>
+
+      <div class="table__row">
+        <div class="cell-user">
+          <div class="cell-avatar">G</div>
+          <div style="display: flex; flex-direction: column">
+            <span class="w-semi">GPT-4o</span>
+            <span class="t-xs t-placeholder">gpt-4o-2024-11</span>
+          </div>
+        </div>
+        <span style="width: 160px" class="t-muted">OpenAI</span>
+        <span style="width: 120px"><span class="pill pill--sm pill--active">已启用</span></span>
+        <span class="cell-grow t-muted">默认 · 项目推进</span>
+        <span style="width: 140px; display: flex; gap: 12px">
+          <span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">停用</span>
+        </span>
+      </div>
+
+      <div class="table__row">
+        <div class="cell-user">
+          <div class="cell-avatar" style="background: #f3eefe; color: #7a5af8">C</div>
+          <div style="display: flex; flex-direction: column">
+            <span class="w-semi">Claude 3.5 Sonnet</span>
+            <span class="t-xs t-placeholder">claude-3-5-sonnet</span>
+          </div>
+        </div>
+        <span style="width: 160px" class="t-muted">Anthropic</span>
+        <span style="width: 120px"><span class="pill pill--sm pill--active">已启用</span></span>
+        <span class="cell-grow t-muted">长文本 · 笔记整理</span>
+        <span style="width: 140px; display: flex; gap: 12px">
+          <span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">停用</span>
+        </span>
+      </div>
+
+      <div class="table__row">
+        <div class="cell-user">
+          <div class="cell-avatar" style="background: #e8f3ee; color: #2f7d5c">D</div>
+          <div style="display: flex; flex-direction: column">
+            <span class="w-semi">DeepSeek-V3</span>
+            <span class="t-xs t-placeholder">deepseek-chat</span>
+          </div>
+        </div>
+        <span style="width: 160px" class="t-muted">DeepSeek</span>
+        <span style="width: 120px"><span class="pill pill--sm pill--active">已启用</span></span>
+        <span class="cell-grow t-muted">批量抽取 · 知识库</span>
+        <span style="width: 140px; display: flex; gap: 12px">
+          <span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">停用</span>
+        </span>
+      </div>
+
+      <div class="table__row">
+        <div class="cell-user">
+          <div class="cell-avatar" style="background: var(--neutral-bg); color: var(--muted)">m</div>
+          <div style="display: flex; flex-direction: column">
+            <span class="w-semi t-muted">GPT-4o mini</span>
+            <span class="t-xs t-placeholder">gpt-4o-mini</span>
+          </div>
+        </div>
+        <span style="width: 160px" class="t-muted">OpenAI</span>
+        <span style="width: 120px"><span class="pill pill--sm pill--archived">已停用</span></span>
+        <span class="cell-grow t-muted">轻量任务</span>
+        <span style="width: 140px; display: flex; gap: 12px">
+          <span class="cell-link">编辑</span><span class="cell-link">启用</span>
+        </span>
+      </div>
+    </div>
+  </main>
+</section>

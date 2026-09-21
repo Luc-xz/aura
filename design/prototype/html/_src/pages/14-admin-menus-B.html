@@ -1,0 +1,121 @@
+<!--# title: 14 菜单管理 · 方案B -->
+<!--# desc: 树形表格，含显示 / 隐藏状态 -->
+<!--# body: data-setnav="menus" -->
+<section class="screen">
+  <!-- @include setnav-b.html -->
+
+  <main class="main">
+    <div class="page-head">
+      <div class="page-head__text">
+        <span class="t-title">菜单管理</span>
+        <span class="t-body t-muted">维护侧边导航结构、层级顺序与可见性</span>
+      </div>
+      <button class="btn btn--primary">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+          <path d="M7 1.5v11M1.5 7h11" />
+        </svg>
+        新增菜单
+      </button>
+    </div>
+
+    <div class="filters" style="align-items: center">
+      <div class="search" style="width: 240px; height: 34px; background: var(--surface)">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="6" cy="6" r="4.2" /><path d="M9.2 9.2 12.5 12.5" stroke-linecap="round" />
+        </svg>
+        搜索菜单名称或路径
+      </div>
+      <div class="filter" style="height: 34px; color: var(--ink)">
+        全部状态
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+          <path d="M3.5 5.5 7 9l3.5-3.5" />
+        </svg>
+      </div>
+      <span class="t-primary w-medium" style="margin-left: auto">展开全部</span>
+    </div>
+
+    <div class="table">
+      <div class="table__head" style="height: 40px">
+        <span style="width: 320px">菜单名称</span>
+        <span style="width: 90px">类型</span>
+        <span class="cell-grow">路由路径</span>
+        <span style="width: 80px">可见</span>
+        <span style="width: 110px">操作</span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 320px" class="w-semi">工作台</span>
+        <span style="width: 90px" class="t-muted">模块</span>
+        <span class="cell-grow t-muted">/workspace</span>
+        <span style="width: 80px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 320px; display: flex; align-items: center; gap: 6px">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+            <path d="M5 3l4 4-4 4" />
+          </svg>
+          <span class="w-semi">笔记</span>
+        </span>
+        <span style="width: 90px" class="t-muted">模块</span>
+        <span class="cell-grow t-muted">/note</span>
+        <span style="width: 80px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 320px; padding-left: 26px" class="t-muted">↳ 笔记库</span>
+        <span style="width: 90px" class="t-muted">页面</span>
+        <span class="cell-grow t-muted">/note</span>
+        <span style="width: 80px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 320px; padding-left: 26px" class="t-muted">↳ 笔记编辑</span>
+        <span style="width: 90px" class="t-muted">页面</span>
+        <span class="cell-grow t-muted">/note/edit</span>
+        <span style="width: 80px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 320px; display: flex; align-items: center; gap: 6px">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+            <path d="M5 3l4 4-4 4" />
+          </svg>
+          <span class="w-semi">设置</span>
+        </span>
+        <span style="width: 90px" class="t-muted">模块</span>
+        <span class="cell-grow t-muted">/setting</span>
+        <span style="width: 80px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 320px; padding-left: 26px" class="t-muted">↳ 模型配置</span>
+        <span style="width: 90px" class="t-muted">页面</span>
+        <span class="cell-grow t-muted">/setting/model</span>
+        <span style="width: 80px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 320px; padding-left: 26px" class="t-muted">↳ 系统管理</span>
+        <span style="width: 90px" class="t-muted">分组</span>
+        <span class="cell-grow t-muted">/setting/admin</span>
+        <span style="width: 80px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 320px; padding-left: 26px" class="t-placeholder">↳ 审计日志</span>
+        <span style="width: 90px" class="t-muted">页面</span>
+        <span class="cell-grow t-muted">/setting/audit</span>
+        <span style="width: 80px" class="t-muted w-medium">隐藏</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link">启用</span></span>
+      </div>
+    </div>
+  </main>
+</section>

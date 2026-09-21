@@ -1,0 +1,80 @@
+<!--# title: 10 设置首页 · 方案B -->
+<!--# desc: 左设置导航 + 账户信息与偏好设置 -->
+<!--# body: data-setnav="account" -->
+<section class="screen">
+  <!-- @include setnav-b.html -->
+
+  <main class="main">
+    <div class="page-head">
+      <div class="page-head__text">
+        <span class="t-title">设置</span>
+        <span class="t-body t-muted">管理账户信息与工作台偏好</span>
+      </div>
+    </div>
+
+    <div class="spec-card">
+      <span class="spec-card__title">账户信息</span>
+      <div class="row-between">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <div style="width: 44px; height: 44px; border-radius: 22px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center">
+            <svg class="nav-icon" viewBox="0 0 18 18" style="width:20px;height:20px;stroke-width:1.6">
+              <circle cx="9" cy="6.4" r="3" /><path d="M3.6 15c.6-2.6 2.8-4 5.4-4s4.8 1.4 5.4 4" />
+            </svg>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <span class="t-body w-semi">yanqing</span>
+            <span class="t-sm t-muted">luc_xz@163.com</span>
+          </div>
+        </div>
+        <button class="btn btn--ghost btn--sm">修改资料</button>
+      </div>
+    </div>
+
+    <div class="spec-card">
+      <span class="spec-card__title">偏好设置</span>
+
+      <div class="row-between" style="padding: 4px 0">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span class="t-body">流式输出</span>
+          <span class="t-sm t-muted">模型回复逐字显示，便于中途打断</span>
+        </div>
+        <span class="switch switch--on"><span class="switch__knob"></span></span>
+      </div>
+
+      <div style="height: 1px; background: var(--line)"></div>
+
+      <div class="row-between" style="padding: 4px 0">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span class="t-body">结论自动存为草稿</span>
+          <span class="t-sm t-muted">判定为「结论」的回复自动生成笔记草稿</span>
+        </div>
+        <span class="switch switch--on"><span class="switch__knob"></span></span>
+      </div>
+
+      <div style="height: 1px; background: var(--line)"></div>
+
+      <div class="row-between" style="padding: 4px 0">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span class="t-body">新会话默认模型</span>
+          <span class="t-sm t-muted">可在单个会话中临时切换</span>
+        </div>
+        <div class="input input--filled" style="width: 160px; justify-content: space-between">
+          GPT-4o
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+            <path d="M3.5 5.5 7 9l3.5-3.5" />
+          </svg>
+        </div>
+      </div>
+
+      <div style="height: 1px; background: var(--line)"></div>
+
+      <div class="row-between" style="padding: 4px 0">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span class="t-body">界面密度</span>
+          <span class="t-sm t-muted">紧凑模式会缩小列表行高与内边距</span>
+        </div>
+        <span class="switch"><span class="switch__knob"></span></span>
+      </div>
+    </div>
+  </main>
+</section>

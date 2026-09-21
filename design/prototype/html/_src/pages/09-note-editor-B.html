@@ -1,0 +1,129 @@
+<!--# title: 09 笔记编辑 · 方案B -->
+<!--# desc: 三栏：左笔记列表（窄）/ 中编辑器 / 右属性与大纲 -->
+<!--# body: data-nav="notes" -->
+<section class="screen">
+  <aside class="col-left col-left--narrow">
+    <div class="brand">
+      <div class="brand__logo">
+        <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M9 2.5 3.2 15.5h11.6L9 2.5Z" fill="#fff" /></svg>
+      </div>
+      <span class="brand__name">Aura</span>
+    </div>
+
+    <div class="search" style="background: var(--surface-subtle)">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+        <circle cx="6" cy="6" r="4.2" /><path d="M9.2 9.2 12.5 12.5" stroke-linecap="round" />
+      </svg>
+      搜索笔记
+    </div>
+
+    <div class="project-list" style="gap: 6px">
+      <div class="session-item session-item--active">
+        <span class="session-item__title">信息架构采用三层结构</span>
+        <span class="session-item__meta">今天 14:32</span>
+      </div>
+      <div class="session-item">
+        <span class="session-item__title">主导航定为四项</span>
+        <span class="session-item__meta">昨天 18:10</span>
+      </div>
+      <div class="session-item">
+        <span class="session-item__title">组件命名与分层约定</span>
+        <span class="session-item__meta">3 天前</span>
+      </div>
+      <div class="session-item">
+        <span class="session-item__title">客服高频问题抽取规则</span>
+        <span class="session-item__meta">上周</span>
+      </div>
+      <div class="session-item">
+        <span class="session-item__title">A/B 实验埋点缺口说明</span>
+        <span class="session-item__meta">2 周前</span>
+      </div>
+    </div>
+
+    <div class="user-bar">
+      <div class="user-bar__avatar">
+        <svg class="nav-icon" viewBox="0 0 18 18" style="width:14px;height:14px;stroke-width:1.6">
+          <circle cx="9" cy="6.4" r="3" /><path d="M3.6 15c.6-2.6 2.8-4 5.4-4s4.8 1.4 5.4 4" />
+        </svg>
+      </div>
+      <span class="user-bar__name">yanqing</span>
+    </div>
+  </aside>
+
+  <div class="col-mid">
+    <div class="format-bar">
+      <span class="w-semi" style="color: var(--ink)">H1</span>
+      <span class="w-semi">H2</span>
+      <span class="w-semi">B</span>
+      <span><em>I</em></span>
+      <span style="text-decoration: underline">U</span>
+      <span>• 列表</span>
+      <span>1. 编号</span>
+      <span>❝ 引用</span>
+      <span>代码</span>
+      <span style="margin-left: auto" class="t-xs t-placeholder">已自动保存 · 今天 14:32</span>
+    </div>
+
+    <div class="editor">
+      <h1 class="editor__title">信息架构采用三层结构</h1>
+      <p class="editor__p">
+        官网的导航与内容按「认知—决策—行动」三层组织，每一层解决一个明确的问题，避免把所有信息平铺在首页。
+      </p>
+
+      <h2 class="editor__h2">三层结构与对应问题</h2>
+      <p class="editor__p">1. 认知层：首页与主导航，解决「这是什么、适合谁」。</p>
+      <p class="editor__p">2. 决策层：方案与案例，解决「为什么选我们」。</p>
+      <p class="editor__p">3. 行动层：定价、文档与试用入口，解决「怎么开始」。</p>
+
+      <h2 class="editor__h2">下一步</h2>
+      <p class="editor__p">先定稿主导航的四到五项，再逐层补充内容模板与字段。</p>
+
+      <blockquote style="margin: 0; padding: 10px 14px; border-left: 3px solid var(--primary-line); background: var(--surface-subtle); font-size: 13px; color: var(--muted); border-radius: 0 8px 8px 0">
+        来自会话「信息架构三层梳理」，由模型建议后人工确认。
+      </blockquote>
+    </div>
+  </div>
+
+  <aside class="col-right col-right--sm">
+    <span class="t-h3">属性</span>
+
+    <div class="side-card side-card--plain">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span class="t-sm t-muted">所属项目</span>
+        <span class="t-sm t-primary">品牌官网改版</span>
+      </div>
+      <div style="height: 1px; background: var(--line)"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span class="t-sm t-muted">创建时间</span>
+        <span class="t-sm">2026-06-12 14:32</span>
+      </div>
+      <div style="height: 1px; background: var(--line)"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span class="t-sm t-muted">来源会话</span>
+        <span class="t-sm">信息架构三层梳理</span>
+      </div>
+    </div>
+
+    <div class="side-card side-card--plain">
+      <span class="side-card__title">标签</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px">
+        <span class="tag">信息架构</span><span class="tag">官网</span><span class="tag">已确认</span>
+      </div>
+    </div>
+
+    <div class="side-card side-card--plain">
+      <span class="side-card__title">大纲</span>
+      <div class="session-item session-item--active">
+        <span class="session-item__title">三层结构与对应问题</span>
+      </div>
+      <div class="session-item">
+        <span class="session-item__title">下一步</span>
+      </div>
+    </div>
+
+    <div class="side-foot">
+      <button class="btn btn--ghost btn--sm">导出</button>
+      <button class="btn btn--primary btn--sm">保存</button>
+    </div>
+  </aside>
+</section>

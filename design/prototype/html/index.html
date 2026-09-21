@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aura 工作台改版 · HTML 原型</title>
+<!-- 由 build.mjs 自动生成 -->
+<style>
+  :root { --primary:#2266d1; --ink:#16202a; --muted:#6b7785; --line:#dce3ea; --canvas:#f5f7f9; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:48px 32px 72px; background:var(--canvas); color:var(--ink);
+    font:14px/1.6 Inter,-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h1 { margin:0 0 8px; font-size:26px; font-weight:700; letter-spacing:-.01em; }
+  .sub { margin:0 0 8px; color:var(--muted); font-size:13px; }
+  code { background:#eef2f5; padding:1px 5px; border-radius:4px; font-size:12px; }
+  .group { margin-top:36px; }
+  h2 { margin:0 0 12px; font-size:12px; font-weight:600; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; }
+  .row { display:flex; align-items:center; gap:14px; padding:14px 18px; margin-bottom:8px;
+    background:#fff; border:1px solid var(--line); border-radius:10px; text-decoration:none; color:inherit; }
+  .row:hover { border-color:#9cc0ee; background:#fbfdff; }
+  .row__title { font-weight:600; flex:0 0 300px; }
+  .row__desc { color:var(--muted); font-size:13px; flex:1 1 auto; }
+  .row__file { color:#a3aeb8; font-size:12px; font-family:ui-monospace,Menlo,Consolas,monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Aura 工作台改版 · HTML 原型</h1>
+  <p class="sub">
+    每屏一个自包含 HTML（内联样式、无外部依赖），双击即可在浏览器查看。
+    文本形态便于模型与开发直接读取结构与样式值，替代此前的 PNG 截图。
+  </p>
+  <p class="sub">
+    视觉基准为 <code>design/prototype/*.png</code>；此目录由 <code>html/build.mjs</code> 从
+    <code>_src/</code> 下的样式与片段生成，改动请改源文件后重新构建。
+  </p>
+    <section class="group">
+      <h2>方案 A · 系统入口</h2>
+      <a class="row" href="01-login-A.html">
+        <span class="row__title">01 登录 · 方案A</span>
+        <span class="row__desc">系统入口，沿用方案 A 的深色品牌区 + 浅色认证区</span>
+        <span class="row__file">01-login-A.html</span>
+      </a>
+      <a class="row" href="02-register-A.html">
+        <span class="row__title">02 注册 · 方案A</span>
+        <span class="row__desc">与登录同构，四个字段：用户名 / 邮箱 / 密码 / 确认密码</span>
+        <span class="row__file">02-register-A.html</span>
+      </a>
+      <a class="row" href="03-workspace-A.html">
+        <span class="row__title">03 项目工作台 · 方案A</span>
+        <span class="row__desc">系统入口门户，选定项目后再进入方案 B 三栏工作区</span>
+        <span class="row__file">03-workspace-A.html</span>
+      </a>
+      <a class="row" href="04-workspace-empty-A.html">
+        <span class="row__title">04 工作台空状态 · 方案A</span>
+        <span class="row__desc">无项目时的引导态：主区空状态卡 + 侧栏空列表</span>
+        <span class="row__file">04-workspace-empty-A.html</span>
+      </a>
+      <a class="row" href="05-new-project-A.html">
+        <span class="row__title">05 新建项目弹窗 · 方案A</span>
+        <span class="row__desc">工作台底图 + 遮罩 + 新建项目表单弹窗（空态）</span>
+        <span class="row__file">05-new-project-A.html</span>
+      </a>
+      <a class="row" href="05b-edit-project-modal-A.html">
+        <span class="row__title">05b 编辑项目弹窗 · 方案A</span>
+        <span class="row__desc">新建弹窗的编辑态：字段预填、状态与模型已选、含删除入口</span>
+        <span class="row__file">05b-edit-project-modal-A.html</span>
+      </a>
+    </section>
+    <section class="group">
+      <h2>方案 B · 主体验</h2>
+      <a class="row" href="06-project-advance-B.html">
+        <span class="row__title">06 项目推进页 · 方案B</span>
+        <span class="row__desc">主体验基准屏——左项目列表 / 中对话推进 / 右上下文沉淀</span>
+        <span class="row__file">06-project-advance-B.html</span>
+      </a>
+      <a class="row" href="07-chat-empty-B.html">
+        <span class="row__title">07 推进页空会话 · 方案B</span>
+        <span class="row__desc">新会话引导态：中栏给出起点建议，右栏提示尚未沉淀</span>
+        <span class="row__file">07-chat-empty-B.html</span>
+      </a>
+      <a class="row" href="08-note-library-B.html">
+        <span class="row__title">08 笔记库 · 方案B</span>
+        <span class="row__desc">三栏：左导航与筛选 / 中笔记列表 / 右标签与统计</span>
+        <span class="row__file">08-note-library-B.html</span>
+      </a>
+      <a class="row" href="09-note-editor-B.html">
+        <span class="row__title">09 笔记编辑 · 方案B</span>
+        <span class="row__desc">三栏：左笔记列表（窄）/ 中编辑器 / 右属性与大纲</span>
+        <span class="row__file">09-note-editor-B.html</span>
+      </a>
+      <a class="row" href="10-settings-B.html">
+        <span class="row__title">10 设置首页 · 方案B</span>
+        <span class="row__desc">左设置导航 + 账户信息与偏好设置</span>
+        <span class="row__file">10-settings-B.html</span>
+      </a>
+      <a class="row" href="11-model-config-B.html">
+        <span class="row__title">11 模型配置 · 方案B</span>
+        <span class="row__desc">左设置导航 + 模型列表与默认模型设置</span>
+        <span class="row__file">11-model-config-B.html</span>
+      </a>
+      <a class="row" href="12-admin-users-B.html">
+        <span class="row__title">12 用户管理 · 方案B</span>
+        <span class="row__desc">列表页骨架——标题 + 筛选 + 表格 + 分页；12/13/14 三屏同构</span>
+        <span class="row__file">12-admin-users-B.html</span>
+      </a>
+      <a class="row" href="13-admin-roles-B.html">
+        <span class="row__title">13 角色管理 · 方案B</span>
+        <span class="row__desc">角色卡片网格 + 权限矩阵</span>
+        <span class="row__file">13-admin-roles-B.html</span>
+      </a>
+      <a class="row" href="14-admin-menus-B.html">
+        <span class="row__title">14 菜单管理 · 方案B</span>
+        <span class="row__desc">树形表格，含显示 / 隐藏状态</span>
+        <span class="row__file">14-admin-menus-B.html</span>
+      </a>
+    </section>
+    <section class="group">
+      <h2>全局与索引</h2>
+      <a class="row" href="00-cover.html">
+        <span class="row__title">00 封面与索引</span>
+        <span class="row__desc">方案边界、设计 Token 与全量屏索引</span>
+        <span class="row__file">00-cover.html</span>
+      </a>
+      <a class="row" href="15-states-feedback.html">
+        <span class="row__title">15 状态与反馈 · 全局</span>
+        <span class="row__desc">全局规范——状态胶囊 / 按钮与输入态 / 空状态与加载 / 反馈与校验</span>
+        <span class="row__file">15-states-feedback.html</span>
+      </a>
+    </section>
+</div>
+</body>
+</html>

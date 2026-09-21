@@ -1,0 +1,67 @@
+<!--# title: 04 工作台空状态 · 方案A -->
+<!--# desc: 无项目时的引导态：主区空状态卡 + 侧栏空列表 -->
+<!--# body: data-nav="workspace" -->
+<section class="screen">
+  <!-- @include rail-a.html -->
+
+  <aside class="sidebar">
+    <div class="sidebar__head">
+      <span class="sidebar__title">项目</span>
+      <span class="counter">0</span>
+    </div>
+    <button class="btn-block">＋ 新建项目</button>
+    <div class="search">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+        <circle cx="6" cy="6" r="4.2" />
+        <path d="M9.2 9.2 12.5 12.5" stroke-linecap="round" />
+      </svg>
+      搜索项目
+    </div>
+    <div class="project-list">
+      <div style="padding: 20px 10px; text-align: center" class="t-sm t-placeholder">还没有项目</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div class="page-head__text">
+        <span class="t-title">项目工作台</span>
+        <span class="t-body t-muted">Aura 是面向长期项目推进的 AI 工作台 · 选一个项目继续推进，或新建一个项目</span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <span class="stat-card__value t-muted">0</span>
+        <span class="stat-card__label">进行中</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value t-muted">0</span>
+        <span class="stat-card__label">暂停</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value t-muted">0</span>
+        <span class="stat-card__label">已归档</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value t-muted">0</span>
+        <span class="stat-card__label">本周有推进</span>
+      </div>
+    </div>
+
+    <div class="empty">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="#b9c4ce" stroke-width="1.6">
+        <rect x="8" y="15" width="40" height="30" rx="4" />
+        <path d="M8 23h40M19 15v-3.5A2.5 2.5 0 0 1 21.5 9h13a2.5 2.5 0 0 1 2.5 2.5V15" stroke-linecap="round" />
+      </svg>
+      <span class="empty__title">还没有项目</span>
+      <span class="empty__desc">创建第一个项目，设定目标与背景，开始推进与沉淀</span>
+      <button class="btn btn--primary" style="margin-top: 6px">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+          <path d="M7 1.5v11M1.5 7h11" />
+        </svg>
+        新建项目
+      </button>
+    </div>
+  </main>
+</section>

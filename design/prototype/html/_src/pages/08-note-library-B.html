@@ -1,0 +1,154 @@
+<!--# title: 08 笔记库 · 方案B -->
+<!--# desc: 三栏：左导航与筛选 / 中笔记列表 / 右标签与统计 -->
+<!--# body: data-nav="notes" -->
+<section class="screen">
+  <aside class="col-left">
+    <div class="brand">
+      <div class="brand__logo">
+        <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M9 2.5 3.2 15.5h11.6L9 2.5Z" fill="#fff" /></svg>
+      </div>
+      <span class="brand__name">Aura</span>
+    </div>
+
+    <div class="modnav">
+      <div class="modnav__item" data-key="workspace">工作台</div>
+      <div class="modnav__item" data-key="notes">笔记</div>
+      <div class="modnav__item" data-key="setting">设置</div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="group-title">筛选</div>
+    <div class="setnav">
+      <div class="setnav__item" data-key="all" style="background: var(--primary-bg); color: var(--primary); font-weight: 500">
+        全部笔记 <span style="margin-left: auto" class="t-xs">18</span>
+      </div>
+      <div class="setnav__item" data-key="recent">最近编辑 <span style="margin-left: auto" class="t-xs t-placeholder">6</span></div>
+      <div class="setnav__item" data-key="mine">我创建的 <span style="margin-left: auto" class="t-xs t-placeholder">11</span></div>
+      <div class="setnav__item" data-key="archived">已归档 <span style="margin-left: auto" class="t-xs t-placeholder">3</span></div>
+    </div>
+
+    <div class="group-title">所属项目</div>
+    <div class="modnav">
+      <div class="modnav__item">品牌官网改版</div>
+      <div class="modnav__item">Aura 前端工作台改造</div>
+      <div class="modnav__item">客服知识库搭建</div>
+    </div>
+
+    <div class="user-bar">
+      <div class="user-bar__avatar">
+        <svg class="nav-icon" viewBox="0 0 18 18" style="width:14px;height:14px;stroke-width:1.6">
+          <circle cx="9" cy="6.4" r="3" /><path d="M3.6 15c.6-2.6 2.8-4 5.4-4s4.8 1.4 5.4 4" />
+        </svg>
+      </div>
+      <span class="user-bar__name">yanqing</span>
+    </div>
+  </aside>
+
+  <div class="col-mid" style="background: var(--canvas)">
+    <header class="mid-head">
+      <div class="page-head__text">
+        <span class="mid-head__title">笔记库</span>
+        <span class="mid-head__sub">项目推进中沉淀的结论与资料</span>
+      </div>
+      <div class="mid-head__right">
+        <div class="search" style="width: 200px; background: var(--surface)">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+            <circle cx="6" cy="6" r="4.2" /><path d="M9.2 9.2 12.5 12.5" stroke-linecap="round" />
+          </svg>
+          搜索笔记
+        </div>
+        <button class="btn btn--primary btn--sm">＋ 新建笔记</button>
+      </div>
+    </header>
+
+    <div class="mid-body">
+      <article class="note-item note-item--active">
+        <span class="note-item__title">信息架构采用三层结构</span>
+        <span class="note-item__excerpt">认知层 / 决策层 / 行动层，分别解决「是什么」「为什么选」「怎么开始」。导航据此拆分为四个一级入口。</span>
+        <div class="note-item__meta">
+          <span class="tag">信息架构</span><span class="tag">官网</span>
+          <span style="margin-left: auto">今天 14:32 · 品牌官网改版</span>
+        </div>
+      </article>
+
+      <article class="note-item">
+        <span class="note-item__title">主导航定为四项</span>
+        <span class="note-item__excerpt">产品方案、客户案例、开发者、定价。开发者入口转化最弱，需补充快速开始与 SDK 文档。</span>
+        <div class="note-item__meta">
+          <span class="tag">导航</span><span class="tag">待办</span>
+          <span style="margin-left: auto">昨天 18:10 · 品牌官网改版</span>
+        </div>
+      </article>
+
+      <article class="note-item">
+        <span class="note-item__title">组件命名与分层约定</span>
+        <span class="note-item__excerpt">基础组件不带业务语义，业务组件以模块名前缀；容器组件统一存放在 containers 目录。</span>
+        <div class="note-item__meta">
+          <span class="tag">组件库</span><span class="tag">规范</span>
+          <span style="margin-left: auto">3 天前 · Aura 前端工作台改造</span>
+        </div>
+      </article>
+
+      <article class="note-item">
+        <span class="note-item__title">客服高频问题抽取规则</span>
+        <span class="note-item__excerpt">按工单标签聚合，出现频次大于 20 且解决率低于 60% 的问题优先收录。</span>
+        <div class="note-item__meta">
+          <span class="tag">知识库</span><span class="tag">规则</span>
+          <span style="margin-left: auto">上周 · 客服知识库搭建</span>
+        </div>
+      </article>
+
+      <article class="note-item">
+        <span class="note-item__title">A/B 实验埋点缺口说明</span>
+        <span class="note-item__excerpt">邀请链路缺少曝光事件，导致次日留存口径无法归因，需数据团队补齐后再启动第三轮。</span>
+        <div class="note-item__meta">
+          <span class="tag">实验</span><span class="tag">风险</span>
+          <span style="margin-left: auto">2 周前 · 用户增长实验</span>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <aside class="col-right col-right--sm">
+    <span class="t-h3">标签与统计</span>
+
+    <div class="side-card side-card--plain">
+      <span class="side-card__title">常用标签</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px">
+        <span class="tag">信息架构</span><span class="tag">导航</span><span class="tag">组件库</span>
+        <span class="tag">规范</span><span class="tag">实验</span><span class="tag">风险</span>
+        <span class="tag">知识库</span><span class="tag">待办</span>
+      </div>
+    </div>
+
+    <div class="side-card side-card--plain">
+      <span class="side-card__title">统计</span>
+      <div style="display: flex; gap: 12px; text-align: center">
+        <div style="flex: 1 1 0">
+          <div class="t-h2 t-primary">18</div>
+          <div class="t-xs t-muted">全部笔记</div>
+        </div>
+        <div style="flex: 1 1 0">
+          <div class="t-h2 t-success">6</div>
+          <div class="t-xs t-muted">本月新增</div>
+        </div>
+        <div style="flex: 1 1 0">
+          <div class="t-h2">4</div>
+          <div class="t-xs t-muted">关联项目</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-card side-card--plain">
+      <span class="side-card__title">最近编辑</span>
+      <div class="session-item session-item--active">
+        <span class="session-item__title">信息架构采用三层结构</span>
+        <span class="session-item__meta">今天 14:32</span>
+      </div>
+      <div class="session-item">
+        <span class="session-item__title">主导航定为四项</span>
+        <span class="session-item__meta">昨天 18:10</span>
+      </div>
+    </div>
+  </aside>
+</section>

@@ -1,0 +1,74 @@
+<!--# title: 01 登录 · 方案A -->
+<!--# desc: 系统入口，沿用方案 A 的深色品牌区 + 浅色认证区 -->
+<!--# body: data-page="login" -->
+<section class="screen">
+  <div class="auth">
+    <div class="auth__brand">
+      <div class="auth__logo">
+        <div class="auth__logo-mark">
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <path d="M9 2.5 3.2 15.5h11.6L9 2.5Z" fill="#fff" />
+          </svg>
+        </div>
+        Aura
+      </div>
+
+      <h1 class="auth__headline">面向长期项目推进的<br />AI 工作台</h1>
+      <p class="auth__sub">
+        每个项目都有目标、背景与当前状态。聊天是推进方式，沉淀下来的<br />结论才是资产。
+      </p>
+
+      <div class="auth__preview">
+        <div class="auth__preview-rail">
+          <span class="auth__preview-dot auth__preview-dot--first"></span>
+          <span class="auth__preview-dot"></span>
+          <span class="auth__preview-dot"></span>
+          <span class="auth__preview-dot"></span>
+        </div>
+        <div class="auth__preview-body">
+          <div class="auth__preview-row auth__preview-row--head" style="width: 62%"></div>
+          <div class="auth__preview-row auth__preview-row--accent" style="height: 54px"></div>
+          <div class="auth__preview-row" style="height: 54px"></div>
+          <div class="auth__preview-row" style="flex: 1 1 auto"></div>
+        </div>
+      </div>
+
+      <p class="auth__caption">Aura Workspace · 项目工作台入口</p>
+    </div>
+
+    <div class="auth__panel">
+      <form class="auth__card" onsubmit="return false">
+        <div class="auth__intro">
+          <span class="auth__title">登录 Aura</span>
+          <span class="t-sm t-muted">登录后继续推进你的项目</span>
+        </div>
+
+        <div class="field">
+          <span class="field__label">邮箱</span>
+          <div class="input">
+            <svg class="input-icon" width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4">
+              <rect x="2.5" y="4" width="13" height="10" rx="2" />
+              <path d="M2.9 4.6 9 9.6l6.1-5" />
+            </svg>
+            请输入邮箱
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field__label">密码</span>
+          <div class="input">
+            <svg class="input-icon" width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4">
+              <rect x="3.5" y="8" width="11" height="7" rx="2" />
+              <path d="M6.2 8V6.2a2.8 2.8 0 0 1 5.6 0V8" />
+            </svg>
+            请输入密码
+          </div>
+        </div>
+
+        <button class="btn btn--primary" style="height: 38px; width: 100%; justify-content: center">登录</button>
+
+        <span class="auth__foot">没有账户？<span class="t-primary w-medium"> 立即注册</span></span>
+      </form>
+    </div>
+  </div>
+</section>

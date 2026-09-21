@@ -1,0 +1,119 @@
+<!--# title: 05 新建项目弹窗 · 方案A -->
+<!--# desc: 工作台底图 + 遮罩 + 新建项目表单弹窗（空态） -->
+<!--# body: data-nav="workspace" -->
+<section class="screen">
+  <!-- @include rail-a.html -->
+  <!-- @include sidebar-projects.html -->
+
+  <main class="main">
+    <div class="page-head">
+      <div class="page-head__text">
+        <span class="t-title">项目工作台</span>
+        <span class="t-body t-muted">Aura 是面向长期项目推进的 AI 工作台 · 选一个项目继续推进，或新建一个项目</span>
+      </div>
+      <button class="btn btn--primary">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+          <path d="M7 1.5v11M1.5 7h11" />
+        </svg>
+        新建项目
+      </button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><span class="stat-card__value t-success">3</span><span class="stat-card__label">进行中</span></div>
+      <div class="stat-card"><span class="stat-card__value t-warning">2</span><span class="stat-card__label">暂停</span></div>
+      <div class="stat-card"><span class="stat-card__value t-muted">1</span><span class="stat-card__label">已归档</span></div>
+      <div class="stat-card"><span class="stat-card__value t-primary">4</span><span class="stat-card__label">本周有推进</span></div>
+    </div>
+
+    <div class="filters">
+      <div class="filter filter--active">全部 6</div>
+      <div class="filter">进行中 3</div>
+      <div class="filter">暂停 2</div>
+      <div class="filter">已归档 1</div>
+    </div>
+
+    <div class="card-grid">
+      <article class="project-card">
+        <span class="project-card__status t-success">进行中</span>
+        <span class="project-card__title">品牌官网改版</span>
+        <span class="project-card__goal">目标：三个月内完成官网信息架构与视觉改版</span>
+        <span class="project-card__desc">重构首页叙事，统一组件库，建立可维护的内容审核流程。</span>
+        <span class="project-card__meta">GPT-4o · 2 小时前 · 24 条对话</span>
+        <div class="project-card__actions">
+          <span class="t-primary w-semi">继续推进</span><span class="t-muted">编辑</span><span class="t-muted">归档</span>
+        </div>
+      </article>
+      <article class="project-card">
+        <span class="project-card__status t-success">进行中</span>
+        <span class="project-card__title">Aura 前端工作台改造</span>
+        <span class="project-card__goal">目标：把聊天工具升级为项目工作台</span>
+        <span class="project-card__desc">新增项目目标、描述与状态字段，改造为三栏推进布局。</span>
+        <span class="project-card__meta">Claude 3.5 Sonnet · 昨天 · 12 条对话</span>
+        <div class="project-card__actions">
+          <span class="t-primary w-semi">继续推进</span><span class="t-muted">编辑</span><span class="t-muted">归档</span>
+        </div>
+      </article>
+      <article class="project-card">
+        <span class="project-card__status t-warning">暂停</span>
+        <span class="project-card__title">用户增长实验</span>
+        <span class="project-card__goal">目标：验证邀请机制对次日留存的影响</span>
+        <span class="project-card__desc">已完成两轮 A/B 实验，等待数据团队补充埋点后继续。</span>
+        <span class="project-card__meta">GPT-4o mini · 3 天前 · 8 条对话</span>
+        <div class="project-card__actions">
+          <span class="t-primary w-semi">继续推进</span><span class="t-muted">编辑</span><span class="t-muted">归档</span>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <div class="overlay">
+    <div class="modal">
+      <div class="auth__intro">
+        <span class="t-h2">新建项目</span>
+        <span class="t-sm t-muted">填写目标与背景，创建后即可开始推进</span>
+      </div>
+
+      <div class="field">
+        <span class="field__label">项目名称</span>
+        <div class="input">例如：品牌官网改版</div>
+      </div>
+
+      <div class="field">
+        <span class="field__label">项目目标</span>
+        <div class="input">一句话说明这个项目要达成什么</div>
+      </div>
+
+      <div class="field">
+        <span class="field__label">背景描述</span>
+        <div class="textarea">补充背景、约束与参考资料，帮助模型理解上下文</div>
+      </div>
+
+      <div style="display: flex; gap: 12px">
+        <div class="field" style="flex: 1 1 0">
+          <span class="field__label">初始状态</span>
+          <div class="input input--filled" style="justify-content: space-between">
+            进行中
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+              <path d="M3.5 5.5 7 9l3.5-3.5" />
+            </svg>
+          </div>
+        </div>
+        <div class="field" style="flex: 1 1 0">
+          <span class="field__label">默认模型</span>
+          <div class="input input--filled" style="justify-content: space-between">
+            GPT-4o
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+              <path d="M3.5 5.5 7 9l3.5-3.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal__foot">
+        <button class="btn btn--ghost">取消</button>
+        <button class="btn btn--primary">创建项目</button>
+      </div>
+    </div>
+  </div>
+</section>
