@@ -1,14 +1,10 @@
 import mysql from 'mysql2/promise'
-import fs from 'node:fs'
-import yaml from 'js-yaml'
 
-const yamlContent = fs.readFileSync('./config.yaml', 'utf8')
-const config = yaml.load(yamlContent)
-
-const dbName = process.env.NODE_ENV === 'test' ? 'aura_test' : config.db.database
+const dbName = process.env.NODE_ENV === 'test' ? 'aura_test' : process.env.DB_NAME || 'aura'
 
 const pool = mysql.createPool({
-  ...config.db,
+  host: process.env.DB_HOST || '127.0.0.1',
+  port: Number(process.env.DB_PORT || 3306),
   database: dbName,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,

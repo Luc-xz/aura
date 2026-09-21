@@ -17,7 +17,7 @@ export default class Chat {
       const options = {
         page: pagination.page,
         pageSize: pagination.pageSize,
-        allowedSortFields: ['proposer', 'created_at', 'updated_at'],
+        allowedSortFields: ['id', 'proposer', 'created_at', 'updated_at'],
         orderBy: sort.orderBy || 'created_at',
         orderDir: sort.orderDir || 'DESC',
       }
@@ -37,12 +37,12 @@ export default class Chat {
     }
   }
 
-  static async create({ workspaceId, proposer, content } = {}) {
+  static async create({ workspaceId, proposer, content, modelId } = {}) {
     if (!workspaceId) {
       throw new Error('workspaceId is required')
     }
-    const baseSql = 'INSERT INTO chat (workspace_id, proposer, content) VALUES (?, ?, ?)'
-    const [result] = await db.query(baseSql, [workspaceId, proposer, content])
+    const baseSql = 'INSERT INTO chat (workspace_id, proposer, content, model_id) VALUES (?, ?, ?, ?)'
+    const [result] = await db.query(baseSql, [workspaceId, proposer, content, modelId ?? null])
     return result.insertId
   }
 

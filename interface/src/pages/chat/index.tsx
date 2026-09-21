@@ -1,4 +1,4 @@
-import { App, Button, Card, Divider, Flex, Space, Modal, Form, Input, Dropdown, Select } from 'antd'
+import { App, Button, Card, Divider, Flex, Space, Modal, Form, Input, Dropdown, Select, Tag } from 'antd'
 import { Bubble, Attachments, Sender } from '@ant-design/x'
 import {
   PlusOutlined,
@@ -10,14 +10,19 @@ import {
   MehOutlined,
   SyncOutlined,
   CopyOutlined,
+  BookOutlined,
+  FileDoneOutlined,
   CloudUploadOutlined,
   LinkOutlined,
 } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router'
 import { getWorkspaceList, createWorkspace, updateWorkspace, deleteWorkspace } from '@/api/workspace'
 import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
+import { createNote } from '@/api/note'
 import { getModelConfigList } from '@/api/setting'
 import { useWorkspaceStore } from '@/store'
+import { createSSEParser } from '@/utils/sse'
 
 const fetchWorkspaceList = async () => {
   const [err, res] = await getWorkspaceList()
@@ -51,6 +56,7 @@ function WorkspacePanel({ list, modelList }) {
   const [workspaceList, setWorkspaceList] = useState(list)
   const [workspaceVisible, setWorkspaceVisible] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditWorkspace, setIsEditWorkspace] = useState(false)
   const [form] = Form.useForm()
   const workspaceRef = useRef(null)
 
@@ -69,12 +75,13 @@ function WorkspacePanel({ list, modelList }) {
         ],
         onClick: ({ key }) => {
           if (key === 'edit') {
+            setIsEditWorkspace(true)
+            setIsModalOpen(true)
             form.setFieldsValue({
               id: workspace.id,
               title: workspace.title,
               modelId: workspace.modelId,
             })
-            setIsModalOpen(true)
             return
           }
           if (key === 'delete') {
@@ -150,7 +157,11 @@ function WorkspacePanel({ list, modelList }) {
         <div className="overflow-hidden p-4 w-55 h-full">
           <div className="title-ter mb-8">工作区</div>
           <Button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              form.resetFields()
+              setIsEditWorkspace(false)
+              setIsModalOpen(true)
+            }}
             className="w-full mb-2"
             color="default"
             variant="outlined"
@@ -170,11 +181,15 @@ function WorkspacePanel({ list, modelList }) {
         {workspaceVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
       </div>
       <Modal
-        title={`${form.getFieldValue('id') ? '编辑' : '新建'}对话`}
+        title={`${isEditWorkspace ? '编辑' : '新建'}对话`}
         closable={true}
+        forceRender
         open={isModalOpen}
         onOk={handleEditWorkspace}
-        onCancel={() => setIsModalOpen(false)}>
+        onCancel={() => {
+          setIsModalOpen(false)
+          form.resetFields()
+        }}>
         <Form form={form}>
           <Form.Item
             name="title"
@@ -203,32 +218,131 @@ function ChatPanel({ workspace }) {
   const [conversation, setConversation] = useState<any[]>([])
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
+  const [saveTarget, setSaveTarget] = useState(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  const [saveForm] = Form.useForm()
+  const { message } = App.useApp()
+
+  const deriveTitle = (text: string) => {
+    const firstLine = text.split('\n').find((l) => l.trim()) ?? '对话笔记'
+    return firstLine.replace(/^#+\s*|^[-*]\s*|^>\s*/g, '').slice(0, 50)
+  }
+
+  const getSelectionInside = (bubbleEl: HTMLElement) => {
+    const sel = window.getSelection()
+    if (!sel || sel.isCollapsed) return ''
+    const range = sel.getRangeAt(0)
+    return bubbleEl.contains(range.commonAncestorContainer) ? sel.toString() : ''
+  }
+
+  const openSave = (e, item) => {
+    const bubbleEl = (e.currentTarget as HTMLElement).closest('.ant-bubble')?.querySelector('.ant-bubble-content')
+    const selected = bubbleEl ? getSelectionInside(bubbleEl as HTMLElement) : ''
+    const content = selected || item.content
+    setSaveTarget({ content, chatId: item.id })
+    saveForm.setFieldsValue({ title: deriveTitle(content), content })
+  }
+
+  const handleSave = async () => {
+    await saveForm.validateFields()
+    const values = saveForm.getFieldsValue()
+    const [err, res] = await createNote({
+      ...values,
+      workspaceId: workspace.id,
+      sourceChatId: saveTarget.chatId,
+    })
+    if (res) {
+      message.success('已保存为笔记')
+      setSaveTarget(null)
+      saveForm.resetFields()
+    } else {
+      message.error('保存失败：' + err.message)
+    }
+  }
+
+  const handleCopy = (content) => {
+    navigator.clipboard.writeText(content)
+    message.success('已复制')
+  }
+
+  const toNote = (id) => navigate(`/note/edit/${id}`)
 
   const chatBubbleList = workspace
     ? conversation?.map?.((item, index) => (
         <Bubble
           placement={item.proposer === 'user' ? 'end' : 'start'}
-          content={<div className="whitespace-pre-wrap">{item.content}</div>}
+          content={
+            <div className="whitespace-pre-wrap">
+              {/* 工具调用期间正文还没来，用 status 占位（正在检索笔记…）；正文到了就只显示正文 */}
+              {item.proposer !== 'user' && item.status && !item.content ? <span className="text-sm text-gray-400">{item.status}</span> : item.content}
+            </div>
+          }
           typing={item.proposer !== 'user' && !item.id ? true : false}
           avatar={{ icon: item.proposer === 'user' ? <UserOutlined /> : <MehOutlined /> }}
           variant={item.proposer === 'user' ? 'filled' : 'shadow'}
           key={index}
           footer={
             item.proposer === 'user' ? null : (
-              <Space>
-                <Button
-                  color="default"
-                  variant="text"
-                  size="small"
-                  icon={<SyncOutlined />}
-                />
-                <Button
-                  color="default"
-                  variant="text"
-                  size="small"
-                  icon={<CopyOutlined />}
-                />
+              <Space
+                direction="vertical"
+                size={4}>
+                <Space>
+                  <Button
+                    color="default"
+                    variant="text"
+                    size="small"
+                    icon={<SyncOutlined />}
+                  />
+                  <Button
+                    color="default"
+                    variant="text"
+                    size="small"
+                    icon={<CopyOutlined />}
+                    onClick={() => handleCopy(item.content)}
+                  />
+                  {item.id ? (
+                    <Button
+                      color="default"
+                      variant="text"
+                      size="small"
+                      icon={<BookOutlined />}
+                      onClick={(e) => openSave(e, item)}
+                    />
+                  ) : null}
+                </Space>
+                {item.references?.length ? (
+                  <Space
+                    wrap
+                    size={4}>
+                    {item.references.map((ref) => (
+                      <Tag
+                        key={ref.id}
+                        icon={<LinkOutlined />}
+                        color="blue"
+                        className="cursor-pointer"
+                        onClick={() => toNote(ref.id)}>
+                        {ref.title}
+                      </Tag>
+                    ))}
+                  </Space>
+                ) : null}
+                {item.savedNotes?.length ? (
+                  <Space
+                    wrap
+                    size={4}>
+                    {item.savedNotes.map((n) => (
+                      <Tag
+                        key={n.id}
+                        icon={<FileDoneOutlined />}
+                        color="green"
+                        className="cursor-pointer"
+                        onClick={() => toNote(n.id)}>
+                        已保存：{n.title}
+                      </Tag>
+                    ))}
+                  </Space>
+                ) : null}
               </Space>
             )
           }
@@ -248,7 +362,8 @@ function ChatPanel({ workspace }) {
     const [err, res] = await chatToWorkspace(workspace.id, content)
     console.log('[API]::[chatToWorkspace]::', res, err)
     if (res) {
-      setConversation([...newConversation, { proposer: 'assistant', content: res.data.content }])
+      // 非流式响应同样是 { content, references } 信封
+      setConversation([...newConversation, { proposer: 'assistant', content: res.data.content, references: res.data.references || [] }])
     }
     setLoading(false)
   }
@@ -257,23 +372,28 @@ function ChatPanel({ workspace }) {
     if (!workspace || prompt.trim() === '') {
       return false
     }
-    let content = prompt.trim()
+    const content = prompt.trim()
     setPrompt('')
     setLoading(true)
     const newConversation = [...conversation, { proposer: 'user', content }]
-    setConversation(newConversation)
-    const [err, res] = await streamChatToWorkspace(workspace.id, content, (e: any) => {
-      const { responseText } = e.event.target
+    setConversation([...newConversation, { proposer: 'assistant', content: '', references: [] }])
+    const feed = createSSEParser((evt) => {
       setConversation((prev) => {
-        const last = prev[prev.length - 1]
-        if (last?.proposer !== 'assistant') {
-          return [...prev, { proposer: 'assistant', content: responseText }]
-        } else {
-          return [...prev.slice(0, -1), { ...last, content: responseText }]
-        }
+        const last = { ...prev[prev.length - 1] }
+        const rest = prev.slice(0, -1)
+        if (evt.type === 'text') last.content += evt.value
+        if (evt.type === 'status') last.status = evt.value
+        if (evt.type === 'references') last.references = evt.notes
+        if (evt.type === 'error') last.content += `\n[出错了] ${evt.message}`
+        if (evt.type === 'done' && evt.chatId) last.id = evt.chatId
+        if (evt.type === 'note-saved') last.savedNotes = [...(last.savedNotes || []), evt.note]
+        return [...rest, last]
       })
     })
-    console.log('[API]::[streamChatToWorkspace]::', res, err)
+
+    await streamChatToWorkspace(workspace.id, content, (e: any) => {
+      feed(e.event.target.responseText)
+    })
     setLoading(false)
   }
 
@@ -363,6 +483,40 @@ function ChatPanel({ workspace }) {
           />
         </div>
       </div>
+      <Modal
+        title="保存为笔记"
+        open={!!saveTarget}
+        forceRender
+        onCancel={() => {
+          setSaveTarget(null)
+          saveForm.resetFields()
+        }}
+        onOk={handleSave}>
+        <Form form={saveForm}>
+          <Form.Item
+            name="title"
+            label="标题"
+            rules={[{ required: true }, { max: 50, message: '不超过 50 字' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="描述"
+            rules={[{ max: 255, message: '不超过 255 字' }]}>
+            <Input.TextArea
+              rows={2}
+              maxLength={255}
+            />
+          </Form.Item>
+          <Form.Item
+            name="content"
+            label="内容"
+            rules={[{ required: true }]}
+            initialValue={saveTarget?.content}>
+            <Input.TextArea autoSize={{ minRows: 10 }} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   )
 }

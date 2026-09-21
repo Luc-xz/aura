@@ -1,6 +1,6 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
-import { formatResponse } from '../../shared/utils/formatter.js'
+import { formatResponse, toSnakeCase } from '../../shared/utils/formatter.js'
 
 export default class Note {
   static filterFields(note) {
@@ -34,6 +34,11 @@ export default class Note {
       params.push(`%${filters.keyword}%`, `%${filters.keyword}%`)
     }
 
+    if (filters.workspaceId) {
+      baseSql += ' AND workspace_id = ?'
+      params.push(filters.workspaceId)
+    }
+
     if (pagination) {
       const options = {
         page: pagination.page,
@@ -58,9 +63,28 @@ export default class Note {
     }
   }
 
-  // TODO: complete
-  static async findByKeywords(keywords) {
+  static async findByKeywords(user, keyword, { limit = 5 } = {}) {
+    if (!user?.id) {
+      throw new Error('userId is required')
+    }
+    if (!keyword || typeof keyword !== 'string') {
+      throw new Error('keyword is required')
+    }
 
+    const pattern = `%${keyword}%`
+    const baseSql = `
+    SELECT id, title, description, keywords, updated_at
+    FROM note
+    WHERE user_id = ?
+      AND (
+        title LIKE ?
+        OR description LIKE ?
+        OR CAST(keywords AS CHAR) LIKE ?
+      )
+    ORDER BY updated_at DESC
+    LIMIT ?`
+    const [rows] = await db.query(baseSql, [user.id, pattern, pattern, pattern, limit])
+    return rows.map(this.filterFields)
   }
 
   static async findById(id) {
@@ -72,12 +96,31 @@ export default class Note {
     return rows[0]
   }
 
-  static async create(user, { title, content, description } = {}) {
+  static async findByIdAndUser(id, user) {
+    if (!id) {
+      throw new Error('id is required')
+    }
     if (!user?.id) {
       throw new Error('userId is required')
     }
-    const baseSql = 'INSERT INTO note (user_id, title, content, description) VALUES (?, ?, ?, ?)'
-    const [result] = await db.query(baseSql, [user.id, title, content, description])
+    const [rows] = await db.query(
+      'SELECT * FROM note WHERE id = ? AND user_id = ?',
+      [id, user.id]
+    )
+    return rows[0] || null
+  }
+
+  static async create(user, { title, content, description, keywords, workspaceId, sourceChatId } = {}) {
+    if (!user?.id) {
+      throw new Error('userId is required')
+    }
+    const baseSql = `INSERT INTO note
+      (user_id, workspace_id, source_chat_id, title, content, description, keywords)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`
+    const [result] = await db.query(baseSql, [
+      user.id, workspaceId ?? null, sourceChatId ?? null,
+      title, content, description, keywords ? JSON.stringify(keywords) : null,
+    ])
     return result.insertId
   }
 
@@ -90,9 +133,10 @@ export default class Note {
     let sql = ''
     let params = []
     for (const key in payload) {
-      if (['title', 'content', 'description'].includes(key) && payload[key]) {
-        sql += `${key} = ?, `
-        params.push(payload[key])
+      if (['title', 'content', 'description', 'keywords', 'workspaceId', 'sourceChatId'].includes(key) && payload[key] !== undefined) {
+        const value = key === 'keywords' ? JSON.stringify(payload[key]) : payload[key]
+        sql += `${toSnakeCase(key)} = ?, `
+        params.push(value)
       }
     }
     if (params.length < 1) {

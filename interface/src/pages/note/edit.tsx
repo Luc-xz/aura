@@ -37,7 +37,9 @@ export default function Page({ loaderData, actionData }) {
   const submit = useSubmit()
 
   const handleSubmit = (values) => {
-    submit(values, { method: 'post' })
+    const payload = { ...values }
+    if (!payload.id) delete payload.id
+    submit(payload, { method: 'post' })
   }
 
   useEffect(() => {

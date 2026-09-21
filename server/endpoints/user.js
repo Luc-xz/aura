@@ -1,5 +1,4 @@
 import express from 'express'
-import sql from '../sql/index.js'
 import User from '../models/user.js'
 import Role from '../models/role.js'
 import Rbac from '../models/rbac.js'
@@ -7,9 +6,12 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 import Validator from '../../shared/utils/validator.js'
 import { AppError, BadRequest, NotFound, Conflict, Forbidden } from '../utils/appError.js'
 import { comparePassword } from '../utils/bcrypt.js'
+import { randomUUID } from 'node:crypto'
 import jwt from 'jsonwebtoken'
+import rateLimit from '../middlewares/rate-limit.js'
 import { authMiddleware } from '../middlewares/auth.js'
-import { loadAuthContext, requirePermission, requireSelfOrPermission, isSuperAdmin } from '../middlewares/rbac.js'
+import { loadAuthContext, requirePermission, requireSelfOrPermission, isSuperAdmin, invalidateUser } from '../middlewares/rbac.js'
+import { cacheSet } from '../utils/redis.js'
 import { toTree } from '../../shared/utils/formatter.js'
 
 const router = express.Router()
@@ -129,7 +131,7 @@ function userEndpoints(apiRouter) {
     })
   }))
 
-  router.post('/login', asyncHandler(async (req, res) => {
+  router.post('/login', rateLimit({ prefix: 'login', windowSeconds: 60, max: 10 }), asyncHandler(async (req, res) => {
     const { email, password } = req.body
     if (!email || !password) {
       throw BadRequest('email and password are required')
@@ -148,7 +150,8 @@ function userEndpoints(apiRouter) {
     const { id, name } = data
     const token = jwt.sign({ id, name, email }, process.env.JWT_SECRET, {
       algorithm: 'HS256',
-      expiresIn: '3 days'
+      expiresIn: '3 days',
+      jwtid: randomUUID(),
     })
 
     res.status(200).json({
@@ -161,6 +164,16 @@ function userEndpoints(apiRouter) {
       code: 200,
       message: 'success',
     })
+  }))
+
+  router.post('/logout', ...withAuthContext, asyncHandler(async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1]
+    const payload = jwt.decode(token)
+    const remaining = Math.ceil(payload.exp - Date.now() / 1000)
+    if (payload.jti && remaining > 0) {
+      await cacheSet(`jwt:blacklist:${payload.jti}`, 1, remaining)
+    }
+    res.status(200).json({ code: 200, message: 'success' })
   }))
 
   // 更新用户：本人可自助修改，修改他人需要 user:update 权限
@@ -214,6 +227,7 @@ function userEndpoints(apiRouter) {
       throw Forbidden('only super_admin can delete a super_admin user')
     }
     const data = await User.delete(id)
+    await invalidateUser(id)
     res.status(200).json({
       data,
       code: 200,
@@ -252,6 +266,7 @@ function userEndpoints(apiRouter) {
     }
 
     await Rbac.assignRolesToUser(id, roleIds)
+    await invalidateUser(id)
     res.status(200).json({
       data: true,
       code: 200,
