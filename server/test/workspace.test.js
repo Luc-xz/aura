@@ -1,3 +1,4 @@
+import pool from '../sql/index.js'
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
 import { getRequest, registerAndLogin, registerAndLoginAdmin, authHeader, cleanTable } from './helpers.js'
 
@@ -224,5 +225,143 @@ describe('横向越权防护（requireOwnership）', () => {
       .send({ title: 'not found' })
 
     expect(res.status).toBe(404)
+  })
+})
+
+describe('项目化字段（goal / description / status）', () => {
+  let token
+
+  beforeEach(async () => {
+    await cleanTable('workspace')
+    await cleanTable('user_role')
+    await cleanTable('user')
+    const auth = await registerAndLogin()
+    token = auth.token
+  })
+
+  const createWs = (payload) =>
+    request.post('/api/workspace').set(authHeader(token)).send(payload)
+
+  it('创建时可带目标/背景/状态', async () => {
+    const res = await createWs({
+      title: '品牌官网改版',
+      goal: '三个月内完成官网信息架构与视觉改版',
+      description: '重构首页叙事，统一组件库。',
+      status: 0,
+    })
+    expect(res.status).toBe(200)
+    expect(res.body.data.goal).toBe('三个月内完成官网信息架构与视觉改版')
+    expect(res.body.data.description).toBe('重构首页叙事，统一组件库。')
+    expect(res.body.data.status).toBe(0)
+  })
+
+  it('status 缺省时为 0（进行中）', async () => {
+    const res = await createWs({ title: 'no status' })
+    expect(res.body.data.status).toBe(0)
+  })
+
+  it('status=3 应返回 400', async () => {
+    const res = await createWs({ title: 'bad status', status: 3 })
+    expect(res.status).toBe(400)
+    expect(res.body.message).toContain('status')
+  })
+
+  it('goal 超过 255 字应返回 400', async () => {
+    const res = await createWs({ title: 'long goal', goal: 'x'.repeat(256) })
+    expect(res.status).toBe(400)
+    expect(res.body.message).toContain('goal')
+  })
+
+  it('description 超过 2000 字应返回 400', async () => {
+    const res = await createWs({ title: 'long desc', description: 'x'.repeat(2001) })
+    expect(res.status).toBe(400)
+    expect(res.body.message).toContain('description')
+  })
+
+  it('列表返回应包含 goal/description/status 键', async () => {
+    await createWs({ title: 'fields ws' })
+    const listRes = await request.get('/api/workspace/list').set(authHeader(token))
+    const row = listRes.body.data[0]
+    expect(row).toHaveProperty('goal')
+    expect(row).toHaveProperty('description')
+    expect(row).toHaveProperty('status')
+  })
+
+  it('PUT 单独改 status 为 2（归档）后列表可见', async () => {
+    const created = await createWs({ title: 'to archive' })
+    const updateRes = await request
+      .put(`/api/workspace/${created.body.data.id}`)
+      .set(authHeader(token))
+      .send({ status: 2 })
+    expect(updateRes.body.code).toBe(200)
+
+    const listRes = await request.get('/api/workspace/list').set(authHeader(token))
+    expect(listRes.body.data[0].status).toBe(2)
+  })
+
+  it('PUT goal 传空串应清空为 null', async () => {
+    const created = await createWs({ title: 'clear goal', goal: '旧目标' })
+    await request
+      .put(`/api/workspace/${created.body.data.id}`)
+      .set(authHeader(token))
+      .send({ goal: '' })
+
+    const listRes = await request.get('/api/workspace/list').set(authHeader(token))
+    expect(listRes.body.data[0].goal).toBeNull()
+  })
+
+  it('PUT 全部字段缺省应返回 400', async () => {
+    const created = await createWs({ title: 'no field' })
+    const res = await request
+      .put(`/api/workspace/${created.body.data.id}`)
+      .set(authHeader(token))
+      .send({})
+    expect(res.status).toBe(400)
+  })
+
+  it('列表支持按 status 过滤', async () => {
+    await createWs({ title: 'a', status: 0 })
+    await createWs({ title: 'b', status: 2 })
+    const listRes = await request
+      .get('/api/workspace/list?status=2')
+      .set(authHeader(token))
+    expect(listRes.body.data).toHaveLength(1)
+    expect(listRes.body.data[0].title).toBe('b')
+  })
+})
+
+describe('GET /api/workspace/stats', () => {
+  beforeEach(async () => {
+    await cleanTable('workspace')
+    await cleanTable('chat')
+    await cleanTable('user_role')
+    await cleanTable('user')
+  })
+
+  it('未认证请求应返回 401', async () => {
+    const res = await request.get('/api/workspace/stats')
+    expect(res.status).toBe(401)
+  })
+
+  it('应按状态计数，并统计近 7 天有对话的项目数', async () => {
+    const { token } = await registerAndLogin()
+    const mk = async (title, status) =>
+      (await request.post('/api/workspace').set(authHeader(token)).send({ title, status })).body.data.id
+    const advanced = await mk('进行中A', 0)
+    await mk('进行中B', 0)
+    await mk('暂停', 1)
+    await mk('归档', 2)
+    // 直接插一条 7 天内的对话（绕过真实模型调用），只让 advanced 项目"本周有推进"
+    await pool.execute('INSERT INTO chat (workspace_id, proposer, content) VALUES (?, ?, ?)', [advanced, 'user', 'hi'])
+
+    const res = await request.get('/api/workspace/stats').set(authHeader(token))
+    expect(res.status).toBe(200)
+    expect(res.body.data).toEqual({ active: 2, paused: 1, archived: 1, advancedThisWeek: 1 })
+  })
+
+  it('无任何项目时四项均为 0', async () => {
+    const { token } = await registerAndLogin()
+    const res = await request.get('/api/workspace/stats').set(authHeader(token))
+    expect(res.body.data).toEqual({ active: 0, paused: 0, archived: 0, advancedThisWeek: 0 })
   })
 })

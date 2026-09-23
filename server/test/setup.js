@@ -1,129 +1,83 @@
 /**
- * 全局测试初始化与清理
- * - 在所有测试开始前：创建测试数据库并初始化表结构
- * - 在所有测试结束后：清除数据并关闭连接池
+ * Destructive integration tests: ONLY run against explicitly configured test services.
+ * MySQL: aura_test tables are recreated per file. Redis: the entire test DB is flushed.
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import dotenv from 'dotenv'
-import { beforeAll, afterAll } from 'vitest'
-import mysql from 'mysql2/promise'
+import { beforeAll, beforeEach, afterAll } from 'vitest'
+import { loadTestEnvironment } from './support/environment.js'
 
-// 确保测试环境
-process.env.NODE_ENV = 'test'
-
-const __dirname = import.meta.dirname || path.dirname(fileURLToPath(import.meta.url))
-
-// 手动加载 .env 文件（测试时 env.js 的相对路径可能有问题）
-dotenv.config({ path: path.resolve(__dirname, '../.env.local') })
-dotenv.config({ path: path.resolve(__dirname, '../.env') })
-
-// 在加载 sql/index.js 之前，先连接 MySQL 并确保测试数据库 (aura_test) 存在
-try {
-  const initConn = await mysql.createConnection({
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-  })
-  await initConn.execute('CREATE DATABASE IF NOT EXISTS `aura_test`')
-  await initConn.end()
-} catch (err) {
-  console.error('❌ Failed to ensure aura_test database exists:', err.message)
-}
-
-// 必须在设置好环境变量且创建好数据库之后再导入 sql
+// Validate before importing either application's connection singleton.
+loadTestEnvironment()
 const { default: pool } = await import('../sql/index.js')
-// Redis 同理：测试期间连真实 Redis，但缓存必须在跑前/跑后清空，
-// 否则上一轮运行残留的 rbac 缓存会污染本轮测试（MySQL 清了而 Redis 没清，权限断言会撞上脏缓存）
 const { default: redis } = await import('../utils/redis.js')
-
-// 注意必须用 beforeEach 而不是 beforeAll：
-// 各测试文件的 beforeEach 会 TRUNCATE user 表重建数据，自增 ID 从 1 重新发号，
-// 不同测试的"同 ID 不同权限"用户会互相踩缓存，只有逐测试清空才能对齐
-beforeEach(async () => {
-  try {
-    if (redis) await redis.flushdb()
-  } catch (err) {
-    console.error('⚠️ Failed to flush redis before test:', err.message)
-  }
-})
+let initialized = false
 
 beforeAll(async () => {
-  try {
-    // 先按 information_schema 清空所有表，再执行 init.sql。
-    // 不能只依赖 CREATE TABLE IF NOT EXISTS：它对已存在的表是空操作，
-    // init.sql 新增的列/索引到不了上一轮遗留的旧表，跑起来全是
-    // "Unknown column 'xxx'" 且看不出是 schema 陈旧（afterAll 只 TRUNCATE 不 DROP）
-    const [existing] = await pool.execute(
-      'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()'
-    )
-    if (existing.length) {
-      await pool.execute('SET FOREIGN_KEY_CHECKS = 0')
-      for (const { TABLE_NAME } of existing) {
-        await pool.execute(`DROP TABLE IF EXISTS \`${TABLE_NAME}\``)
+  // Fail closed: never treat unavailable services as skipped/passing tests.
+  if (redis.status !== 'ready') {
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => finish(new Error('Test Redis readiness timed out')), 5000)
+      const onReady = () => finish()
+      const onError = (error) => finish(error)
+      function finish(error) {
+        clearTimeout(timer)
+        redis.off('ready', onReady)
+        redis.off('error', onError)
+        error ? reject(error) : resolve()
       }
-      await pool.execute('SET FOREIGN_KEY_CHECKS = 1')
-      console.log(`♻️  dropped ${existing.length} stale test tables`)
-    }
-
-    // 读取并执行 init.sql 初始化表结构
-    const initSql = fs.readFileSync(
-      path.resolve(__dirname, '../sql/init.sql'),
-      'utf8'
-    )
-
-    // 按分号拆分 SQL 语句并逐条执行，测试环境下过滤掉创建和选择数据库的语句
-    const statements = initSql
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.toUpperCase().startsWith('CREATE DATABASE') && !s.toUpperCase().startsWith('USE'))
-
-    for (const statement of statements) {
-      await pool.execute(statement)
-    }
-
-    console.log('✅ Test database initialized')
-  } catch (err) {
-    console.error('❌ Failed to initialize test database:', err.message)
-    throw err
+      redis.once('ready', onReady)
+      redis.once('error', onError)
+    })
   }
+  await redis.ping()
+  const [[{ database }]] = await pool.query('SELECT DATABASE() AS `database`')
+  if (database !== 'aura_test') throw new Error(`Refusing to reset database: ${database}`)
+
+  const [existing] = await pool.execute(
+    'SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()'
+  )
+  const connection = await pool.getConnection()
+  try {
+    await connection.query('SET FOREIGN_KEY_CHECKS = 0')
+    for (const { TABLE_NAME } of existing) {
+      await connection.query('DROP TABLE IF EXISTS ??', [TABLE_NAME])
+    }
+  } finally {
+    await connection.query('SET FOREIGN_KEY_CHECKS = 1')
+    connection.release()
+  }
+
+  const initSql = fs.readFileSync(path.resolve(import.meta.dirname, '../sql/init.sql'), 'utf8')
+  const statements = initSql.split(';').map((s) => s.trim()).filter(
+    (s) => s.length > 0 && !s.toUpperCase().startsWith('CREATE DATABASE') && !s.toUpperCase().startsWith('USE')
+  )
+  for (const statement of statements) await pool.execute(statement)
+  initialized = true
+  console.log('Test database initialized: aura_test (isolated services)')
+})
+
+beforeEach(async () => {
+  // Required: user IDs are reused after TRUNCATE, so stale RBAC caches are unsafe.
+  await redis.flushdb()
 })
 
 afterAll(async () => {
   try {
-    // 清空所有表数据（按外键依赖顺序）
-    const tables = [
-      'user_settings',
-      'chat',
-      'model_config',
-      'note',
-      'workspace',
-      'role_menu',
-      'user_role',
-      'menu',
-      'role',
-      'user'
-    ]
-
-    await pool.execute('SET FOREIGN_KEY_CHECKS = 0')
-    for (const table of tables) {
+    if (initialized) {
+      const tables = ['user_settings', 'chat', 'model_config', 'note', 'workspace', 'role_menu', 'user_role', 'menu', 'role', 'user']
+      const connection = await pool.getConnection()
       try {
-        await pool.execute(`TRUNCATE TABLE \`${table}\``)
-      } catch {
-        // 表可能不存在，忽略
+        await connection.query('SET FOREIGN_KEY_CHECKS = 0')
+        for (const table of tables) await connection.query('TRUNCATE TABLE ??', [table])
+      } finally {
+        await connection.query('SET FOREIGN_KEY_CHECKS = 1')
+        connection.release()
       }
+      await redis.flushdb()
     }
-    await pool.execute('SET FOREIGN_KEY_CHECKS = 1')
-
-    // 清空测试期间写入的 Redis 缓存，与上面的 TRUNCATE 对称
-    if (redis) await redis.flushdb()
-
-    // 关闭连接池
+  } finally {
+    redis.disconnect()
     await pool.end()
-    console.log('🧹 Test database cleaned up')
-  } catch (err) {
-    console.error('⚠️ Cleanup warning:', err.message)
   }
 })

@@ -27,6 +27,16 @@ beforeAll(async () => {
   request = await getRequest()
 })
 
+// 创建属于该用户的模型配置，返回其 id
+const createModelConfig = async (token) => {
+  const res = await request.post('/api/model-config').set(authHeader(token)).send({
+    provider: 'openai',
+    modelName: 'gpt-4o-mini',
+  })
+  expect(res.status).toBe(200)
+  return res.body.data?.id ?? res.body.data
+}
+
 describe('对话 happy path', () => {
   it('发消息后返回模型回复，用户/助手消息均落库', async () => {
     const user = await registerAndLogin()
@@ -70,5 +80,50 @@ describe('对话 happy path', () => {
     // 用户消息落库时应带上本次使用的模型配置 id
     const userRow = messages.find((row) => row.proposer === 'user')
     expect(userRow.modelId).toBe(modelId)
+  })
+
+  it('新建项目未指定模型时回退用户默认模型（创建时落地）', async () => {
+    const user = await registerAndLogin()
+    const modelId = await createModelConfig(user.token)
+
+    const settingsRes = await request
+      .put('/api/user/settings')
+      .set(authHeader(user.token))
+      .send({ defaultModelId: modelId })
+    expect(settingsRes.status).toBe(200)
+    expect(settingsRes.body.code).toBe(200)
+
+    // 不传 modelId：POST /api/workspace 应把默认模型落到工作区上
+    const wsRes = await request
+      .post('/api/workspace')
+      .set(authHeader(user.token))
+      .send({ title: 'fallback ws' })
+    expect(wsRes.status).toBe(200)
+    expect(wsRes.body.data.modelId).toBe(modelId)
+  })
+
+  it('存量项目未挂模型时，聊天按 use_default_model 回退默认模型', async () => {
+    const user = await registerAndLogin()
+
+    // 先在工作区无模型、也无默认模型时创建（modelId 为 NULL 的存量形态）
+    const wsRes = await request
+      .post('/api/workspace')
+      .set(authHeader(user.token))
+      .send({ title: 'legacy ws' })
+    expect(wsRes.status).toBe(200)
+    const workspaceId = wsRes.body.data.id
+    expect(wsRes.body.data.modelId).toBeNull()
+
+    // 用户随后设置默认模型，存量项目应能直接对话
+    const modelId = await createModelConfig(user.token)
+    const settingsRes = await request.put('/api/user/settings').set(authHeader(user.token)).send({ defaultModelId: modelId })
+    expect(settingsRes.status).toBe(200)
+
+    const chatRes = await request
+      .post(`/api/chat/${workspaceId}`)
+      .set(authHeader(user.token))
+      .send({ content: 'hi', stream: false })
+    expect(chatRes.status).toBe(200)
+    expect(chatRes.body.data.content).toBe('mocked reply')
   })
 })

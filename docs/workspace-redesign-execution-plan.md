@@ -43,9 +43,9 @@
 
 ### B0 测试基线（0.5 天）
 
-把 `67f0847` 中撤出的 190 行 spec 测试恢复进 `server/test/`（`workspace.test.js` 的「项目化字段」12 例 + `chat-happy-path.test.js` 的默认模型回退 2 例），作为本阶段的红→绿目标。
+把历史提交 `a0eec5c`（reflog 可找回；不在 `67f0847` 的测试变更中）的 190 行 spec 恢复进 `server/test/`：`workspace.test.js` 的项目字段 10 例 + 统计 3 例，及 `chat-happy-path.test.js` 默认模型回退 2 例，共 **15 例**。作为本阶段的红→绿目标。B0 验收记录见 [workspace-redesign-b0-baseline.md](./workspace-redesign-b0-baseline.md)。
 
-> 注意：本机无 MySQL/Redis 时测试全量 skip。约定：开发时以 Docker 或本机实例跑测试；skip 状态不算绿。
+> 测试必须使用隔离的 MySQL/Redis，配置见 `server/test/README.md`。B0 已改为环境异常明确失败，不允许用 skip 代替通过。
 
 ### B1 数据层迁移（1 天）
 
@@ -204,6 +204,6 @@ CREATE INDEX idx_workspace_user_status
 
 ## 8. 每阶段验收口径
 
-- **B**：spec 测试（B0 恢复的 14 例）+ 新增 stats/detail/设置接口各补至少 1 例；`init.sql` 重建库后测试仍绿。
+- **B**：spec 测试（B0 恢复的 15 例）+ 新增 stats/detail/设置接口各补至少 1 例；`init.sql` 重建库后测试仍绿。
 - **F1**：对照原型 03/04/05/05b/06 骨架截图走查；`/workspace` 全链路（登录→工作台→新建项目→进 chat→返回）手工回归。
 - **F2**：对照原型 06/07/08/10/15 逐项走查；上一轮差距报告中的「建议对齐」清单逐项勾销；`pnpm build` + 全量测试绿。
