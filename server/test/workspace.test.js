@@ -143,7 +143,7 @@ describe('DELETE /api/workspace/:id', () => {
     const res = await request
       .post('/api/workspace')
       .set(authHeader(token))
-      .send({ title: 'to be deleted' })
+      .send({ title: 'to be deleted', status: 2 })
     workspaceId = res.body.data.id
   })
 

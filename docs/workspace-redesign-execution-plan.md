@@ -55,31 +55,42 @@
 ALTER TABLE workspace
   ADD COLUMN goal VARCHAR(255) DEFAULT NULL AFTER title,
   ADD COLUMN description VARCHAR(2000) DEFAULT NULL AFTER goal,
-  ADD COLUMN status TINYINT NOT NULL DEFAULT 0 AFTER description,
-  ADD COLUMN chat_count INT NOT NULL DEFAULT 0 AFTER status;  -- 见 B2 说明，可并入统计接口方案
+  ADD COLUMN status TINYINT NOT NULL DEFAULT 0 AFTER description;
 
 CREATE INDEX idx_workspace_user_status
   ON workspace (user_id, status);
+CREATE INDEX idx_chat_workspace_created
+  ON chat (workspace_id, created_at);
 ```
 
-同步更新 `server/sql/init.sql` 的 workspace 建表语句，保证新环境一致。
+同步更新 `server/sql/init.sql` 的 workspace/chat 建表语句，保证新环境一致。迁移仅对升级前的数据库备份后执行一次，不可对已更新的 init.sql 重复执行；本轮仅在隔离测试库验证，未迁移开发或生产库。
 
 - `status` 枚举：`0=进行中 1=暂停 2=已归档`（**整数**，理由见 §6.1）。
-- `chat_count` 冗余计数若实现成本高，可改为统计接口实时 `COUNT`，二选一在 B2 定稿。
+- **计数方案已定稿**：不新增 `chat_count` 冗余列；列表、详情实时返回 `chatCount`，表示 chat 消息记录数（含用户和助手消息），不是会话数或问答轮数。
 
 ### B2 workspace model / endpoint（1.5 天）
 
-目标文件：`server/models/workspace.js`、`server/endpoints/workspace.js`。
+目标文件：`server/models/workspace.js`、`server/endpoints/workspace.js`；`server/models/chat.js` 配套维护推进时间。
 
 | 接口 | 改动 |
 | --- | --- |
 | `POST /api/workspace` | 接收 `title, goal, description, status, modelId`；校验：goal ≤255、description ≤2000、status ∈ {0,1,2} 缺省 0 |
-| `PUT /api/workspace/:id` | 同字段；`goal` 传空串 → 置 NULL；全部字段缺省 → 400 |
-| `GET /api/workspace/list` | 支持 `status` 过滤；返回新字段；**默认排序改 `updated_at DESC`**（原型"最近推进在前"） |
+| `PUT /api/workspace/:id` | 同字段，按字段是否提供更新；goal/description 空串或 null → NULL；modelId=null 解除挂载；全部字段缺省 → 400 |
+| `GET /api/workspace/list` | 支持 `status` 过滤；返回新字段；**默认排序改 `updated_at DESC, id DESC`**（原型"最近推进在前"） |
 | `GET /api/workspace/:id` | **新增详情路由**（前端 `getWorkspaceDetail` 已定义，后端一直缺失）；含归属校验 |
 | `GET /api/workspace/stats` | **新增**：`{ active, paused, archived, advancedThisWeek }`，advancedThisWeek = 近 7 天有 chat 记录的项目数 |
 
-列表搜索：`title` 由精确等值放宽为 `LIKE '%kw%'`（原型侧栏搜索框的前置条件）。
+列表搜索：`title` 由精确等值放宽为参数化 `LIKE '%kw%'`，搜索文本中的 `%`、`_`、`!` 按字面量处理。列表保持 `data` 数组结构，不新增分页响应协议；排序字段仅允许 `title/created_at/updated_at`，方向仅允许 ASC/DESC。
+
+补充契约：
+
+- 写入 status 必须是 JSON 整数 0/1/2；查询 status 为字符串 "0"/"1"/"2"，筛选“全部”时不传。ID 必须是正安全整数。
+- stats 只统计当前用户项目：`advancedThisWeek` 为 `[数据库当前时间-7天, 当前时间]` 内有消息的去重项目数，涵盖各状态，不是自然周，也不是消息数。
+- 列表/详情返回 `chatCount` 和模型显示字段 `modelName/provider`，不返回模型密钥；详情沿用 owner/super_admin 权限规则，静态 `/stats` 路由置于 `/:id` 前。
+- Chat 每次持久化消息时，在同一事务中更新 workspace.updated_at，实现“最近推进在前”；以项目行锁协调项目删除，避免删除期间新增孤儿消息。
+- `DELETE /api/workspace/:id`：仅 status=2 可删除，否则 409；事务内锁定并检查状态，统一删除关联 note、chat 和 workspace。归属校验不变。前端归档/确认弹窗仍留在 F2，后端约束在 B2 落地。
+
+B1/B2 实施与验收记录见 [workspace-redesign-b1-b2-acceptance.md](./workspace-redesign-b1-b2-acceptance.md)。
 
 ### B3 用户默认模型设置（1 天）
 
@@ -178,14 +189,14 @@ CREATE INDEX idx_workspace_user_status
 
 ### 6.1 status 枚举：整数 0/1/2（已决）
 
-[frontend-workspace-redesign-dev-doc.md](./frontend-workspace-redesign-dev-doc.md) §6 写的是字符串枚举（`active/paused/archived`）。本计划改为 **TINYINT 0/1/2**：与已实现的 `status-pill` 组件、撤出的 spec 测试（`status=3 → 400`、`status=2 归档`）、库内既有惯例一致。**实现时需回改该文档 §6，避免后续误导。**
+[frontend-workspace-redesign-dev-doc.md](./frontend-workspace-redesign-dev-doc.md) 原 §6 的字符串枚举已在 B1/B2 同步改为 **TINYINT 0/1/2**：与已实现的 `status-pill` 组件、恢复的 spec 测试（`status=3 → 400`、`status=2 归档`）、库内既有惯例一致。
 
 ### 6.2 风险
 
 | 风险 | 应对 |
 | --- | --- |
 | 本机无 MySQL/Redis，测试静默 skip | B0 约定测试环境（Docker compose 或本机实例）；CI 若引入，把"全 skip"视为失败 |
-| `chat_count` 冗余列与写放大 | 优先 stats 接口实时聚合，数据量小；冗余列仅作备选 |
+| 计数查询成本 | B1/B2 已采用实时计数并新增 chat(workspace_id, created_at) 索引；暂不引入冗余计数同步 |
 | F1 重写工作台页时旧 WIP 已删无可参考 | 以原型 03/04/05/05b + 本计划 F1.3 清单为准；首轮审查报告中有 WIP 的结构记录 |
 | B4 回退改变 `POST /workspace` 既有语义（原必须传 modelId？） | 实测现状：不传 modelId 可创建（model_id NULL）；B4 只是让 NULL 场景更可用，无破坏 |
 | 前端在 G1 前抢跑导致契约返工 | 以阶段门约束；接口字段以 B 阶段测试为准（测试即契约） |

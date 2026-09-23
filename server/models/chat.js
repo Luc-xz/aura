@@ -1,3 +1,4 @@
+import { NotFound } from '../utils/appError.js'
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
 import { formatResponse } from '../../shared/utils/formatter.js'
@@ -41,9 +42,25 @@ export default class Chat {
     if (!workspaceId) {
       throw new Error('workspaceId is required')
     }
-    const baseSql = 'INSERT INTO chat (workspace_id, proposer, content, model_id) VALUES (?, ?, ?, ?)'
-    const [result] = await db.query(baseSql, [workspaceId, proposer, content, modelId ?? null])
-    return result.insertId
+    const connection = await db.getConnection()
+    try {
+      await connection.beginTransaction()
+      // Lock the parent before writing so deletion cannot leave orphan messages.
+      const [[workspace]] = await connection.query('SELECT id FROM workspace WHERE id = ? FOR UPDATE', [workspaceId])
+      if (!workspace) throw NotFound('workspace not found')
+      const [result] = await connection.query(
+        'INSERT INTO chat (workspace_id, proposer, content, model_id) VALUES (?, ?, ?, ?)',
+        [workspaceId, proposer, content, modelId ?? null]
+      )
+      await connection.query('UPDATE workspace SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [workspaceId])
+      await connection.commit()
+      return result.insertId
+    } catch (error) {
+      await connection.rollback()
+      throw error
+    } finally {
+      connection.release()
+    }
   }
 
   static async update(id, payload) {

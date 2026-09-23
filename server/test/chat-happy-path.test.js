@@ -1,3 +1,4 @@
+import pool from '../sql/index.js'
 /**
  * 对话 happy-path 冒烟测试
  * 用 MockLanguageModelV3 替换真实模型，验证「发消息 → 模型回复 → 双方消息落库」主链路。
@@ -125,5 +126,32 @@ describe('对话 happy path', () => {
       .send({ content: 'hi', stream: false })
     expect(chatRes.status).toBe(200)
     expect(chatRes.body.data.content).toBe('mocked reply')
+  })
+})
+
+
+describe('project activity from chat', () => {
+  it('moves a previously old project to the top after persisted chat and counts both messages', async () => {
+    const user = await registerAndLogin()
+    const modelId = await createModelConfig(user.token)
+    const projectIds = []
+    for (const title of ['old project', 'newer project']) {
+      const res = await request.post('/api/workspace').set(authHeader(user.token)).send({ title, modelId })
+      expect(res.status).toBe(200)
+      projectIds.push(res.body.data.id)
+    }
+    await pool.query('UPDATE workspace SET updated_at = NOW() - INTERVAL 10 DAY WHERE id = ?', [projectIds[0]])
+    await pool.query('UPDATE workspace SET updated_at = NOW() - INTERVAL 2 DAY WHERE id = ?', [projectIds[1]])
+    const before = await request.get('/api/workspace/list').set(authHeader(user.token))
+    expect(before.body.data.map(row => row.id)).toEqual([projectIds[1], projectIds[0]])
+    const response = await request.post('/api/chat/' + projectIds[0]).set(authHeader(user.token)).send({ content: 'advance this project', stream: false })
+    expect(response.status).toBe(200)
+    const after = await request.get('/api/workspace/list').set(authHeader(user.token))
+    expect(after.status).toBe(200)
+    expect(after.body.data.map(row => row.id)).toEqual([projectIds[0], projectIds[1]])
+    expect(after.body.data[0].chatCount).toBe(2)
+    expect(after.body.data[0].updatedAt).not.toBe(before.body.data[1].updatedAt)
+    const stats = await request.get('/api/workspace/stats').set(authHeader(user.token))
+    expect(stats.body.data.advancedThisWeek).toBe(1)
   })
 })

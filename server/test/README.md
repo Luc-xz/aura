@@ -56,7 +56,8 @@ node node_modules/vitest/vitest.mjs run
 ## 阶段性红灯
 
 B0 恢复了 `a0eec5c` 的 15 条历史契约测试。恢复后不是全绿：
-B1/B2 尚未实现项目字段与统计，B3/B4 尚未实现设置及默认模型回退。
+B0 当时的红灯包括 B1/B2 项目字段与统计，以及 B3/B4 设置及默认模型回退。
+B1/B2 本轮已实现，当前全量回归预期只剩 B3/B4 的两条红灯；阶段结果见 `docs/workspace-redesign-b1-b2-acceptance.md`。
 这些用例正常执行并失败，不使用 skip、todo 或 expected-failure 掩盖。
 
 验收记录见 `docs/workspace-redesign-b0-baseline.md`。后续阶段应逐步消除对应红灯，

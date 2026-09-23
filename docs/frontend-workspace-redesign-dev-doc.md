@@ -268,8 +268,8 @@ Aura
 
 ```sql
 goal VARCHAR(255) DEFAULT NULL,
-description TEXT DEFAULT NULL,
-status VARCHAR(32) NOT NULL DEFAULT 'active'
+description VARCHAR(2000) DEFAULT NULL,
+status TINYINT NOT NULL DEFAULT 0
 ```
 
 字段说明：
@@ -278,8 +278,8 @@ status VARCHAR(32) NOT NULL DEFAULT 'active'
 | --- | --- | --- | --- |
 | title | VARCHAR(255) | 是 | 项目名称，保留现有字段 |
 | goal | VARCHAR(255) | 否 | 项目目标，一句话说明要推进什么 |
-| description | TEXT | 否 | 项目背景、范围或备注 |
-| status | VARCHAR(32) | 是 | 项目状态，默认 active |
+| description | VARCHAR(2000) | 否 | 项目背景、范围或备注，最多 2000 字符 |
+| status | TINYINT | 是 | 项目状态，默认 0；0=进行中、1=暂停、2=已归档 |
 | model_id | INT | 否 | 默认模型，保留现有字段 |
 
 ### 6.2 状态枚举
@@ -287,23 +287,23 @@ status VARCHAR(32) NOT NULL DEFAULT 'active'
 第一版使用三个状态：
 
 ```text
-active   -> 进行中
-paused   -> 暂停
-archived -> 已归档
+0 -> 进行中 (active)
+1 -> 暂停 (paused)
+2 -> 已归档 (archived)
 ```
 
 状态使用建议：
 
-1. `active` 是默认状态，项目工作台优先展示。
-2. `paused` 用于暂时不推进但仍保留上下文的项目。
-3. `archived` 用于已完成或不再推进的项目。
+1. `0` 是默认状态，项目工作台优先展示。
+2. `1` 用于暂时不推进但仍保留上下文的项目。
+3. `2` 用于已完成或不再推进的项目。
 
 ### 6.3 数据库迁移
 
 建议新增迁移文件：
 
 ```text
-server/sql/migrations/20260709_alter_workspace_project_fields.sql
+server/sql/migrations/20260924_alter_workspace_project_fields.sql
 ```
 
 迁移内容示例：
@@ -311,11 +311,13 @@ server/sql/migrations/20260709_alter_workspace_project_fields.sql
 ```sql
 ALTER TABLE workspace
   ADD COLUMN goal VARCHAR(255) DEFAULT NULL AFTER title,
-  ADD COLUMN description TEXT DEFAULT NULL AFTER goal,
-  ADD COLUMN status VARCHAR(32) NOT NULL DEFAULT 'active' AFTER description;
+  ADD COLUMN description VARCHAR(2000) DEFAULT NULL AFTER goal,
+  ADD COLUMN status TINYINT NOT NULL DEFAULT 0 AFTER description;
 
-CREATE INDEX idx_workspace_user_status_updated_at
-  ON workspace (user_id, status, updated_at);
+CREATE INDEX idx_workspace_user_status
+  ON workspace (user_id, status);
+CREATE INDEX idx_chat_workspace_created
+  ON chat (workspace_id, created_at);
 ```
 
 同时更新 `server/sql/init.sql`，保证新环境初始化时字段一致。
@@ -360,14 +362,23 @@ server/endpoints/workspace.js
 
 3. `POST /api/workspace`
    - 接收 `title, goal, description, status, modelId`。
-   - `status` 不传时默认为 `active`。
+   - `status` 不传时默认为整数 `0`，仅接收 JSON 整数 0/1/2。
 
 4. `PUT /api/workspace/:id`
    - 接收 `title, goal, description, status, modelId`。
    - 必须校验当前用户拥有该 workspace。
 
 5. `DELETE /api/workspace/:id`
-   - 必须校验当前用户拥有该 workspace。
+   - 归属校验沿用 owner/super_admin 规则；仅已归档（status=2）可删，否则 409。
+   - 在事务内删除项目及其关联消息、笔记。
+
+6. `GET /api/workspace/stats`
+   - 返回 `{ active, paused, archived, advancedThisWeek }`，只统计当前用户。
+   - advancedThisWeek 是近 7 天至当前时间内有消息的去重项目数，不是自然周。
+
+列表/详情均返回实时 `chatCount`，不增加冗余数据库列；每次消息落库同步更新项目推进时间。
+`goal/description` 传空串或 null 清空，`modelId=null` 解除挂载；PUT 未提供的字段不变。
+这些契约以执行计划 B1/B2 及 HTTP 集成测试为准，前端代码在 F1 阶段接入。
 
 ### 7.3 响应结构
 
@@ -375,7 +386,7 @@ server/endpoints/workspace.js
 
 ```json
 {
-  "code": 1,
+  "code": 200,
   "message": "success",
   "data": {}
 }
@@ -461,7 +472,7 @@ interface/src/api/workspace/index.ts
 建议补充类型：
 
 ```ts
-export type WorkspaceStatus = 'active' | 'paused' | 'archived'
+export type WorkspaceStatus = 0 | 1 | 2
 
 export interface Workspace {
   id: number
@@ -469,6 +480,7 @@ export interface Workspace {
   goal?: string | null
   description?: string | null
   status: WorkspaceStatus
+  chatCount: number // 用户与助手消息记录总数，不是会话数
   modelId?: number | null
   modelName?: string | null
   provider?: string | null
@@ -478,20 +490,21 @@ export interface Workspace {
 
 export interface WorkspacePayload {
   title: string
-  goal?: string
-  description?: string
+  goal?: string | null
+  description?: string | null
   status?: WorkspaceStatus
-  modelId?: number
+  modelId?: number | null
 }
 ```
 
 接口函数建议：
 
 ```ts
-getWorkspaceList(params?: { status?: WorkspaceStatus | 'all'; keyword?: string })
+// 全部状态时不传 status；服务端返回 data 数组，默认按 updated_at DESC, id DESC
+getWorkspaceList(params?: { status?: WorkspaceStatus; title?: string })
 getWorkspaceDetail(id: string | number)
 createWorkspace(data: WorkspacePayload)
-updateWorkspace(id: string | number, data: WorkspacePayload)
+updateWorkspace(id: string | number, data: Partial<WorkspacePayload>)
 deleteWorkspace(id: string | number)
 ```
 
