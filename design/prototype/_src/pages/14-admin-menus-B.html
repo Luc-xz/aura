@@ -1,0 +1,164 @@
+<!--# title: 14 菜单管理 · 方案B -->
+<!--# desc: 树形表格（目录/菜单/按钮 + 权限码 + 标识）；左侧导航由本页配置驱动、按角色可见 -->
+<!--# body: data-setnav="menus" -->
+<section class="screen">
+  <!-- @include setnav-b.html -->
+
+  <main class="main">
+    <div class="page-head">
+      <div class="page-head__text">
+        <span class="t-title">菜单管理</span>
+        <span class="t-body t-muted">维护导航结构、权限码与可见性——各角色看到的左侧导航即由此驱动</span>
+      </div>
+      <button class="btn btn--primary">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+          <path d="M7 1.5v11M1.5 7h11" />
+        </svg>
+        新增菜单
+      </button>
+    </div>
+
+    <div class="filters" style="align-items: center">
+      <div class="search" style="width: 240px; height: 34px; background: var(--surface)">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="6" cy="6" r="4.2" /><path d="M9.2 9.2 12.5 12.5" stroke-linecap="round" />
+        </svg>
+        搜索菜单名称、标识或权限码
+      </div>
+      <div class="filter" style="height: 34px; color: var(--ink)">
+        全部类型
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+          <path d="M3.5 5.5 7 9l3.5-3.5" />
+        </svg>
+      </div>
+      <span class="t-primary w-medium" style="margin-left: auto">展开全部</span>
+    </div>
+
+    <div class="table">
+      <div class="table__head" style="height: 40px">
+        <span style="width: 290px">菜单名称</span>
+        <span style="width: 70px">类型</span>
+        <span style="width: 170px">权限码</span>
+        <span style="width: 130px">标识</span>
+        <span class="cell-grow">路由路径</span>
+        <span style="width: 70px">可见</span>
+        <span style="width: 110px">操作</span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 290px" class="w-semi">工作台</span>
+        <span style="width: 70px" class="t-muted">菜单</span>
+        <span style="width: 170px">—</span>
+        <span style="width: 130px"><span class="perm-code">workspace</span></span>
+        <span class="cell-grow t-muted">/workspace</span>
+        <span style="width: 70px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 290px; display: flex; align-items: center; gap: 6px">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+            <path d="M5 3l4 4-4 4" />
+          </svg>
+          <span class="w-semi">笔记</span>
+        </span>
+        <span style="width: 70px" class="t-muted">目录</span>
+        <span style="width: 170px">—</span>
+        <span style="width: 130px"><span class="perm-code">note</span></span>
+        <span class="cell-grow t-muted">/note</span>
+        <span style="width: 70px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 290px; padding-left: 26px" class="t-muted">↳ 笔记库</span>
+        <span style="width: 70px" class="t-muted">菜单</span>
+        <span style="width: 170px">—</span>
+        <span style="width: 130px"><span class="perm-code">note-library</span></span>
+        <span class="cell-grow t-muted">/note</span>
+        <span style="width: 70px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 290px; padding-left: 44px" class="t-muted" >↳ 新建笔记</span>
+        <span style="width: 70px" class="t-muted">按钮</span>
+        <span style="width: 170px"><span class="perm-code">note:create</span></span>
+        <span style="width: 130px" class="t-placeholder">—</span>
+        <span class="cell-grow t-placeholder">—</span>
+        <span style="width: 70px" class="t-placeholder">—</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 290px; display: flex; align-items: center; gap: 6px">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+            <path d="M5 3l4 4-4 4" />
+          </svg>
+          <span class="w-semi">设置</span>
+        </span>
+        <span style="width: 70px" class="t-muted">目录</span>
+        <span style="width: 170px">—</span>
+        <span style="width: 130px"><span class="perm-code">setting</span></span>
+        <span class="cell-grow t-muted">/setting</span>
+        <span style="width: 70px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 290px; padding-left: 26px" class="t-muted">↳ 我的模型</span>
+        <span style="width: 70px" class="t-muted">菜单</span>
+        <span style="width: 170px">—</span>
+        <span style="width: 130px"><span class="perm-code">my-model</span></span>
+        <span class="cell-grow t-muted">/setting/model</span>
+        <span style="width: 70px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 290px; padding-left: 26px" class="t-muted">↳ 系统管理</span>
+        <span style="width: 70px" class="t-muted">目录</span>
+        <span style="width: 170px">—</span>
+        <span style="width: 130px"><span class="perm-code">admin</span></span>
+        <span class="cell-grow t-muted">/setting/admin</span>
+        <span style="width: 70px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 290px; padding-left: 44px" class="t-muted">↳ 用户管理</span>
+        <span style="width: 70px" class="t-muted">菜单</span>
+        <span style="width: 170px">—</span>
+        <span style="width: 130px"><span class="perm-code">admin-user</span></span>
+        <span class="cell-grow t-muted">/setting/admin/users</span>
+        <span style="width: 70px" class="t-success w-medium">显示</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 290px; padding-left: 62px" class="t-muted">↳ 新增用户</span>
+        <span style="width: 70px" class="t-muted">按钮</span>
+        <span style="width: 170px"><span class="perm-code">user:create</span></span>
+        <span style="width: 130px" class="t-placeholder">—</span>
+        <span class="cell-grow t-placeholder">—</span>
+        <span style="width: 70px" class="t-placeholder">—</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+
+      <div class="table__row table__row--compact">
+        <span style="width: 290px; padding-left: 62px" class="t-muted">↳ 删除用户</span>
+        <span style="width: 70px" class="t-muted">按钮</span>
+        <span style="width: 170px"><span class="perm-code">user:delete</span></span>
+        <span style="width: 130px" class="t-placeholder">—</span>
+        <span class="cell-grow t-placeholder">—</span>
+        <span style="width: 70px" class="t-placeholder">—</span>
+        <span style="width: 110px; display: flex; gap: 10px"><span class="cell-link">编辑</span><span class="cell-link" style="color: var(--muted)">删除</span></span>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <span class="annotation">说明：原「审计日志」隐藏菜单项已移除（远期规划）；左侧导航为 super_admin 视角、按角色过滤。表中「系统管理」收进「设置」目录、路由（/setting/model 等）与标识（my-model 等）均为目标态——现状为 /setting/model-config、/admin/users、model_config、user，落地时需迁移菜单种子与前端路由；按钮权限码需扩展菜单种子</span>
+      <span class="t-sm t-muted num">共 10 条 · 目录 3 · 菜单 4 · 按钮 3</span>
+    </div>
+  </main>
+</section>

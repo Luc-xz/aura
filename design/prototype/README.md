@@ -1,9 +1,34 @@
 # Aura 工作台改版 · 原型交付
 
-UI 原型已按**两种形态**落盘：可读的 HTML 原型（主）+ 静态 PNG（视觉参照）。
-设计源文件：Ardot `Aura 工作台改版原型` — https://ardot.tencent.com/file/723970175272232
+UI 原型以**可读 HTML** 形态交付：每屏一个自包含单文件，模型与开发可直接读取。
+设计源文件：Ardot `Aura 工作台改版原型` — https://ardot.tencent.com/file/723970175272232（视觉基准，可随时重新导出）。
 
 配套文档：`docs/frontend-workspace-redesign-dev-doc.md`（改造方案）、`docs/aura-ui-redesign-options.html`（A/B 草图）。
+
+---
+
+## 变更记录 · 2026-09-22（对齐《原型调整建议-不建议对齐项.md》）
+
+**目录整理**：移除全部 PNG 与旧画廊页 index.html；随后目录扁平化——生成屏、入口页、脚本与 `_src/` 均位于 `design/prototype/` 根，不再有 `html/` 子目录。2026-09-23 复核：补齐 06 页此前缺失的「工具执行状态」「AI 保存回执」示意（变更说明与页面一度不符），并按新布局修正本文全部路径。
+
+**功能逻辑修正**
+- 13：权限矩阵 → 「权限配置面板 + 菜单/按钮树勾选」，按钮项带权限码（`note:create` 等）；管理员为系统内置只读锁定态（锁标 + 不可编辑）
+- 11：模型配置定位改为**个人资源**，标题「我的模型」，副标题注明每用户独立 API Key、仅本人可见
+- 12：行操作改为「编辑（含改密）/ 分配角色 / 删除」，移除独立重置密码；新增按钮级权限标注（无 `user:create` 不可见）
+- 14：类型枚举改为「目录 / 菜单 / 按钮」，补「权限码」「标识」两列；移除「审计日志」隐藏项（远期规划，表格下方有标注）
+- 02：标注「实现为 /login 同页双态切换（?type=register）」
+
+**补充实现领先原型的能力**
+- 06：Agent 工具执行状态（✓ 已检索笔记 · 命中 3 条）、引用来源标签（可点击跳笔记）、AI 自动保存回执（已保存：×××）、消息级「存为笔记」与**划选部分文本保存**（高亮 + 浮动按钮）
+- 15：登录限流 toast（操作过于频繁，60 秒后重试）
+- 14：补导航说明——左侧导航由菜单配置驱动、按角色可见（super_admin 视角示意）
+
+**视觉升级（样式基座 v2）**
+- 阴影体系 xs/sm/md/pop：卡片浮起、表格与弹窗分层；边框弱化为 #E4EAF0
+- 主色阶化 + 渐变：主按钮 / Logo / 头像 / 发送键改渐变 + 内高光 + 投影
+- 选中导航（modnav/setnav/会话项）加左侧指示条；表格行与列表项 hover 反馈
+- 状态胶囊加同色描边；标题收紧字距、统计数字 tabular-nums、表头加字距
+- 输入框 focus ring（3px 主色光环）；空状态改虚线描边；登录品牌区改渐变深色
 
 ---
 
@@ -11,12 +36,11 @@ UI 原型已按**两种形态**落盘：可读的 HTML 原型（主）+ 静态 P
 
 | 形态 | 位置 | 适合谁用 |
 |---|---|---|
-| **可读 HTML 原型** | `design/prototype/html/*.html` | **模型与开发**：文本形态，结构、class、样式值都能直接读取，双击即开 |
-| 静态图 PNG | `design/prototype/*.png` | 人：快速浏览整体视觉，作为还原度基准 |
+| **可读 HTML 原型** | `design/prototype/*.html` | **模型与开发**：文本形态，结构、class、样式值都能直接读取，双击即开 |
 | 设计 Token | `design/prototype/tokens.css` · `tokens.json` | 代码接入：直接引入或映射到 Tailwind theme |
 
-> PNG 是位图，模型只能「看」不能「读」——拿不到精确的尺寸、间距、色值与图层关系。
-> 因此 HTML 原型是后续开发的主入口，PNG 退居视觉参照。
+> 位图导出（PNG）已移除：位图模型只能「看」不能「读」，也无法随源稿迭代。
+> 视觉源文件为 Ardot 画布（https://ardot.tencent.com/file/723970175272232），可随时重新导出；开发读取以本目录 HTML 为准。
 
 ---
 
@@ -25,7 +49,7 @@ UI 原型已按**两种形态**落盘：可读的 HTML 原型（主）+ 静态 P
 ### 目录结构
 
 ```
-design/prototype/html/
+design/prototype/
 ├── index.html               # 入口页（自动生成，按方案分组索引）
 ├── 00-cover.html            # 17 个自包含屏（CSS 内联，无外部依赖）
 ├── 01-login-A.html
@@ -33,6 +57,7 @@ design/prototype/html/
 ├── 15-states-feedback.html
 ├── build.mjs                # 生成脚本
 ├── check.mjs                # 自检脚本（标签配对 / 样式类覆盖 / 占位符残留）
+├── tokens.css / tokens.json # 设计 Token
 └── _src/                    # 源文件（改这里，不要改生成结果）
     ├── app.css              # 设计系统样式基座
     ├── partials/            # 可复用外壳：rail-a / sidebar-projects / leftbar-b / setnav-b
@@ -43,7 +68,7 @@ design/prototype/html/
 
 - 每个 `.html` 都是**自包含单文件**：样式内联、图标为内联 SVG、无 CDN 与构建依赖，双击即可在浏览器打开。
 - 画布锁定 **1440×900**，打开时按窗口**等比缩放**，与设计稿观感一致。
-- 修改流程：改 `_src/` 下的样式或片段 → 在 `html/` 目录运行 `node build.mjs` → 重新生成全部屏。
+- 修改流程：改 `_src/` 下的样式或片段 → 在 `design/prototype/` 目录运行 `node build.mjs` → 重新生成全部屏。
 - 自检：`node check.mjs`（会报告标签不配对、用到但未定义的 class、残留占位符）。
 
 ### 为什么这样组织
@@ -72,29 +97,27 @@ A 的深色 Rail 只在入口层出现，进入 B 后降级为左栏顶部的轻
 
 改动类型：**新增** = 现无此页面需新建；**重构** = 结构/布局重写；**改造** = 沿用现有结构，替换视觉与信息密度。
 
-| HTML | PNG | 界面 | 方案 | 目标路由 | 现有代码 | 改动 |
-|---|---|---|---|---|---|---|
-| `00-cover.html` | `00-cover.png` | 封面与索引 | — | — | — | 索引 |
-| `01-login-A.html` | `01-login-A.png` | 登录 | A | `/login` | `interface/src/pages/login/index.tsx` | 改造 |
-| `02-register-A.html` | `02-register-A.png` | 注册 | A | `/login`（切换态） | `interface/src/pages/login/index.tsx` | 改造 |
-| `03-workspace-A.html` | `03-workspace-A.png` | 项目工作台 | A | `/`（现重定向 `/chat`） | `interface/src/pages/index.tsx` | **新增** |
-| `04-workspace-empty-A.html` | `04-workspace-empty-A.png` | 工作台空状态 | A | `/` | 同上 | **新增** |
-| `05-new-project-A.html` | `05-new-project-A.png` | 新建项目弹窗 | A | `/` | 同上 | **新增** |
-| `05b-edit-project-modal-A.html` | `05b-new-project-modal-A.png` | 编辑项目弹窗 | A | `/` | 同上 | **新增** |
-| `06-project-advance-B.html` | `06-project-advance-B.png` | 项目推进页 | B | `/chat` | `interface/src/pages/chat/index.tsx` | 重构 |
-| `07-chat-empty-B.html` | `07-chat-empty-B.png` | 推进页空会话 | B | `/chat` | 同上 | 重构 |
-| `08-note-library-B.html` | `08-note-library-B.png` | 笔记库 | B | `/note` | `interface/src/pages/note/index.tsx` | 重构 |
-| `09-note-editor-B.html` | `09-note-editor-B.png` | 笔记编辑 | B | `/note/edit/:id?` | `interface/src/pages/note/edit.tsx` | 重构 |
-| `10-settings-B.html` | `10-settings-B.png` | 设置首页 | B | `/setting` | `interface/src/pages/setting/index.tsx` | 改造 |
-| `11-model-config-B.html` | `11-model-config-B.png` | 模型配置 | B | `/setting/model-config` | `interface/src/pages/setting/model-config.tsx` | 改造 |
-| `12-admin-users-B.html` | `12-admin-users-B.png` | 用户管理 | B | `/admin/users` | `interface/src/pages/admin/users/index.tsx` | 改造 |
-| `13-admin-roles-B.html` | `13-admin-roles-B.png` | 角色管理（权限矩阵） | B | `/admin/roles` | `interface/src/pages/admin/roles/index.tsx` | 改造 |
-| `14-admin-menus-B.html` | `14-admin-menus-B.png` | 菜单管理（树形表格） | B | `/admin/menus` | `interface/src/pages/admin/menus/index.tsx` | 改造 |
-| `15-states-feedback.html` | `15-states-feedback.png` | 状态与反馈规范 | 全局 | — | 建议新建 `components/ui/*` | **新增** |
+| HTML | 界面 | 方案 | 目标路由 | 现有代码 | 改动 |
+|---|---|---|---|---|---|
+| `00-cover.html` | 封面与索引 | — | — | — | 索引 |
+| `01-login-A.html` | 登录 | A | `/login` | `interface/src/pages/login/index.tsx` | 改造 |
+| `02-register-A.html` | 注册 | A | `/login`（切换态） | `interface/src/pages/login/index.tsx` | 改造 |
+| `03-workspace-A.html` | 项目工作台 | A | `/`（现重定向 `/chat`） | `interface/src/pages/index.tsx` | **新增** |
+| `04-workspace-empty-A.html` | 工作台空状态 | A | `/` | 同上 | **新增** |
+| `05-new-project-A.html` | 新建项目弹窗 | A | `/` | 同上 | **新增** |
+| `05b-edit-project-modal-A.html` | 编辑项目弹窗 | A | `/` | 同上 | **新增** |
+| `06-project-advance-B.html` | 项目推进页 | B | `/chat` | `interface/src/pages/chat/index.tsx` | 重构 |
+| `07-chat-empty-B.html` | 推进页空会话 | B | `/chat` | 同上 | 重构 |
+| `08-note-library-B.html` | 笔记库 | B | `/note` | `interface/src/pages/note/index.tsx` | 重构 |
+| `09-note-editor-B.html` | 笔记编辑 | B | `/note/edit/:id?` | `interface/src/pages/note/edit.tsx` | 重构 |
+| `10-settings-B.html` | 设置首页 | B | `/setting` | `interface/src/pages/setting/index.tsx` | 改造 |
+| `11-model-config-B.html` | 我的模型（个人资源） | B | `/setting/model-config` | `interface/src/pages/setting/model-config.tsx` | 改造 |
+| `12-admin-users-B.html` | 用户管理 | B | `/admin/users` | `interface/src/pages/admin/users/index.tsx` | 改造 |
+| `13-admin-roles-B.html` | 角色管理（权限树 + 抽屉示意） | B | `/admin/roles` | `interface/src/pages/admin/roles/index.tsx` | 改造 |
+| `14-admin-menus-B.html` | 菜单管理（目录/菜单/按钮 + 权限码） | B | `/admin/menus` | `interface/src/pages/admin/menus/index.tsx` | 改造 |
+| `15-states-feedback.html` | 状态与反馈规范 | 全局 | — | 建议新建 `components/ui/*` | **新增** |
 
-> **05b 与 PNG 的差异**：PNG 里 05b 是「新建项目弹窗态」（底图+遮罩+弹窗的合成），
-> HTML 版在此基础上把 05b 做成了**编辑项目弹窗**（字段预填、含删除入口），
-> 与 05 的新建空表单形成一对，便于开发直接对照两种状态。
+> **05 与 05b**：05 为新建项目弹窗（空表单），05b 为编辑项目弹窗（字段预填、含删除入口），成对覆盖两种状态。
 
 > 当前 `pages/index.tsx` 仅做 `redirect('/chat')`，改版后需承载真正的项目工作台，这是本次改动量最大的一块。
 
@@ -125,7 +148,7 @@ A 的深色 Rail 只在入口层出现，进入 B 后降级为左栏顶部的轻
 
 - `tokens.css` — CSS 变量，可直接引入或在 Tailwind theme 中引用
 - `tokens.json` — 结构化 token，含状态色语义（项目/会话状态对应文案与配色）
-- `html/_src/app.css` — HTML 原型实际使用的样式基座，数值与上面两份一致
+- `_src/app.css` — HTML 原型实际使用的样式基座，数值与上面两份一致
 
 核心色：主色 `#2266D1`、进行中 `#2F7D5C`、已暂停 `#AD6D18`、已归档 `#6B7785`、失败 `#C0392B`、深色 Rail `#18222D`、画布 `#F5F7F9`、描边 `#DCE3EA`、主文字 `#16202A`。
 
@@ -142,5 +165,4 @@ A 的深色 Rail 只在入口层出现，进入 B 后降级为左栏顶部的轻
 
 ## 八、在线预览
 
-- **HTML 原型入口**：`design/prototype/html/index.html`（推荐，可点击进入每一屏）
-- PNG 画廊：`design/prototype/index.html`
+- **HTML 原型入口**：`design/prototype/index.html`（可点击进入每一屏）
