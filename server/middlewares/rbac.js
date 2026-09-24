@@ -132,6 +132,8 @@ export const requireOwnership = ({ resource, idFrom = 'params.id' }) => {
     if (rows.length === 0) {
       throw NotFound('resource not found')
     }
+    // 属主 id 透传给 handler 复用（如 modelId 挂载比对），避免再查一次详情
+    req.resourceOwnerId = rows[0].user_id
 
     if (rows[0].user_id === userId) {
       return next()

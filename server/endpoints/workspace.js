@@ -37,12 +37,7 @@ function listOptions(query) {
     }
     filters[field] = range
   }
-  const orderBy = query.orderBy ?? 'updated_at'
-  const orderDir = typeof query.orderDir === 'string' ? query.orderDir.toUpperCase() : query.orderDir ?? 'DESC'
-  if (!['title', 'created_at', 'updated_at'].includes(orderBy) || !['ASC', 'DESC'].includes(orderDir)) {
-    throw BadRequest('invalid workspace sort')
-  }
-  return { filters, sort: { orderBy, orderDir } }
+  return { filters, sort: { orderBy: query.orderBy, orderDir: query.orderDir } }
 }
 
 // Presence, not truthiness: status=0 and empty/null text are intentional updates.
@@ -132,19 +127,14 @@ function workspaceEndpoints(apiRouter) {
     const payload = projectPayload(req.body)
     const { modelId } = payload
 
-    const existing = await Workspace.findById(id)
-    if (!existing) {
-      throw NotFound('workspace not found')
-    }
-
     // modelId 挂载校验：配置必须属于工作区属主（唯一校验点，chat 只读工作区挂载的配置）
-    // 校验对象是属主而非操作者，防止 super_admin 代管时把自己的配置挂进他人工作区
+    // 校验对象是属主（requireOwnership 已查出，挂在 req 上）而非操作者，防止 super_admin 代管时把自己的配置挂进他人工作区
     if (modelId) {
       const modelConfig = await ModelConfig.findById(modelId)
       if (!modelConfig) {
         throw NotFound('model config not found')
       }
-      if (modelConfig.userId !== existing.userId) {
+      if (modelConfig.userId !== req.resourceOwnerId) {
         throw Forbidden('model config does not belong to the workspace owner')
       }
     }
@@ -158,12 +148,7 @@ function workspaceEndpoints(apiRouter) {
   }))
 
   router.delete('/:id', asyncHandler(requireOwnership({ resource: 'workspace' })), asyncHandler(async (req, res) => {
-    const { id } = req.params
-    const existing = await Workspace.findById(id)
-    if (!existing) {
-      throw NotFound('workspace not found')
-    }
-    const data = await Workspace.delete(id)
+    const data = await Workspace.delete(req.params.id)
     res.status(200).json({
       data,
       code: 200,

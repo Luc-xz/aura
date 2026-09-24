@@ -31,11 +31,13 @@ export default class Workspace {
       params.push('%' + filters.title.replace(/[!%_]/g, '!$&') + '%')
     }
     const orderBy = sort.orderBy ?? 'updated_at'
-    const orderDir = (sort.orderDir ?? 'DESC').toUpperCase()
-    if (!['title', 'created_at', 'updated_at'].includes(orderBy) || !['ASC', 'DESC'].includes(orderDir)) {
+    const orderDir = sort.orderDir ?? 'DESC'
+    if (typeof orderBy !== 'string' || typeof orderDir !== 'string'
+      || !['title', 'created_at', 'updated_at'].includes(orderBy)
+      || !['ASC', 'DESC'].includes(orderDir.toUpperCase())) {
       throw BadRequest('invalid workspace sort')
     }
-    const query = this.detailSelect + where + ' ORDER BY workspace.' + orderBy + ' ' + orderDir + ', workspace.id DESC'
+    const query = this.detailSelect + where + ' ORDER BY workspace.' + orderBy + ' ' + orderDir.toUpperCase() + ', workspace.id DESC'
     if (!pagination) {
       const [rows] = await db.query(query, params)
       return rows.map(this.filterFields)
