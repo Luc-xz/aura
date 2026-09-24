@@ -2,6 +2,7 @@ import express from 'express'
 import Chat from '../models/chat.js'
 import ModelConfig from '../models/model-config.js'
 import Workspace from '../models/workspace.js'
+import UserSettings from '../models/user-settings.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import rateLimit from '../middlewares/rate-limit.js'
 import { authMiddleware } from '../middlewares/auth.js'
@@ -57,11 +58,19 @@ function chatEndpoints(apiRouter) {
       }
 
       const workspace = await Workspace.findById(workspaceId)
-      if (!workspace.modelId) {
-        throw BadRequest('no model configured for this workspace, please set a model first')
+      let modelConfig = null
+      if (workspace.modelId) {
+        modelConfig = await ModelConfig.findById(workspace.modelId)
+      } else {
+        // B4：项目未挂模型时回退用户默认模型（use_default_model 语义）；默认配置已被删除视为未配置
+        const settings = await UserSettings.findByUserId(req.user.id)
+        if (settings.defaultModelId) {
+          modelConfig = await ModelConfig.findById(settings.defaultModelId)
+        }
+        if (!modelConfig) {
+          throw BadRequest('当前账号未配置默认模型，请先在偏好设置中选择，或为项目挂载模型')
+        }
       }
-
-      const modelConfig = await ModelConfig.findById(workspace.modelId)
       if (!modelConfig) {
         throw NotFound('model config not found')
       }
@@ -96,6 +105,13 @@ function chatEndpoints(apiRouter) {
       })
 
       const model = createModelInstance(modelConfig)
+      // B7：项目目标与背景拼进 system prompt（笔记工具提示词在前，未设置时不加段落）
+      const projectContext = []
+      if (workspace.goal) projectContext.push(`项目目标：${workspace.goal}`)
+      if (workspace.description) projectContext.push(`项目背景：${workspace.description}`)
+      const systemPrompt = projectContext.length
+        ? `${NOTE_TOOLS_SYSTEM_PROMPT}\n\n# 项目上下文\n${projectContext.join('\n')}`
+        : NOTE_TOOLS_SYSTEM_PROMPT
       const sendEvent = (payload) => res.write(`data: ${JSON.stringify(payload)}\n\n`)
 
       const references = []
@@ -118,7 +134,7 @@ function chatEndpoints(apiRouter) {
         const result = await generateText({
           model,
           messages,
-          system: NOTE_TOOLS_SYSTEM_PROMPT,
+          system: systemPrompt,
           tools,
           stopWhen: stepCountIs(TOOL_MAX_STEPS),
         });
@@ -145,7 +161,7 @@ function chatEndpoints(apiRouter) {
       const result = streamText({
         model,
         messages,
-        system: NOTE_TOOLS_SYSTEM_PROMPT,
+        system: systemPrompt,
         tools,
         stopWhen: stepCountIs(TOOL_MAX_STEPS),
       });

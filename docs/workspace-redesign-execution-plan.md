@@ -116,6 +116,8 @@ B1/B2 实施与验收记录见 [workspace-redesign-b1-b2-acceptance.md](./worksp
 
 `chat.js` 组装 messages 时，把项目 `goal/description` 注入 system prompt（在现有 `NOTE_TOOLS_SYSTEM_PROMPT` 基础上拼接）。关联笔记摘要注入为远期，不在本轮。
 
+B3–B7 实施与验收记录见 [workspace-redesign-b3-b7-acceptance.md](./workspace-redesign-b3-b7-acceptance.md)（G1 已达成，进入 F1）。
+
 **B 阶段合计约 5~5.5 人日。**
 
 ## 4. 阶段 F1：前端框架（页面骨架与导航，不做深功能）

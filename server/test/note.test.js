@@ -161,3 +161,44 @@ describe('note 来源关联与归属校验', () => {
     expect(titles).not.toContain('无项目笔记')
   })
 })
+
+describe('笔记列表关联项目（B5）', () => {
+  const createWorkspace = async (token, title) => {
+    const res = await request.post('/api/workspace').set(authHeader(token)).send({ title })
+    expect(res.status).toBe(200)
+    return res.body.data
+  }
+
+  it('列表附带所属项目标题，未关联时为 null', async () => {
+    const user = await registerAndLogin()
+    const ws = await createWorkspace(user.token, '关联项目A')
+    await createNote(user.token, '游离笔记')
+    const linked = await request.post('/api/note').set(authHeader(user.token)).send({
+      title: '关联笔记',
+      content: 'in project',
+      workspaceId: ws.id,
+    })
+    expect(linked.status).toBe(200)
+
+    const res = await request.get('/api/note/page').set(authHeader(user.token))
+    expect(res.status).toBe(200)
+    const rows = res.body.data.rows
+    const linkedRow = rows.find((n) => n.title === '关联笔记')
+    expect(linkedRow).toMatchObject({ workspaceId: ws.id, workspaceTitle: '关联项目A' })
+    const freeRow = rows.find((n) => n.title === '游离笔记')
+    expect(freeRow.workspaceTitle).toBeNull()
+  })
+
+  it('keyword 搜索命中 keywords 字段', async () => {
+    const user = await registerAndLogin()
+    const res = await request.post('/api/note').set(authHeader(user.token)).send({
+      title: '普通标题',
+      content: 'hello',
+      keywords: ['redis', 'cache'],
+    })
+    expect(res.status).toBe(200)
+    const hit = await request.get('/api/note/page').query({ keyword: 'redis' }).set(authHeader(user.token))
+    expect(hit.status).toBe(200)
+    expect(hit.body.data.rows.map((n) => n.title)).toContain('普通标题')
+  })
+})

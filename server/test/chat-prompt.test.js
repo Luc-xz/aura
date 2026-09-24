@@ -19,6 +19,7 @@ vi.mock('../utils/model-factory.js', () => ({
 }))
 
 import { getRequest, registerAndLogin, authHeader } from './helpers.js'
+import { NOTE_TOOLS_SYSTEM_PROMPT } from '../tool/index.js'
 
 let request
 beforeAll(async () => { request = await getRequest() })
@@ -63,5 +64,31 @@ describe('喂给模型的消息组装', () => {
     expect(contents.filter((c) => c === 'second-question').length).toBe(1)
     // 时间正序（旧 bug：desc 直接喂，最新在前）
     expect(contents.indexOf('first-question')).toBeLessThan(contents.indexOf('second-question'))
+  })
+
+  it('项目 goal/description 注入 system prompt，未设置时保持原样（B7）', async () => {
+    const user = await registerAndLogin()
+    const workspaceId = await setupChatWorkspace(user)
+
+    const systemTextOfLastCall = async () => {
+      const prompt = captured.prompts.at(-1)
+      const system = prompt.find((m) => m.role === 'system')
+      return typeof system.content === 'string' ? system.content : system.content.map((p) => p.text).join('')
+    }
+
+    // 未设置项目字段：system prompt 就是笔记工具提示词本身
+    let res = await request.post(`/api/chat/${workspaceId}`).set(authHeader(user.token)).send({ content: 'no goal question', stream: false })
+    expect(res.status).toBe(200)
+    expect(await systemTextOfLastCall()).toBe(NOTE_TOOLS_SYSTEM_PROMPT)
+
+    // 设置 goal/description 后追加项目上下文段落
+    res = await request.put(`/api/workspace/${workspaceId}`).set(authHeader(user.token)).send({ goal: '上线个人网站', description: '技术栈为 React + Node' })
+    expect(res.status).toBe(200)
+    res = await request.post(`/api/chat/${workspaceId}`).set(authHeader(user.token)).send({ content: 'goal question', stream: false })
+    expect(res.status).toBe(200)
+    const systemText = await systemTextOfLastCall()
+    expect(systemText.startsWith(NOTE_TOOLS_SYSTEM_PROMPT)).toBe(true)
+    expect(systemText).toContain('项目目标：上线个人网站')
+    expect(systemText).toContain('项目背景：技术栈为 React + Node')
   })
 })

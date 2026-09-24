@@ -64,6 +64,24 @@ describe('init.sql 种子数据', () => {
     expect(res.body.data).toHaveProperty('token')
   })
 
+  it('应包含工作台菜单，授予三个系统角色且排在 Chat 之前（B6）', async () => {
+    const [menus] = await db.query("SELECT id, path, sort_order FROM menu WHERE code = 'workspace'")
+    expect(menus).toHaveLength(1)
+    expect(menus[0]).toMatchObject({ path: '/workspace', sort_order: 0 })
+
+    const [roles] = await db.query(`
+      SELECT r.code FROM role r
+      JOIN role_menu rm ON r.id = rm.role_id
+      WHERE rm.menu_id = ? ORDER BY r.code
+    `, [menus[0].id])
+    expect(roles.map((r) => r.code)).toEqual(['admin', 'member', 'super_admin'])
+
+    const [business] = await db.query(
+      "SELECT code FROM menu WHERE id IN (1, 2) AND parent_id IS NULL ORDER BY sort_order"
+    )
+    expect(business.map((m) => m.code)).toEqual(['workspace', 'chat'])
+  })
+
   it('种子管理员应能通过 super_admin 通道访问管理接口', async () => {
     const loginRes = await request
       .post('/api/user/login')

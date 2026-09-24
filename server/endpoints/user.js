@@ -1,5 +1,7 @@
 import express from 'express'
 import User from '../models/user.js'
+import UserSettings from '../models/user-settings.js'
+import ModelConfig from '../models/model-config.js'
 import Role from '../models/role.js'
 import Rbac from '../models/rbac.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
@@ -18,6 +20,40 @@ const router = express.Router()
 
 // 需要登录且加载权限上下文的公共中间件链（register/login 保持公开）
 const withAuthContext = [asyncHandler(authMiddleware), asyncHandler(loadAuthContext)]
+
+// 偏好设置字段：按是否提供部分更新；第一版只接 defaultModelId，其余透传存取
+function settingsPayload(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw BadRequest('body must be an object')
+  const payload = {}
+  if (body.defaultModelId !== undefined) {
+    if (body.defaultModelId !== null && !Validator.isPositiveInt(body.defaultModelId)) {
+      throw BadRequest('defaultModelId must be a positive integer or null')
+    }
+    payload.defaultModelId = body.defaultModelId === null ? null : Number(body.defaultModelId)
+  }
+  if (body.systemPrompt !== undefined) {
+    if (body.systemPrompt !== null && !Validator.isLength(body.systemPrompt, 0, 65535)) {
+      throw BadRequest('systemPrompt must be a string of at most 65535 characters, or null')
+    }
+    payload.systemPrompt = body.systemPrompt === '' ? null : body.systemPrompt
+  }
+  if (body.autoSaveInterval !== undefined) {
+    if (!Number.isInteger(body.autoSaveInterval) || body.autoSaveInterval < 0) {
+      throw BadRequest('autoSaveInterval must be a non-negative integer')
+    }
+    payload.autoSaveInterval = body.autoSaveInterval
+  }
+  if (body.language !== undefined) {
+    if (body.language !== null && !Validator.isLength(body.language, 0, 20)) {
+      throw BadRequest('language must be a string of at most 20 characters, or null')
+    }
+    payload.language = body.language === '' ? null : body.language
+  }
+  if (!Object.keys(payload).length) {
+    throw BadRequest('at least one field (defaultModelId, systemPrompt, autoSaveInterval, language) is required')
+  }
+  return payload
+}
 
 function userEndpoints(apiRouter) {
   apiRouter.use('/user', router)
@@ -81,6 +117,37 @@ function userEndpoints(apiRouter) {
         permissions,
         menus
       },
+      code: 200,
+      message: 'success'
+    })
+  }))
+
+  // 当前用户偏好设置（B3）：静态路由，须注册在 /:id 之前
+  router.get('/settings', ...withAuthContext, asyncHandler(async (req, res) => {
+    res.status(200).json({
+      data: await UserSettings.findByUserId(req.user.id),
+      code: 200,
+      message: 'success'
+    })
+  }))
+
+  router.put('/settings', ...withAuthContext, asyncHandler(async (req, res) => {
+    const payload = settingsPayload(req.body)
+
+    // 默认模型必须存在且属于本人（与 workspace 挂载校验同口径）
+    if (payload.defaultModelId) {
+      const modelConfig = await ModelConfig.findById(payload.defaultModelId)
+      if (!modelConfig) {
+        throw NotFound('model config not found')
+      }
+      if (modelConfig.userId !== req.user.id) {
+        throw Forbidden('model config does not belong to you')
+      }
+    }
+
+    const data = await UserSettings.update(req.user.id, payload)
+    res.status(200).json({
+      data,
       code: 200,
       message: 'success'
     })

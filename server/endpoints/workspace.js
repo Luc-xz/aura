@@ -1,6 +1,7 @@
 import express from 'express'
 import Workspace from '../models/workspace.js'
 import ModelConfig from '../models/model-config.js'
+import UserSettings from '../models/user-settings.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
 import { requireOwnership } from '../middlewares/rbac.js'
@@ -100,10 +101,10 @@ function workspaceEndpoints(apiRouter) {
 
   router.post('/', asyncHandler(async (req, res) => {
     const payload = projectPayload(req.body, true)
-    const { modelId } = payload
+    let { modelId } = payload
 
-    // 挂载校验：配置必须属于创建者
     if (modelId) {
+      // 挂载校验：配置必须属于创建者
       const modelConfig = await ModelConfig.findById(modelId)
       if (!modelConfig) {
         throw NotFound('model config not found')
@@ -111,9 +112,16 @@ function workspaceEndpoints(apiRouter) {
       if (modelConfig.userId !== req.user.id) {
         throw Forbidden('model config does not belong to you')
       }
+    } else if (modelId === undefined) {
+      // B4：未指定模型时在创建时落地用户默认模型；默认配置已被删除则按无模型创建
+      const settings = await UserSettings.findByUserId(req.user.id)
+      if (settings.defaultModelId) {
+        const modelConfig = await ModelConfig.findById(settings.defaultModelId)
+        if (modelConfig) modelId = modelConfig.id
+      }
     }
 
-    const id = await Workspace.create(req.user, payload)
+    const id = await Workspace.create(req.user, { ...payload, modelId })
     const data = await Workspace.findById(id)
     res.status(200).json({
       data,

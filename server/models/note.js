@@ -1,5 +1,6 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
+import { BadRequest } from '../utils/appError.js'
 import { formatResponse, toSnakeCase } from '../../shared/utils/formatter.js'
 
 export default class Note {
@@ -8,44 +9,52 @@ export default class Note {
     return formatResponse(rest)
   }
 
+  // JOIN workspace 供笔记库展示所属项目；字段全部限定表名，避免与 workspace 同名列歧义
+  static sortColumns = { title: 'note.title', created_at: 'note.created_at', updated_at: 'note.updated_at' }
+
   static async findAll({ user, filters = {}, pagination = null, sort = {} } = {}) {
     if (!user?.id) {
       throw new Error('userId is required')
     }
 
-    let baseSql = `SELECT * FROM note WHERE 1=1`
+    let baseSql = `SELECT note.*, workspace.title AS workspace_title
+      FROM note LEFT JOIN workspace ON note.workspace_id = workspace.id WHERE 1=1`
     const params = []
 
-    baseSql += ' AND user_id = ?'
+    baseSql += ' AND note.user_id = ?'
     params.push(user.id)
 
     if (filters.createdAt) {
-      baseSql += ' AND created_at BETWEEN ? AND ?'
+      baseSql += ' AND note.created_at BETWEEN ? AND ?'
       params.push(filters.createdAt[0], filters.createdAt[1])
     }
 
     if (filters.updatedAt) {
-      baseSql += ' AND updated_at BETWEEN ? AND ?'
+      baseSql += ' AND note.updated_at BETWEEN ? AND ?'
       params.push(filters.updatedAt[0], filters.updatedAt[1])
     }
 
     if (filters.keyword) {
-      baseSql += ' AND (title LIKE ? OR description LIKE ?)'
-      params.push(`%${filters.keyword}%`, `%${filters.keyword}%`)
+      baseSql += ' AND (note.title LIKE ? OR note.description LIKE ? OR CAST(note.keywords AS CHAR) LIKE ?)'
+      params.push(`%${filters.keyword}%`, `%${filters.keyword}%`, `%${filters.keyword}%`)
     }
 
     if (filters.workspaceId) {
-      baseSql += ' AND workspace_id = ?'
+      baseSql += ' AND note.workspace_id = ?'
       params.push(filters.workspaceId)
+    }
+
+    if (sort.orderBy !== undefined && !this.sortColumns[sort.orderBy]) {
+      throw BadRequest('invalid note sort')
     }
 
     if (pagination) {
       const options = {
         page: pagination.page,
         pageSize: pagination.pageSize,
-        allowedSortFields: ['title', 'created_at', 'updated_at'],
-        orderBy: sort.orderBy || 'created_at',
-        orderDir: sort.orderDir || 'DESC',
+        allowedSortFields: Object.values(this.sortColumns),
+        orderBy: this.sortColumns[sort.orderBy] || this.sortColumns.created_at,
+        orderDir: sort.orderDir,
       }
 
       const { rows, page, pageSize, offset, total, totalPage } = await getOffsetPage(baseSql, params, options)

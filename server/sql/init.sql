@@ -119,11 +119,12 @@ CREATE TABLE IF NOT EXISTS role_menu (
 -- ===================== RBAC 种子数据 =====================
 
 -- 1. 菜单/权限树（directory 无权限码，menu 页面级权限，button 操作级权限）
---    业务菜单与前端侧边栏对应：Chat / Note(New Note, My Notes) / System(Setting, Model Config)
+--    业务菜单与前端侧边栏对应：Workbench / Chat / Note(New Note, My Notes) / System(Setting, Model Config)
 --    icon 存 antd 图标组件名，前端按 ICON_MAP[icon] 渲染；name 为纯展示字段，可随意改名
 --    id 分配：业务菜单 1-99，管理菜单 100 起，各管理页间隔 20 预留扩展
 INSERT IGNORE INTO menu (id, parent_id, name, code, permission, path, icon, sort_order, type, visible) VALUES
 -- 业务菜单
+(2,  NULL, '工作台',       'workspace',    NULL, '/workspace',            'AppstoreFilled', 0, 'menu',      1),
 (1,  NULL, 'Chat',         'chat',         NULL, '/chat',                 'OpenAIFilled',  1, 'menu',      1),
 (10, NULL, 'Note',         'note',         NULL, NULL,                    'BookOutlined',  2, 'directory', 1),
 (11, 10,   'New Note',     'note_new',     NULL, '/note/edit',            NULL,            1, 'menu',      1),
@@ -156,12 +157,13 @@ INSERT IGNORE INTO menu (id, parent_id, name, code, permission, path, icon, sort
 -- member：业务菜单（目录必须与子菜单一并授权，否则子菜单会脱离树结构）
 INSERT IGNORE INTO role_menu (role_id, menu_id)
 SELECT r.id, m.id FROM role r, menu m
-WHERE r.code = 'member' AND m.id IN (1, 10, 11, 12, 20, 21, 22);
+WHERE r.code = 'member' AND m.id IN (2, 1, 10, 11, 12, 20, 21, 22);
 
--- admin：系统管理目录 + 用户/角色/菜单管理（含所有 button）
+-- admin：业务菜单 + 系统管理目录 + 用户/角色/菜单管理（含所有 button）
 INSERT IGNORE INTO role_menu (role_id, menu_id)
 SELECT r.id, m.id FROM role r, menu m
 WHERE r.code = 'admin' AND m.id IN (
+  2,
   100,
   101, 102, 103, 104, 105, 106,
   120, 121, 122, 123, 124,
@@ -241,10 +243,11 @@ CREATE TABLE IF NOT EXISTS model_config (
 CREATE TABLE IF NOT EXISTS user_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    default_model_id INT NOT NULL,
+    default_model_id INT DEFAULT NULL,
     system_prompt TEXT DEFAULT NULL,
     auto_save_interval INT DEFAULT 0,
     language VARCHAR(20) DEFAULT 'zh-CN',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_settings_user (user_id)
 );

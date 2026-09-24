@@ -127,6 +127,22 @@ describe('对话 happy path', () => {
     expect(chatRes.status).toBe(200)
     expect(chatRes.body.data.content).toBe('mocked reply')
   })
+
+  it('项目未挂模型且无默认模型时返回中文 400', async () => {
+    const user = await registerAndLogin()
+    const wsRes = await request
+      .post('/api/workspace')
+      .set(authHeader(user.token))
+      .send({ title: 'no model ws' })
+    expect(wsRes.status).toBe(200)
+
+    const chatRes = await request
+      .post(`/api/chat/${wsRes.body.data.id}`)
+      .set(authHeader(user.token))
+      .send({ content: 'hi', stream: false })
+    expect(chatRes.status).toBe(400)
+    expect(chatRes.body.message).toBe('当前账号未配置默认模型，请先在偏好设置中选择，或为项目挂载模型')
+  })
 })
 
 

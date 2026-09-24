@@ -183,3 +183,31 @@ describe('archived project deletion', () => {
     expect((await detail(archived.id)).status).toBe(404)
   })
 })
+
+describe('default model fallback (B4)', () => {
+  const createModel = async () => {
+    const res = await request.post('/api/model-config').set(authHeader(owner.token)).send({ provider: 'openai', modelName: 'test' })
+    expect(res.status).toBe(200)
+    return res.body.data?.id ?? res.body.data
+  }
+  const setDefault = (modelId) => request.put('/api/user/settings').set(authHeader(owner.token)).send({ defaultModelId: modelId })
+
+  it('creation without modelId materializes the user default model', async () => {
+    const modelId = await createModel()
+    expect((await setDefault(modelId)).status).toBe(200)
+    expect((await create()).modelId).toBe(modelId)
+  })
+
+  it('explicit modelId null stays unmounted even with a user default', async () => {
+    const modelId = await createModel()
+    expect((await setDefault(modelId)).status).toBe(200)
+    expect((await create({ modelId: null })).modelId).toBeNull()
+  })
+
+  it('a deleted default model falls back to creating without a model', async () => {
+    const modelId = await createModel()
+    expect((await setDefault(modelId)).status).toBe(200)
+    await pool.query('DELETE FROM model_config WHERE id = ?', [modelId])
+    expect((await create()).modelId).toBeNull()
+  })
+})
