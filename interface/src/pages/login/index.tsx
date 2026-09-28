@@ -232,7 +232,7 @@ export default function Page({ actionData }) {
         setUser(actionData)
         // 等角色/菜单写入 store 再进主界面，避免首帧空菜单
         await setProfile()
-        navigate('/chat')
+        navigate('/workspace')
       }
       if (type === 'register') {
         setType('login')

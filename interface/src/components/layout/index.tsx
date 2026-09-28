@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Navigate, Outlet, useNavigate, useLocation } from 'react-router'
 import { Flex, Layout, Menu, Avatar, Tooltip } from 'antd'
-import { LogoutOutlined, MenuUnfoldOutlined, MenuFoldOutlined, BookOutlined, OpenAIFilled, SettingFilled, TeamOutlined } from '@ant-design/icons'
+import { LogoutOutlined, MenuUnfoldOutlined, MenuFoldOutlined, AppstoreFilled, BookOutlined, OpenAIFilled, SettingFilled, TeamOutlined } from '@ant-design/icons'
 import { useUserStore } from '@/store'
 import { profile, logout } from '@/api/user'
 const { Header, Footer, Sider, Content } = Layout
 
 const ICON_MAP: Record<string, React.ReactNode> = {
+  AppstoreFilled: <AppstoreFilled />,
   OpenAIFilled: <OpenAIFilled />,
   BookOutlined: <BookOutlined />,
   SettingFilled: <SettingFilled />,

@@ -1,4 +1,4 @@
-import { App, Button, Card, Divider, Flex, Space, Modal, Form, Input, Dropdown, Select, Tag } from 'antd'
+import { App, Button, Card, Divider, Flex, Space, Modal, Form, Input, Tag } from 'antd'
 import { Bubble, Attachments, Sender } from '@ant-design/x'
 import {
   PlusOutlined,
@@ -14,15 +14,19 @@ import {
   FileDoneOutlined,
   CloudUploadOutlined,
   LinkOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router'
-import { getWorkspaceList, createWorkspace, updateWorkspace, deleteWorkspace } from '@/api/workspace'
+import { useNavigate, useSearchParams } from 'react-router'
+import { getWorkspaceList, createWorkspace } from '@/api/workspace'
 import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
 import { createNote } from '@/api/note'
 import { getModelConfigList } from '@/api/setting'
 import { useWorkspaceStore } from '@/store'
 import { createSSEParser } from '@/utils/sse'
+import WorkspaceModal, { toWorkspacePayload } from '@/components/workspace-modal'
+import ProjectContext from '@/components/project-context'
+import StatusPill, { statusDotClass } from '@/components/status-pill'
 
 const fetchWorkspaceList = async () => {
   const [err, res] = await getWorkspaceList()
@@ -43,173 +47,127 @@ const fetchModelList = async () => {
   return []
 }
 
-export async function clientLoader({ params }) {
-  return [await fetchWorkspaceList(), await fetchModelList()]
+export async function clientLoader({ request }) {
+  // F1.2：?workspaceId= 指定进入的项目，优先级高于 store 兜底
+  const workspaceId = new URL(request.url).searchParams.get('workspaceId')
+  return [await fetchWorkspaceList(), await fetchModelList(), workspaceId]
 }
 
-function WorkspacePanel({ list, modelList }) {
-  const { message, modal } = App.useApp()
+function ProjectPanel({ list, modelList, initialId }) {
+  const { message } = App.useApp()
+  const navigate = useNavigate()
+  const [, setSearchParams] = useSearchParams()
 
   const workspace = useWorkspaceStore((state) => state.workspace)
   const setWorkspace = useWorkspaceStore((state) => state.setWorkspace)
 
   const [workspaceList, setWorkspaceList] = useState(list)
-  const [workspaceVisible, setWorkspaceVisible] = useState(true)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isEditWorkspace, setIsEditWorkspace] = useState(false)
-  const [form] = Form.useForm()
-  const workspaceRef = useRef(null)
-
-  const dropdown = (
-    <Dropdown
-      menu={{
-        items: [
-          {
-            key: 'edit',
-            label: '编辑对话',
-          },
-          {
-            key: 'delete',
-            label: '删除对话',
-          },
-        ],
-        onClick: ({ key }) => {
-          if (key === 'edit') {
-            setIsEditWorkspace(true)
-            setIsModalOpen(true)
-            form.setFieldsValue({
-              id: workspace.id,
-              title: workspace.title,
-              modelId: workspace.modelId,
-            })
-            return
-          }
-          if (key === 'delete') {
-            modal.confirm({
-              title: '确定删除对话吗？',
-              onOk: async () => {
-                const [err, res] = await deleteWorkspace(workspace.id)
-                if (res) {
-                  message.success('操作成功')
-                  const list = await fetchWorkspaceList()
-                  setWorkspaceList(list)
-                }
-              },
-            })
-            return
-          }
-        },
-      }}
-      placement="bottomLeft">
-      <div className="ml-2 relative bottom-1 text-xl text-right cursor-pointer">...</div>
-    </Dropdown>
-  )
-
-  const WorkspaceCardList = workspaceList.map((item) => (
-    <div
-      key={item.id}
-      onClick={() => setWorkspace(item)}
-      className={`p-3 w-full space-x-2 cursor-pointer rounded hover:bg-blue-100 ${
-        item.id === (workspace && workspace.id) ? 'card-active' : 'card-inactive'
-      }`}>
-      <div className="flex items-center w-full">
-        <div className="flex flex-col justify-between flex-1 overflow-hidden">
-          <div className="truncate">{item.title}</div>
-          <div className="truncate text-sm text-gray-500">{item.modelName}</div>
-        </div>
-        {item.id === (workspace && workspace.id) && dropdown}
-      </div>
-    </div>
-  ))
-
-  const handleEditWorkspace = async () => {
-    await form.validateFields()
-    let flag = form.getFieldValue('id') ? 'update' : 'create'
-    let api = flag === 'update' ? updateWorkspace : createWorkspace
-    const [err, res] = await api(form.getFieldsValue(true))
-    console.log('[API]::[handleEditWorkspace]::', res, err)
-    if (res) {
-      message.success('操作成功')
-      setIsModalOpen(false)
-      form.resetFields()
-      setWorkspace(res.data)
-      const list = await fetchWorkspaceList()
-      setWorkspaceList(list)
+  const [panelVisible, setPanelVisible] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [confirmLoading, setConfirmLoading] = useState(false)
+  // URL 参数只在首轮选中消费一次，之后的切换由用户点击或 store 持久化决定
+  const initialIdRef = useRef(initialId)
+  // 首帧对账（渲染期）：持久化的项目已被删/不在列表时先置空，避免 ChatPanel 带脏 id 发起 404；
+  // 对账完成后不再介入，保证“新建项目后立即选中”不被误清
+  const reconciledRef = useRef(false)
+  if (!reconciledRef.current) {
+    if (workspace && !workspaceList.some((item) => item.id === workspace.id)) {
+      setWorkspace(null)
     } else {
-      message.error('操作失败：' + err.message)
+      reconciledRef.current = true
     }
   }
 
+  // 选中优先级：URL 参数 > store 已持久化选择 > 兜底首个
   useEffect(() => {
-    if (!workspaceList?.length) return
-    let chat = null
-    if (!workspace?.id) {
-      chat = workspaceList[0]
-    } else {
-      chat = workspaceList.find((item) => item.id === workspace?.id) || workspaceList[0]
+    if (!workspaceList?.length) {
+      if (workspace) setWorkspace(null)
+      return
     }
-    setWorkspace(chat)
+    let next = null
+    if (initialIdRef.current) {
+      next = workspaceList.find((item) => String(item.id) === initialIdRef.current) || null
+      initialIdRef.current = null
+    }
+    if (!next && workspace?.id) {
+      next = workspaceList.find((item) => item.id === workspace.id) || null
+    }
+    if (!next) next = workspaceList[0]
+    if (next?.id !== workspace?.id) setWorkspace(next)
   }, [workspaceList])
+
+  const selectWorkspace = (item) => {
+    setWorkspace(item)
+    // 清掉 URL 参数，避免后续列表刷新时旧参数反选
+    setSearchParams({}, { replace: true })
+  }
+
+  const handleCreate = async (values) => {
+    setConfirmLoading(true)
+    const [err, res] = await createWorkspace(toWorkspacePayload(values, 'create'))
+    setConfirmLoading(false)
+    if (res) {
+      message.success('项目已创建')
+      setModalOpen(false)
+      setWorkspace(res.data)
+      setWorkspaceList(await fetchWorkspaceList())
+    }
+  }
+
+  const ProjectCardList = workspaceList.map((item) => (
+    <div
+      key={item.id}
+      onClick={() => selectWorkspace(item)}
+      className={`p-3 mb-1 w-full cursor-pointer rounded hover:bg-blue-100 ${
+        item.id === workspace?.id ? 'card-active' : 'card-inactive'
+      }`}>
+      <div className="flex items-center gap-2 w-full">
+        <span className={`flex-none w-2 h-2 rounded-full ${statusDotClass(item.status)}`} />
+        <div className="truncate">{item.title}</div>
+      </div>
+      <div className="truncate text-sm text-gray-500 pl-4">{item.modelName || '默认模型'}</div>
+    </div>
+  ))
 
   return (
     <div className="relative bg-moon border-r border-ashen flex-0">
-      <div className={`overflow-hidden h-full transition-all duration-300 ${workspaceVisible ? 'w-55' : 'w-0'}`}>
+      <div className={`overflow-hidden h-full transition-all duration-300 ${panelVisible ? 'w-55' : 'w-0'}`}>
         <div className="overflow-hidden p-4 w-55 h-full">
-          <div className="title-ter mb-8">工作区</div>
+          <div className="flex items-center justify-between mb-4">
+            <span className="title-ter">项目</span>
+            <Button
+              type="text"
+              size="small"
+              icon={<AppstoreOutlined />}
+              title="返回工作台"
+              onClick={() => navigate('/workspace')}
+            />
+          </div>
           <Button
-            onClick={() => {
-              form.resetFields()
-              setIsEditWorkspace(false)
-              setIsModalOpen(true)
-            }}
+            onClick={() => setModalOpen(true)}
             className="w-full mb-2"
             color="default"
             variant="outlined"
             icon={<PlusOutlined />}>
-            新建对话
+            新建项目
           </Button>
-          <div
-            ref={workspaceRef}
-            className="overflow-y-auto h-[calc(100%-92px)]">
-            {WorkspaceCardList}
+          <div className="overflow-y-auto h-[calc(100%-88px)]">
+            {workspaceList.length ? ProjectCardList : <div className="p-2 text-sm text-gray-400">暂无项目，点击上方按钮创建</div>}
           </div>
         </div>
       </div>
       <div
         className="absolute top-[50%] right-[-32px] w-5 h-11 flex items-center justify-center bg-moon color-primary text-sm hover:text-base border border-ashen rounded text-gray-500 cursor-pointer"
-        onClick={() => setWorkspaceVisible(!workspaceVisible)}>
-        {workspaceVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
+        onClick={() => setPanelVisible(!panelVisible)}>
+        {panelVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
       </div>
-      <Modal
-        title={`${isEditWorkspace ? '编辑' : '新建'}对话`}
-        closable={true}
-        forceRender
-        open={isModalOpen}
-        onOk={handleEditWorkspace}
-        onCancel={() => {
-          setIsModalOpen(false)
-          form.resetFields()
-        }}>
-        <Form form={form}>
-          <Form.Item
-            name="title"
-            label="对话名称"
-            rules={[{ required: true, message: '请输入' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="modelId"
-            label="对话模型"
-            rules={[{ required: true, message: '请选择' }]}>
-            <Select
-              showSearch
-              options={modelList.map((item) => {
-                return { value: item.id, label: item.modelName }
-              })}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
+      <WorkspaceModal
+        open={modalOpen}
+        modelList={modelList}
+        confirmLoading={confirmLoading}
+        onOk={handleCreate}
+        onCancel={() => setModalOpen(false)}
+      />
     </div>
   )
 }
@@ -428,13 +386,32 @@ function ChatPanel({ workspace }) {
         <Card
           className="relative z-1 flex-1 mx-10 my-1 max-w-210 h-14"
           size="small">
-          <div className="flex items-center px-2 w-full h-8">
-            <span className="flex-1 text-md font-bold">{workspace?.modelName || ''}</span>
-            <div className="text-gray cursor-pointer">
+          <div className="flex items-center px-2 w-full gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-md font-bold truncate">{workspace?.title || '未选择项目'}</span>
+                {workspace ? <StatusPill status={workspace.status} /> : null}
+              </div>
+              <div className="text-xs text-gray-500 truncate">
+                {workspace ? workspace.goal || '未设置项目目标' : '从左侧选择或新建一个项目'}
+              </div>
+            </div>
+            {workspace?.modelName ? (
+              <Tag
+                bordered={false}
+                className="m-0">
+                {workspace.modelName}
+              </Tag>
+            ) : null}
+            <div
+              className="text-gray cursor-pointer"
+              title="切换模型">
               <SwapOutlined />
             </div>
             <Divider type="vertical" />
-            <div className="text-gray cursor-pointer">
+            <div
+              className="text-gray cursor-pointer"
+              title="模型配置">
               <SettingOutlined />
             </div>
           </div>
@@ -526,11 +503,13 @@ export default function Page({ loaderData, actionData, params, matches }) {
 
   return (
     <div className="flex w-full h-full">
-      <WorkspacePanel
+      <ProjectPanel
         list={loaderData[0]}
         modelList={loaderData[1]}
+        initialId={loaderData[2]}
       />
       <ChatPanel workspace={workspace} />
+      <ProjectContext workspace={workspace} />
     </div>
   )
 }

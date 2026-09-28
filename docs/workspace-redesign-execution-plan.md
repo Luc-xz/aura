@@ -154,6 +154,8 @@ B3–B7 实施与验收记录见 [workspace-redesign-b3-b7-acceptance.md](./work
 
 **F1 阶段合计约 4 人日。G2 达成后进入 F2。**
 
+F1 实施与验收记录见 [workspace-redesign-f1-acceptance.md](./workspace-redesign-f1-acceptance.md)（G2 已达成，进入 F2）。
+
 ## 5. 阶段 F2：前端功能项（价值排序）
 
 ### P0 主链路体验（约 3 天）

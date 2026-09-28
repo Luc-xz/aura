@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import type { WorkspaceItem } from '@/api/workspace'
 
 interface User {
   id: number
@@ -25,15 +26,9 @@ interface Menu {
   updatedAt?: string
 }
 
-interface Workspace {
-  id: number
-  name: string
-  [key: string]: unknown
-}
-
 interface WorkspaceState {
-  workspace: Workspace | null
-  setWorkspace: (workspace: Workspace | null) => void
+  workspace: WorkspaceItem | null
+  setWorkspace: (workspace: WorkspaceItem | null) => void
 }
 
 interface UserState {
@@ -62,11 +57,20 @@ const getStorage = () => {
   return localStorage
 }
 
-// workspace 引用数据库记录，不持久化：每次进入页面由 workspaceList 自动选中
-export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
-  workspace: null,
-  setWorkspace: (workspace) => set({ workspace }),
-}))
+// 当前项目跨会话记忆：仅持久化 workspace 字段；进入 chat 页时 URL ?workspaceId= 优先级高于它（F1.2）
+export const useWorkspaceStore = create<WorkspaceState>()(
+  persist(
+    (set) => ({
+      workspace: null,
+      setWorkspace: (workspace) => set({ workspace }),
+    }),
+    {
+      name: 'workspace-store',
+      storage: createJSONStorage(getStorage),
+      partialize: (state) => ({ workspace: state.workspace }),
+    }
+  )
+)
 
 export const useUserStore = create<UserState>()(
   persist(
