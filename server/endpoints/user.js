@@ -171,24 +171,24 @@ function userEndpoints(apiRouter) {
   router.post('/register', asyncHandler(async (req, res) => {
     const { name, email, password } = req.body
     if (!name || !email || !password) {
-      throw BadRequest('name, email and password are required')
+      throw BadRequest('请填写用户名、邮箱和密码')
     }
     if (!Validator.isValidName(name)) {
-      throw BadRequest('name must be 4-16 characters (letters, digits, _ or -)')
+      throw BadRequest('用户名须为 4-16 位字母、数字、下划线或减号')
     }
     if (!Validator.isEmail(email)) {
-      throw BadRequest('invalid email format')
+      throw BadRequest('邮箱格式不正确')
     }
     if (!Validator.isStrongPassword(password)) {
-      throw BadRequest('password must be at least 8 characters with letters, digits and special chars (-_)')
+      throw BadRequest('密码至少 8 位，且包含字母、数字和特殊字符 (-_)')
     }
     const existing = await User.findByEmail(email)
     if (existing) {
-      throw Conflict('email already registered')
+      throw Conflict('该邮箱已注册')
     }
     const existingName = await User.findByName(name)
     if (existingName) {
-      throw Conflict('name already registered')
+      throw Conflict('该用户名已被占用')
     }
     const data = await User.create({ name, email, password })
     res.status(200).json({
@@ -201,18 +201,18 @@ function userEndpoints(apiRouter) {
   router.post('/login', rateLimit({ prefix: 'login', windowSeconds: 60, max: 10 }), asyncHandler(async (req, res) => {
     const { email, password } = req.body
     if (!email || !password) {
-      throw BadRequest('email and password are required')
+      throw BadRequest('请填写邮箱和密码')
     }
     if (!Validator.isEmail(email)) {
-      throw BadRequest('invalid email format')
+      throw BadRequest('邮箱格式不正确')
     }
     const data = await User.findByEmail(email)
     if (!data) {
-      throw NotFound('user not found')
+      throw NotFound('账号或密码错误')
     }
     const isMatch = await comparePassword(password, data.password)
     if (!isMatch) {
-      throw BadRequest('password is incorrect')
+      throw BadRequest('账号或密码错误')
     }
     const { id, name } = data
     const token = jwt.sign({ id, name, email }, process.env.JWT_SECRET, {

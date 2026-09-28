@@ -160,6 +160,8 @@ F1 实施与验收记录见 [workspace-redesign-f1-acceptance.md](./workspace-re
 
 ### P0 主链路体验（约 3 天）
 
+P0 已完成，实施与验收记录见 [workspace-redesign-f2-p0-acceptance.md](./workspace-redesign-f2-p0-acceptance.md)。
+
 | 项 | 内容 | 涉及 |
 | --- | --- | --- |
 | 项目状态流转 | 归档 / 恢复 / 暂停操作组；删除二次确认带后果文案（"项目下的会话与笔记将一并移除"）；仅归档态可删 | workspace 页 |

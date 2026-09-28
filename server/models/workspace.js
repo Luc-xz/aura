@@ -98,7 +98,7 @@ export default class Workspace {
       // Check lifecycle under the same lock as deletion, not just in the route.
       const [[workspace]] = await connection.query('SELECT status FROM workspace WHERE id = ? FOR UPDATE', [id])
       if (!workspace) throw NotFound('workspace not found')
-      if (workspace.status !== 2) throw Conflict('archive the workspace before deleting it')
+      if (workspace.status !== 2) throw Conflict('请先将项目归档，再进行删除')
       await connection.query('DELETE FROM note WHERE workspace_id = ?', [id])
       await connection.query('DELETE FROM chat WHERE workspace_id = ?', [id])
       await connection.query('DELETE FROM workspace WHERE id = ?', [id])

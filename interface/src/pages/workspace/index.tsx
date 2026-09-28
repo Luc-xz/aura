@@ -1,17 +1,17 @@
-import { App, Button, Card, Divider, Empty, Segmented, Space, Spin, Tag } from 'antd'
-import { PlusOutlined, RightOutlined } from '@ant-design/icons'
-import { useState } from 'react'
+import { App, Button, Card, Divider, Empty, Input, Segmented, Select, Space, Spin, Tag } from 'antd'
+import { PlusOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { createWorkspace, deleteWorkspace, getWorkspaceList, getWorkspaceStats, updateWorkspace } from '@/api/workspace'
-import type { WorkspaceItem, WorkspaceStats } from '@/api/workspace'
+import type { WorkspaceItem, WorkspaceListParams, WorkspaceStats } from '@/api/workspace'
 import { getModelConfigList } from '@/api/setting'
 import WorkspaceModal, { toWorkspacePayload } from '@/components/workspace-modal'
 import type { WorkspaceFormValues } from '@/components/workspace-modal'
 import StatusPill, { WORKSPACE_STATUS } from '@/components/status-pill'
 import { formatRelative } from '@/utils/time'
 
-const fetchWorkspaceList = async (status?: number) => {
-  const [err, res] = await getWorkspaceList(status === undefined ? undefined : { status: status as 0 | 1 | 2 })
+const fetchWorkspaceList = async (params?: WorkspaceListParams) => {
+  const [err, res] = await getWorkspaceList(params)
   return res?.data || []
 }
 
@@ -29,6 +29,12 @@ export async function clientLoader() {
   return [await fetchWorkspaceList(), await fetchWorkspaceStats(), await fetchModelList()]
 }
 
+const SORT_OPTIONS = [
+  { value: 'updated_at', label: '最近更新' },
+  { value: 'created_at', label: '最近创建' },
+  { value: 'title', label: '名称' },
+]
+
 export default function Page({ loaderData }) {
   const navigate = useNavigate()
   const { message, modal } = App.useApp()
@@ -37,19 +43,38 @@ export default function Page({ loaderData }) {
   const [stats, setStats] = useState<WorkspaceStats | null>(loaderData[1])
   const [modelList] = useState(loaderData[2])
   const [filter, setFilter] = useState<string>('全部')
+  const [searchInput, setSearchInput] = useState('')
+  const [keyword, setKeyword] = useState('')
+  const [sortKey, setSortKey] = useState('updated_at')
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<WorkspaceItem | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
 
-  const refresh = async (label = filter) => {
+  const refresh = async (opts?: { label?: string; title?: string; sort?: string }) => {
+    const label = opts?.label ?? filter
     const status = WORKSPACE_STATUS.find((s) => s.label === label)?.value
+    const sort = opts?.sort ?? sortKey
+    const title = opts?.title ?? keyword
+    const params: WorkspaceListParams = { orderBy: sort, orderDir: sort === 'title' ? 'ASC' : 'DESC' }
+    if (status !== undefined) params.status = status
+    if (title) params.title = title
     setLoading(true)
-    const [nextList, nextStats] = await Promise.all([fetchWorkspaceList(status), fetchWorkspaceStats()])
+    const [nextList, nextStats] = await Promise.all([fetchWorkspaceList(params), fetchWorkspaceStats()])
     setList(nextList)
     setStats(nextStats)
     setLoading(false)
   }
+
+  // 搜索防抖：停止输入 400ms 后刷新列表（挂载时 keyword 与输入一致则跳过）
+  useEffect(() => {
+    if (searchInput === keyword) return
+    const timer = setTimeout(() => {
+      setKeyword(searchInput)
+      refresh({ title: searchInput })
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [searchInput])
 
   const openCreate = () => {
     setEditing(null)
@@ -79,14 +104,26 @@ export default function Page({ loaderData }) {
   }
 
   const handleDelete = () => {
-    if (!editing) return
+    if (editing) confirmDelete(editing)
+  }
+
+  // 状态流转操作组：0 进行中 ⇄ 1 暂停，任意 → 2 归档；仅归档态提供删除
+  const changeStatus = async (item: WorkspaceItem, status: number) => {
+    const [err, res] = await updateWorkspace({ id: item.id, status })
+    if (res) {
+      message.success(status === 0 ? '已恢复推进' : status === 1 ? '已暂停' : '已归档')
+      refresh()
+    }
+  }
+
+  const confirmDelete = (item: WorkspaceItem) => {
     modal.confirm({
-      title: `确定删除「${editing.title}」？`,
+      title: `确定删除「${item.title}」？`,
       content: '删除后项目下的会话与笔记将一并移除，不可恢复。',
       okText: '删除',
       okButtonProps: { danger: true },
       onOk: async () => {
-        const [err, res] = await deleteWorkspace(editing.id)
+        const [err, res] = await deleteWorkspace(item.id)
         if (res) {
           message.success('项目已删除')
           setModalOpen(false)
@@ -132,15 +169,33 @@ export default function Page({ loaderData }) {
           ))}
         </div>
 
-        {/* 状态筛选胶囊 */}
-        <div className="mb-4">
+        {/* 筛选胶囊 + 搜索 + 排序 */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
           <Segmented
             options={['全部', ...WORKSPACE_STATUS.map((s) => s.label)]}
             value={filter}
             onChange={(value) => {
               setFilter(value as string)
-              refresh(value as string)
+              refresh({ label: value as string })
             }}
+          />
+          <div className="flex-1" />
+          <Select
+            options={SORT_OPTIONS}
+            value={sortKey}
+            onChange={(value) => {
+              setSortKey(value)
+              refresh({ sort: value })
+            }}
+            className="w-32"
+          />
+          <Input
+            allowClear
+            prefix={<SearchOutlined className="text-gray-400" />}
+            placeholder="搜索项目名称"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-52"
           />
         </div>
 
@@ -155,6 +210,7 @@ export default function Page({ loaderData }) {
               <Card
                 key={item.id}
                 hoverable
+                className={item.status === 2 ? 'opacity-60' : ''}
                 styles={{ body: { padding: 16 } }}
                 onClick={() => enterChat(item)}>
                 <div className="flex items-start justify-between gap-2">
@@ -172,34 +228,73 @@ export default function Page({ loaderData }) {
                   {item.description || '暂无背景描述'}
                 </div>
                 <Divider className="my-3" />
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  {item.modelName ? (
-                    <Tag
-                      color="blue"
-                      bordered={false}
-                      className="m-0">
-                      {item.modelName}
-                    </Tag>
-                  ) : (
-                    <span>未挂载模型</span>
-                  )}
+                <div className="flex items-center justify-between gap-2 text-xs text-gray-500">
+                  <Space size={6}>
+                    {item.modelName ? (
+                      <Tag
+                        color="blue"
+                        bordered={false}
+                        className="m-0">
+                        {item.modelName}
+                      </Tag>
+                    ) : (
+                      <span>未挂载模型</span>
+                    )}
+                    <span>{item.chatCount} 条对话</span>
+                  </Space>
                   <span>{formatRelative(item.updatedAt)}</span>
                 </div>
                 <div
-                  className="mt-3 flex justify-end gap-2"
+                  className="mt-3 flex items-center justify-between gap-2"
                   onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    size="small"
-                    onClick={() => openEdit(item)}>
-                    编辑
-                  </Button>
-                  <Button
-                    size="small"
-                    type="primary"
-                    icon={<RightOutlined />}
-                    onClick={() => enterChat(item)}>
-                    继续推进
-                  </Button>
+                  <Space size={0}>
+                    {item.status !== 0 ? (
+                      <Button
+                        size="small"
+                        type="text"
+                        onClick={() => changeStatus(item, 0)}>
+                        恢复推进
+                      </Button>
+                    ) : null}
+                    {item.status === 0 ? (
+                      <Button
+                        size="small"
+                        type="text"
+                        onClick={() => changeStatus(item, 1)}>
+                        暂停
+                      </Button>
+                    ) : null}
+                    {item.status !== 2 ? (
+                      <Button
+                        size="small"
+                        type="text"
+                        onClick={() => changeStatus(item, 2)}>
+                        归档
+                      </Button>
+                    ) : (
+                      <Button
+                        size="small"
+                        type="text"
+                        danger
+                        onClick={() => confirmDelete(item)}>
+                        删除
+                      </Button>
+                    )}
+                  </Space>
+                  <Space>
+                    <Button
+                      size="small"
+                      onClick={() => openEdit(item)}>
+                      编辑
+                    </Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      icon={<RightOutlined />}
+                      onClick={() => enterChat(item)}>
+                      继续推进
+                    </Button>
+                  </Space>
                 </div>
               </Card>
             ))}
@@ -208,8 +303,14 @@ export default function Page({ loaderData }) {
           <div className="flex justify-center py-16">
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={filter === '全部' ? '还没有项目，创建第一个项目开始推进' : '该状态下暂无项目'}>
-              {filter === '全部' ? (
+              description={
+                keyword
+                  ? `没有匹配「${keyword}」的项目`
+                  : filter === '全部'
+                    ? '还没有项目，创建第一个项目开始推进'
+                    : '该状态下暂无项目'
+              }>
+              {!keyword && filter === '全部' ? (
                 <Space>
                   <Button
                     type="primary"

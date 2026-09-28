@@ -1,6 +1,6 @@
 import { App, Flex, Card, Space, Button, Checkbox, Form, Input } from 'antd'
 import { LockOutlined, UserOutlined, MailOutlined } from '@ant-design/icons'
-import { useNavigate, useSearchParams, useSubmit } from 'react-router'
+import { useNavigate, useNavigation, useSearchParams, useSubmit } from 'react-router'
 import { useState, useEffect } from 'react'
 import { login, register, profile } from '@/api/user'
 import { useUserStore } from '@/store'
@@ -35,6 +35,8 @@ export async function clientAction({ request }) {
 export function LoginPanel() {
   const submit = useSubmit()
   const navigate = useNavigate()
+  const navigation = useNavigation()
+  const submitting = navigation.state === 'submitting'
 
   const handleSubmit = (values) => {
     submit(values, { method: 'post' })
@@ -51,7 +53,10 @@ export function LoginPanel() {
           hidden></Form.Item>
         <Form.Item
           name="email"
-          rules={[{ required: true, message: '请输入邮箱' }]}>
+          rules={[
+            { required: true, message: '请输入邮箱' },
+            { type: 'email', message: '请输入正确的邮箱' },
+          ]}>
           <Input
             prefix={<MailOutlined />}
             placeholder="请输入邮箱"
@@ -84,7 +89,9 @@ export function LoginPanel() {
           <Button
             block
             type="primary"
-            htmlType="submit">
+            htmlType="submit"
+            loading={submitting}
+            disabled={submitting}>
             登录
           </Button>
           没有账户？
@@ -104,6 +111,8 @@ export function RegisterPanel() {
   const submit = useSubmit()
   const [form] = Form.useForm()
   const navigate = useNavigate()
+  const navigation = useNavigation()
+  const submitting = navigation.state === 'submitting'
 
   const handleSubmit = (values) => {
     submit(values, { method: 'post' })
@@ -180,7 +189,9 @@ export function RegisterPanel() {
           <Button
             block
             type="primary"
-            htmlType="submit">
+            htmlType="submit"
+            loading={submitting}
+            disabled={submitting}>
             注册
           </Button>
           已有账户？
@@ -226,7 +237,7 @@ export default function Page({ actionData }) {
 
   useEffect(() => {
     if (!actionData) return
-    message.success('提交成功')
+    message.success(type === 'login' ? '登录成功，欢迎回来' : '注册成功，请登录')
     const go = async () => {
       if (type === 'login') {
         setUser(actionData)

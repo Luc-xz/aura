@@ -176,11 +176,19 @@ function ChatPanel({ workspace }) {
   const [conversation, setConversation] = useState<any[]>([])
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
+  const [historyLoaded, setHistoryLoaded] = useState(false)
   const [saveTarget, setSaveTarget] = useState(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const [saveForm] = Form.useForm()
   const { message } = App.useApp()
+
+  // P0 空态引导提示词：静态配置，后续可按项目 goal 生成
+  const SUGGESTED_PROMPTS = [
+    '帮我梳理这个项目的当前进展',
+    '基于项目目标，列出下一步行动清单',
+    '总结一下已经讨论过的要点',
+  ]
 
   const deriveTitle = (text: string) => {
     const firstLine = text.split('\n').find((l) => l.trim()) ?? '对话笔记'
@@ -357,12 +365,15 @@ function ChatPanel({ workspace }) {
 
   const fetchConversation = async () => {
     if (!workspace?.id) {
+      setConversation([])
+      setHistoryLoaded(true)
       return false
     }
     const [err, res] = await getChatListByWorkspaceId(workspace.id)
     console.log('[API]::[getChatListByWorkspaceId]::', res, err)
     if (res) {
       setConversation(res.data || [])
+      setHistoryLoaded(true)
     }
   }
 
@@ -424,13 +435,34 @@ function ChatPanel({ workspace }) {
       <div
         className="flex-1 overflow-y-auto"
         ref={scrollRef}>
-        <div className="mx-auto my-4 w-210">
-          <Flex
-            gap="middle"
-            vertical>
-            {chatBubbleList}
-          </Flex>
-        </div>
+        {workspace && historyLoaded && !conversation?.length && !loading ? (
+          <div className="h-full flex flex-col items-center justify-center px-8 text-center">
+            <div className="text-xl font-bold mb-2">开始推进「{workspace.title}」</div>
+            <div className="text-sm text-gray-500 mb-6">从下面的话题开始，或直接输入你的问题</div>
+            <Space
+              wrap
+              size="middle"
+              className="justify-center max-w-160">
+              {SUGGESTED_PROMPTS.map((text) => (
+                <Tag
+                  key={text}
+                  color="blue"
+                  className="cursor-pointer !px-3 !py-1 !text-sm"
+                  onClick={() => setPrompt(text)}>
+                  {text}
+                </Tag>
+              ))}
+            </Space>
+          </div>
+        ) : (
+          <div className="mx-auto my-4 w-210">
+            <Flex
+              gap="middle"
+              vertical>
+              {chatBubbleList}
+            </Flex>
+          </div>
+        )}
       </div>
       {/* Prompt */}
       <div className="flex-none basis-13 flex items-center justify-center mb-10">
