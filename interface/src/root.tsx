@@ -3,12 +3,15 @@ import { XProvider } from '@ant-design/x'
 import { App as AntdApp } from 'antd'
 import './assets/styles/index.css'
 import { setMessageInstance } from './http/handler'
+import { applyCompact, getPreferences } from './utils/preferences'
 import React from 'react'
 
 function MessageProvider({ children }: { children: React.ReactNode }) {
   const { message } = AntdApp.useApp()
   React.useEffect(() => {
     setMessageInstance(message)
+    // 启动时恢复本地偏好（紧凑模式挂在 <html> class 上）
+    applyCompact(getPreferences().compact)
   }, [message])
 
   return <>{children}</>

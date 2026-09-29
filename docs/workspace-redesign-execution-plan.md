@@ -172,6 +172,8 @@ P0 已完成，实施与验收记录见 [workspace-redesign-f2-p0-acceptance.md]
 
 ### P1 设置与联动（约 3 天）
 
+P1 已完成，实施与验收记录见 [workspace-redesign-f2-p1-acceptance.md](./workspace-redesign-f2-p1-acceptance.md)。
+
 | 项 | 内容 |
 | --- | --- |
 | 账户设置页 | 原型 10：账户信息卡（`PUT /user/:id` 已支持本人修改）+ 偏好设置（默认模型接 B3 接口；流式输出开关接 chat 请求参数；紧凑模式先 localStorage） |

@@ -1,4 +1,4 @@
-import { App, Button, Card, Divider, Flex, Space, Modal, Form, Input, Tag } from 'antd'
+import { App, Button, Card, Divider, Dropdown, Flex, Space, Modal, Form, Input, Tag } from 'antd'
 import { Bubble, Attachments, Sender } from '@ant-design/x'
 import {
   PlusOutlined,
@@ -15,15 +15,17 @@ import {
   CloudUploadOutlined,
   LinkOutlined,
   AppstoreOutlined,
+  CheckOutlined,
 } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-import { getWorkspaceList, createWorkspace } from '@/api/workspace'
+import { getWorkspaceList, createWorkspace, updateWorkspace } from '@/api/workspace'
 import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
 import { createNote } from '@/api/note'
 import { getModelConfigList } from '@/api/setting'
 import { useWorkspaceStore } from '@/store'
 import { createSSEParser } from '@/utils/sse'
+import { getPreferences } from '@/utils/preferences'
 import WorkspaceModal, { toWorkspacePayload } from '@/components/workspace-modal'
 import ProjectContext from '@/components/project-context'
 import StatusPill, { statusDotClass } from '@/components/status-pill'
@@ -172,7 +174,7 @@ function ProjectPanel({ list, modelList, initialId }) {
   )
 }
 
-function ChatPanel({ workspace }) {
+function ChatPanel({ workspace, modelList }) {
   const [conversation, setConversation] = useState<any[]>([])
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
@@ -182,6 +184,7 @@ function ChatPanel({ workspace }) {
   const navigate = useNavigate()
   const [saveForm] = Form.useForm()
   const { message } = App.useApp()
+  const setWorkspace = useWorkspaceStore((state) => state.setWorkspace)
 
   // P0 空态引导提示词：静态配置，后续可按项目 goal 生成
   const SUGGESTED_PROMPTS = [
@@ -253,20 +256,24 @@ function ChatPanel({ workspace }) {
               <Space
                 direction="vertical"
                 size={4}>
-                <Space>
+              <Space>
+                {index === conversation.length - 1 && item.proposer !== 'user' && !loading ? (
                   <Button
                     color="default"
                     variant="text"
                     size="small"
                     icon={<SyncOutlined />}
+                    title="重新生成"
+                    onClick={() => handleRegenerate(index)}
                   />
-                  <Button
-                    color="default"
-                    variant="text"
-                    size="small"
-                    icon={<CopyOutlined />}
-                    onClick={() => handleCopy(item.content)}
-                  />
+                ) : null}
+                <Button
+                  color="default"
+                  variant="text"
+                  size="small"
+                  icon={<CopyOutlined />}
+                  onClick={() => handleCopy(item.content)}
+                />
                   {item.id ? (
                     <Button
                       color="default"
@@ -316,51 +323,68 @@ function ChatPanel({ workspace }) {
       ))
     : null
 
-  const handleChat = async () => {
-    if (!workspace || prompt.trim() === '') {
+  // 统一发送：流式与否由本地偏好决定；base 供重新生成基于截断后的历史重建会话
+  const send = async (content: string, base = conversation) => {
+    if (!workspace || !content) {
       return false
     }
-    let content = prompt.trim()
-    setPrompt('')
     setLoading(true)
-    const newConversation = [...conversation, { proposer: 'user', content }]
-    setConversation(newConversation)
-    const [err, res] = await chatToWorkspace(workspace.id, content)
-    console.log('[API]::[chatToWorkspace]::', res, err)
-    if (res) {
-      // 非流式响应同样是 { content, references } 信封
-      setConversation([...newConversation, { proposer: 'assistant', content: res.data.content, references: res.data.references || [] }])
+    const newConversation = [...base, { proposer: 'user', content }]
+    if (getPreferences().stream) {
+      setConversation([...newConversation, { proposer: 'assistant', content: '', references: [] }])
+      const feed = createSSEParser((evt) => {
+        setConversation((prev) => {
+          const last = { ...prev[prev.length - 1] }
+          const rest = prev.slice(0, -1)
+          if (evt.type === 'text') last.content += evt.value
+          if (evt.type === 'status') last.status = evt.value
+          if (evt.type === 'references') last.references = evt.notes
+          if (evt.type === 'error') last.content += `\n[出错了] ${evt.message}`
+          if (evt.type === 'done' && evt.chatId) last.id = evt.chatId
+          if (evt.type === 'note-saved') last.savedNotes = [...(last.savedNotes || []), evt.note]
+          return [...rest, last]
+        })
+      })
+
+      await streamChatToWorkspace(workspace.id, content, (e: any) => {
+        feed(e.event.target.responseText)
+      })
+    } else {
+      setConversation(newConversation)
+      const [err, res] = await chatToWorkspace(workspace.id, content)
+      console.log('[API]::[chatToWorkspace]::', res, err)
+      if (res) {
+        // 非流式响应同样是 { content, references } 信封
+        setConversation([...newConversation, { proposer: 'assistant', content: res.data.content, references: res.data.references || [] }])
+      }
     }
     setLoading(false)
   }
 
-  const handleStreamChat = async () => {
-    if (!workspace || prompt.trim() === '') {
-      return false
-    }
+  const handleSubmit = () => {
     const content = prompt.trim()
+    if (!content) return
     setPrompt('')
-    setLoading(true)
-    const newConversation = [...conversation, { proposer: 'user', content }]
-    setConversation([...newConversation, { proposer: 'assistant', content: '', references: [] }])
-    const feed = createSSEParser((evt) => {
-      setConversation((prev) => {
-        const last = { ...prev[prev.length - 1] }
-        const rest = prev.slice(0, -1)
-        if (evt.type === 'text') last.content += evt.value
-        if (evt.type === 'status') last.status = evt.value
-        if (evt.type === 'references') last.references = evt.notes
-        if (evt.type === 'error') last.content += `\n[出错了] ${evt.message}`
-        if (evt.type === 'done' && evt.chatId) last.id = evt.chatId
-        if (evt.type === 'note-saved') last.savedNotes = [...(last.savedNotes || []), evt.note]
-        return [...rest, last]
-      })
-    })
+    send(content)
+  }
 
-    await streamChatToWorkspace(workspace.id, content, (e: any) => {
-      feed(e.event.target.responseText)
-    })
-    setLoading(false)
+  // 消息级重新生成：截断到目标 assistant 前的 user 消息，重发同一段内容
+  const handleRegenerate = (index: number) => {
+    if (loading) return
+    const userMsg = conversation[index - 1]
+    if (!userMsg || userMsg.proposer !== 'user') return
+    send(userMsg.content, conversation.slice(0, index - 1))
+  }
+
+  // 模型快捷切换：更新项目挂载；PUT 只回布尔，成功后在本地合并模型字段刷新展示
+  const handleModelSwitch = async (modelId: number) => {
+    if (!workspace || modelId === workspace.modelId) return
+    const target = modelList.find((item) => item.id === modelId)
+    const [err, res] = await updateWorkspace({ id: workspace.id, modelId })
+    if (res) {
+      message.success('模型已切换')
+      setWorkspace({ ...workspace, modelId, modelName: target?.modelName ?? null })
+    }
   }
 
   const fetchConversation = async () => {
@@ -414,15 +438,28 @@ function ChatPanel({ workspace }) {
                 {workspace.modelName}
               </Tag>
             ) : null}
-            <div
-              className="text-gray cursor-pointer"
-              title="切换模型">
-              <SwapOutlined />
-            </div>
+            <Dropdown
+              menu={{
+                items: modelList.map((item) => ({
+                  key: item.id,
+                  label: item.modelName,
+                  icon: item.id === workspace?.modelId ? <CheckOutlined /> : null,
+                })),
+                onClick: ({ key }) => handleModelSwitch(Number(key)),
+              }}
+              placement="bottomRight"
+              disabled={!workspace}>
+              <div
+                className="text-gray cursor-pointer"
+                title="切换模型">
+                <SwapOutlined />
+              </div>
+            </Dropdown>
             <Divider type="vertical" />
             <div
               className="text-gray cursor-pointer"
-              title="模型配置">
+              title="模型配置"
+              onClick={() => navigate('/setting/model-config')}>
               <SettingOutlined />
             </div>
           </div>
@@ -455,7 +492,7 @@ function ChatPanel({ workspace }) {
             </Space>
           </div>
         ) : (
-          <div className="mx-auto my-4 w-210">
+          <div className="mx-auto my-4 w-210 chat-record">
             <Flex
               gap="middle"
               vertical>
@@ -473,7 +510,7 @@ function ChatPanel({ workspace }) {
             onChange={(v) => {
               setPrompt(v)
             }}
-            onSubmit={handleStreamChat}
+            onSubmit={handleSubmit}
             prefix={
               <Attachments
                 beforeUpload={() => false}
@@ -540,7 +577,10 @@ export default function Page({ loaderData, actionData, params, matches }) {
         modelList={loaderData[1]}
         initialId={loaderData[2]}
       />
-      <ChatPanel workspace={workspace} />
+      <ChatPanel
+        workspace={workspace}
+        modelList={loaderData[1]}
+      />
       <ProjectContext workspace={workspace} />
     </div>
   )

@@ -36,6 +36,8 @@ service.interceptors.response.use(response => {
     handleNetworkError(errStatus)
   }
   if (errStatus === 401) {
+    // 跳转前清掉过期用户，避免残留 store 造成登录后仍显示旧身份
+    useUserStore.getState().clearUser()
     window.location.href = '/login'
   }
   return Promise.reject(error)

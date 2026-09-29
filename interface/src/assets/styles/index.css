@@ -37,3 +37,12 @@ body {
     @apply border border-transparent;
   }
 }
+
+/* 紧凑模式（偏好设置开关）：收紧会话气泡间距 */
+.compact-mode .chat-record > .ant-flex {
+  gap: 8px !important;
+}
+
+.compact-mode .chat-record .ant-bubble-content {
+  padding-block: 8px;
+}
