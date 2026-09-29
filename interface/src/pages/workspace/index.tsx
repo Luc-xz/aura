@@ -1,4 +1,4 @@
-import { App, Button, Card, Divider, Empty, Input, Segmented, Select, Space, Spin, Tag } from 'antd'
+import { App, Button, Card, Divider, Empty, Input, Segmented, Select, Skeleton, Space, Tag } from 'antd'
 import { PlusOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -199,10 +199,18 @@ export default function Page({ loaderData }) {
           />
         </div>
 
-        {/* 项目卡片列表 */}
+        {/* 项目卡片列表（加载态为骨架卡） */}
         {loading ? (
-          <div className="flex justify-center py-16">
-            <Spin />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((key) => (
+              <Card key={key}>
+                <Skeleton
+                  active
+                  title
+                  paragraph={{ rows: 3 }}
+                />
+              </Card>
+            ))}
           </div>
         ) : list.length ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

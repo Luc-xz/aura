@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { App, Button, Card, Empty, Flex, Form, Input, Layout, Pagination, Segmented, Select, Space, Tag, Typography } from 'antd'
+import { App, Button, Card, Empty, Flex, Form, Input, Layout, Pagination, Segmented, Select, Skeleton, Space, Tag, Typography } from 'antd'
 import { AppstoreOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { getNotePage } from '@/api/note'
 import { getWorkspaceList } from '@/api/workspace'
@@ -34,6 +34,7 @@ export default function Page({ loaderData }) {
   const [workspaceId, setWorkspaceId] = useState<number | undefined>()
   const [sortKey, setSortKey] = useState('created_at')
   const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
   const [form] = Form.useForm()
 
   const load = async (opts?: { page?: number; workspaceId?: number; sortKey?: string; keyword?: string }) => {
@@ -45,10 +46,12 @@ export default function Page({ loaderData }) {
       workspaceId: opts?.workspaceId ?? workspaceId,
       keyword: opts?.keyword ?? form.getFieldValue('keyword'),
     }
+    setLoading(true)
     const data = await fetch(next)
     setList(data?.rows || [])
     setTotal(data?.total || 0)
     setPage(next.page)
+    setLoading(false)
   }
 
   // 常用标签点击筛选：复用关键词搜索（后端 title/description/keywords LIKE）
@@ -201,7 +204,20 @@ export default function Page({ loaderData }) {
           </Form.Item>
         </Form>
       </Flex>
-      {list.length ? (
+      {loading ? (
+        [1, 2].map((key) => (
+          <Card
+            key={key}
+            style={{ width: '100%', marginBottom: 16 }}
+            styles={{ body: { padding: 16, height: 180 } }}>
+            <Skeleton
+              active
+              title
+              paragraph={{ rows: 2 }}
+            />
+          </Card>
+        ))
+      ) : list.length ? (
         cardList
       ) : (
         <div className="flex justify-center py-20">

@@ -23,12 +23,16 @@ export default function Page() {
   const [form] = Form.useForm()
   const [roleForm] = Form.useForm()
 
+  const [loading, setLoading] = useState(false)
+
   const fetchList = async (q = query) => {
+    setLoading(true)
     const [err, res] = await pageUser({ page: q.page, pageSize: q.pageSize, keyword: q.keyword || undefined })
     if (res) {
       setList(res.data.rows)
       setTotal(res.data.total)
     }
+    setLoading(false)
   }
 
   useEffect(() => { fetchList() }, [query])
@@ -116,6 +120,7 @@ export default function Page() {
       </Space>
       <Table
         rowKey="id"
+        loading={loading}
         columns={columns}
         dataSource={list}
         pagination={{

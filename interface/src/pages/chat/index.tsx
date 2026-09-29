@@ -21,7 +21,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { getWorkspaceList, createWorkspace, updateWorkspace } from '@/api/workspace'
 import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
-import { createNote } from '@/api/note'
+import { getNotePage, createNote } from '@/api/note'
 import { getModelConfigList } from '@/api/setting'
 import { useWorkspaceStore } from '@/store'
 import { createSSEParser } from '@/utils/sse'
@@ -174,11 +174,14 @@ function ProjectPanel({ list, modelList, initialId }) {
   )
 }
 
-function ChatPanel({ workspace, modelList }) {
+function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, onSessionNoteSaved }) {
   const [conversation, setConversation] = useState<any[]>([])
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
+  // 会话状态胶囊：流式中 / 已中断（SSE 未收到 done 或出错）
+  const [streamStatus, setStreamStatus] = useState<'idle' | 'streaming' | 'interrupted'>('idle')
+  const streamDoneRef = useRef(true)
   const [saveTarget, setSaveTarget] = useState(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -225,6 +228,8 @@ function ChatPanel({ workspace, modelList }) {
       message.success('已保存为笔记')
       setSaveTarget(null)
       saveForm.resetFields()
+      onSessionNoteClose?.()
+      onSessionNoteSaved?.()
     } else {
       message.error('保存失败：' + err.message)
     }
@@ -236,6 +241,22 @@ function ChatPanel({ workspace, modelList }) {
   }
 
   const toNote = (id) => navigate(`/note/edit/${id}`)
+
+  // 会话级存为笔记：拼接当前会话为内容（P2 右栏入口经 Page 桥接触发）
+  useEffect(() => {
+    if (!sessionNoteOpen) return
+    const content = conversation
+      .filter((item) => item.content)
+      .map((item) => `${item.proposer === 'user' ? '我' : '助手'}：${item.content}`)
+      .join('\n\n')
+    if (!content) {
+      message.warning('当前会话没有可保存的内容')
+      onSessionNoteClose?.()
+      return
+    }
+    setSaveTarget({ content, chatId: null })
+    saveForm.setFieldsValue({ title: deriveTitle(content), content })
+  }, [sessionNoteOpen])
 
   const chatBubbleList = workspace
     ? conversation?.map?.((item, index) => (
@@ -331,6 +352,8 @@ function ChatPanel({ workspace, modelList }) {
     setLoading(true)
     const newConversation = [...base, { proposer: 'user', content }]
     if (getPreferences().stream) {
+      setStreamStatus('streaming')
+      streamDoneRef.current = false
       setConversation([...newConversation, { proposer: 'assistant', content: '', references: [] }])
       const feed = createSSEParser((evt) => {
         setConversation((prev) => {
@@ -344,11 +367,22 @@ function ChatPanel({ workspace, modelList }) {
           if (evt.type === 'note-saved') last.savedNotes = [...(last.savedNotes || []), evt.note]
           return [...rest, last]
         })
+        if (evt.type === 'done') {
+          streamDoneRef.current = true
+          setStreamStatus('idle')
+        }
+        if (evt.type === 'error') {
+          setStreamStatus('interrupted')
+        }
       })
 
       await streamChatToWorkspace(workspace.id, content, (e: any) => {
         feed(e.event.target.responseText)
       })
+      // 流结束仍未收到 done 视为中断（连接被掐断 / 出错未恢复）
+      if (!streamDoneRef.current) {
+        setStreamStatus('interrupted')
+      }
     } else {
       setConversation(newConversation)
       const [err, res] = await chatToWorkspace(workspace.id, content)
@@ -356,6 +390,8 @@ function ChatPanel({ workspace, modelList }) {
       if (res) {
         // 非流式响应同样是 { content, references } 信封
         setConversation([...newConversation, { proposer: 'assistant', content: res.data.content, references: res.data.references || [] }])
+      } else {
+        setStreamStatus('interrupted')
       }
     }
     setLoading(false)
@@ -438,6 +474,23 @@ function ChatPanel({ workspace, modelList }) {
                 {workspace.modelName}
               </Tag>
             ) : null}
+            {streamStatus === 'streaming' ? (
+              <Tag
+                color="processing"
+                bordered={false}
+                className="m-0"
+                icon={<SyncOutlined spin />}>
+                生成中
+              </Tag>
+            ) : null}
+            {streamStatus === 'interrupted' ? (
+              <Tag
+                color="warning"
+                bordered={false}
+                className="m-0">
+                已中断
+              </Tag>
+            ) : null}
             <Dropdown
               menu={{
                 items: modelList.map((item) => ({
@@ -475,7 +528,12 @@ function ChatPanel({ workspace, modelList }) {
         {workspace && historyLoaded && !conversation?.length && !loading ? (
           <div className="h-full flex flex-col items-center justify-center px-8 text-center">
             <div className="text-xl font-bold mb-2">开始推进「{workspace.title}」</div>
-            <div className="text-sm text-gray-500 mb-6">从下面的话题开始，或直接输入你的问题</div>
+            <div className="text-sm text-gray-500 mb-2">从下面的话题开始，或直接输入你的问题</div>
+            {workspace.goal || workspace.description ? (
+              <div className="text-xs text-blue-500 mb-6">已注入项目目标与背景，助手了解你的项目上下文</div>
+            ) : (
+              <div className="text-xs text-gray-400 mb-6">设置项目目标与背景后，将自动注入对话上下文</div>
+            )}
             <Space
               wrap
               size="middle"
@@ -533,9 +591,12 @@ function ChatPanel({ workspace, modelList }) {
         title="保存为笔记"
         open={!!saveTarget}
         forceRender
+        okText="确定"
+        cancelText="取消"
         onCancel={() => {
           setSaveTarget(null)
           saveForm.resetFields()
+          onSessionNoteClose?.()
         }}
         onOk={handleSave}>
         <Form form={saveForm}>
@@ -569,6 +630,28 @@ function ChatPanel({ workspace, modelList }) {
 
 export default function Page({ loaderData, actionData, params, matches }) {
   const workspace = useWorkspaceStore((state) => state.workspace)
+  // 右栏关联笔记由页面层持有：会话级保存成功后可主动刷新（P2 沉淀联动）
+  const [notes, setNotes] = useState<any[]>([])
+  const [sessionNoteOpen, setSessionNoteOpen] = useState(false)
+
+  const refreshNotes = async () => {
+    if (!workspace?.id) {
+      setNotes([])
+      return
+    }
+    const [err, res] = await getNotePage({
+      page: 1,
+      pageSize: 5,
+      workspaceId: workspace.id,
+      orderBy: 'updated_at',
+      orderDir: 'DESC',
+    })
+    setNotes(res?.data?.rows || [])
+  }
+
+  useEffect(() => {
+    refreshNotes()
+  }, [workspace?.id])
 
   return (
     <div className="flex w-full h-full">
@@ -580,8 +663,15 @@ export default function Page({ loaderData, actionData, params, matches }) {
       <ChatPanel
         workspace={workspace}
         modelList={loaderData[1]}
+        sessionNoteOpen={sessionNoteOpen}
+        onSessionNoteClose={() => setSessionNoteOpen(false)}
+        onSessionNoteSaved={refreshNotes}
       />
-      <ProjectContext workspace={workspace} />
+      <ProjectContext
+        workspace={workspace}
+        notes={notes}
+        onSaveSessionNote={() => setSessionNoteOpen(true)}
+      />
     </div>
   )
 }

@@ -30,9 +30,13 @@ export default function Page() {
   const [current, setCurrent] = useState<MenuRow | null>(null)
   const [form] = Form.useForm()
 
+  const [loading, setLoading] = useState(false)
+
   const fetchList = async () => {
+    setLoading(true)
     const [err, res] = await menuTree()
     if (res) setList(res.data)
+    setLoading(false)
   }
 
   useEffect(() => { fetchList() }, [])
@@ -110,7 +114,7 @@ export default function Page() {
       <AuthButton permission="menu:create">
         <Button type="primary" style={{ marginBottom: 16 }} onClick={openCreate}>新增菜单</Button>
       </AuthButton>
-      <Table rowKey="id" columns={columns} dataSource={list} pagination={false} />
+      <Table rowKey="id" columns={columns} dataSource={list} pagination={false} loading={loading} />
 
       <Drawer
         title={current ? `编辑菜单 - ${current.name}` : '新增菜单'}

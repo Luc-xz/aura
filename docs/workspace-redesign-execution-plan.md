@@ -184,6 +184,9 @@ P1 已完成，实施与验收记录见 [workspace-redesign-f2-p1-acceptance.md]
 
 ### P2 沉淀与打磨（约 2.5 天，可裁剪）
 
+P2 已完成，实施与验收记录见 [workspace-redesign-f2-p2-acceptance.md](./workspace-redesign-f2-p2-acceptance.md)。
+**至此 B/F1/F2 全部阶段收口，执行计划整体完成。**
+
 | 项 | 内容 |
 | --- | --- |
 | 右栏沉淀内容 | `project-context` 实装：关联笔记列表（`note.workspaceId`）+ "存为笔记"会话级入口（补充而非替换现有消息级/划选/AI 自动保存） |

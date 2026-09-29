@@ -42,9 +42,13 @@ export default function Page() {
   const [halfCheckedMenuIds, setHalfCheckedMenuIds] = useState<number[]>([])
   const [form] = Form.useForm()
 
+  const [loading, setLoading] = useState(false)
+
   const fetchList = async () => {
+    setLoading(true)
     const [err, res] = await listRoles()
     if (res) setList(res.data)
+    setLoading(false)
   }
 
   useEffect(() => { fetchList() }, [])
@@ -144,7 +148,7 @@ export default function Page() {
       <AuthButton permission="role:create">
         <Button type="primary" style={{ marginBottom: 16 }} onClick={openCreate}>新增角色</Button>
       </AuthButton>
-      <Table rowKey="id" columns={columns} dataSource={list} pagination={false} />
+      <Table rowKey="id" columns={columns} dataSource={list} pagination={false} loading={loading} />
 
       <Drawer
         title={current ? `编辑角色 - ${current.name}` : '新增角色'}
