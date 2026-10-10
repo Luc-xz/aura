@@ -362,7 +362,7 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
           if (evt.type === 'text') last.content += evt.value
           if (evt.type === 'status') last.status = evt.value
           if (evt.type === 'references') last.references = evt.notes
-          if (evt.type === 'error') last.content += `\n[出错了] ${evt.message}`
+          if (evt.type === 'error') last.content += `\n${evt.statusCode != null ? `${evt.statusCode}: ` : ''}${evt.message}`
           if (evt.type === 'done' && evt.chatId) last.id = evt.chatId
           if (evt.type === 'note-saved') last.savedNotes = [...(last.savedNotes || []), evt.note]
           return [...rest, last]
@@ -391,6 +391,8 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
         // 非流式响应同样是 { content, references } 信封
         setConversation([...newConversation, { proposer: 'assistant', content: res.data.content, references: res.data.references || [] }])
       } else {
+        const status = err?.response?.status ?? err?.code
+        setConversation([...newConversation, { proposer: 'assistant', content: `${status != null ? `${status}: ` : ''}${err.message}` }])
         setStreamStatus('interrupted')
       }
     }

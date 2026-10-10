@@ -3,7 +3,7 @@ export type SSEEvent =
   | { type: 'status'; value: string }
   | { type: 'references'; notes: { id: number; title: string }[] }
   | { type: 'done'; chatId?: number }
-  | { type: 'error'; message: string }
+  | { type: 'error'; message: string; statusCode?: number | null }
   | { type: 'note-saved'; note: { id: number; title: string } }
 
 export function createSSEParser(onEvent: (evt: SSEEvent) => void) {

@@ -10,7 +10,8 @@ import { requireOwnership } from '../middlewares/rbac.js'
 import { createModelInstance } from '../utils/model-factory.js'
 import { generateText, streamText, stepCountIs } from 'ai'
 import Validator from '../../shared/utils/validator.js'
-import { BadRequest, NotFound } from '../utils/appError.js'
+import { BadRequest, NotFound, BadGateway } from '../utils/appError.js'
+import { logger } from '../utils/logger.js'
 import { buildNoteTools, NOTE_TOOLS_SYSTEM_PROMPT } from '../tool/index.js'
 
 const TOOL_MAX_STEPS = 5
@@ -131,13 +132,20 @@ function chatEndpoints(apiRouter) {
       })
 
       if (!stream) {
-        const result = await generateText({
-          model,
-          messages,
-          system: systemPrompt,
-          tools,
-          stopWhen: stepCountIs(TOOL_MAX_STEPS),
-        });
+        let result
+        try {
+          result = await generateText({
+            model,
+            messages,
+            system: systemPrompt,
+            tools,
+            stopWhen: stepCountIs(TOOL_MAX_STEPS),
+          })
+        } catch (err) {
+          // 直透上游错误信息（如 Incorrect API key provided），空响应才兜底
+          logger.warn(`[chat] upstream error (non-stream): ${err.message}`)
+          throw BadGateway(err?.message || '上游模型调用失败')
+        }
         const chatId = await Chat.create({ workspaceId, content: result.text, proposer: 'assistant' })
         res.status(200).json({
           data: {
@@ -156,7 +164,11 @@ function chatEndpoints(apiRouter) {
       res.setHeader('Cache-Control', 'no-cache')
       res.setHeader('Connection', 'keep-alive')
 
-
+      // 客户端提前断开（关页面/切项目）时中止上游请求，避免继续消耗模型配额
+      const upstreamAbort = new AbortController()
+      res.on('close', () => {
+        if (!res.writableEnded) upstreamAbort.abort()
+      })
 
       const result = streamText({
         model,
@@ -164,11 +176,19 @@ function chatEndpoints(apiRouter) {
         system: systemPrompt,
         tools,
         stopWhen: stepCountIs(TOOL_MAX_STEPS),
+        abortSignal: upstreamAbort.signal,
+        // 上游错误会被 SDK 转成 fullStream 的 error part（不 throw），这里只负责日志归一
+        onError: ({ error }) => logger.warn(`[chat] upstream stream error: ${error?.message}`),
       });
       let full = ''
 
       try {
+        let streamError = null
         for await (const part of result.fullStream) {
+          if (part.type === 'error') {
+            streamError = part.error
+            break
+          }
           if (part.type === 'text-delta') {
             full += part.text
             sendEvent({ type: 'text', value: part.text })
@@ -178,11 +198,21 @@ function chatEndpoints(apiRouter) {
             if (part.toolName === 'save_note') sendEvent({ type: 'status', value: '正在保存笔记…' })
           }
         }
+        if (streamError) {
+          // 中途失败但已有部分内容：把半截存下来，刷新后不丢；一句没出就不落库
+          if (full.trim()) {
+            await Chat.create({ workspaceId, content: full, proposer: 'assistant' })
+          }
+          // 直透上游错误信息，空响应才兜底；statusCode 为上游 HTTP 状态码（无则为 null）
+          sendEvent({ type: 'error', statusCode: streamError?.statusCode ?? null, message: streamError?.message || '上游模型调用失败' })
+          return
+        }
         const chatId = await Chat.create({ workspaceId, content: full, proposer: 'assistant' })
         sendEvent({ type: 'references', notes: references })
         sendEvent({ type: 'done', chatId })
       } catch (err) {
-        sendEvent({ type: 'error', message: err.message })
+        // 流消费/落库阶段的本地异常同样以 error 事件收尾，前端不会悬挂
+        sendEvent({ type: 'error', statusCode: err?.statusCode ?? null, message: err?.message || '上游模型调用失败' })
       } finally {
         res.end()
       }
