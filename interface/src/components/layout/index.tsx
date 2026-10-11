@@ -110,7 +110,7 @@ export default function MyLayout() {
           {/* 品牌区：悬浮 Logo 时交叉淡变为折叠/展开图标；折叠时 Logo 水平居中 */}
           <Tooltip title={collapsed ? '展开' : '折叠'}>
             <div
-              className="brand group relative flex items-center h-16 border-b border-ashen/70 cursor-pointer select-none overflow-hidden px-5"
+              className="brand group relative flex items-center h-16 border-b border-line cursor-pointer select-none overflow-hidden px-5"
               onClick={() => setCollapsed(!collapsed)}>
               <span className={`flex-none w-7 h-7 ${collapsed ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' : 'relative'}`}>
                 <span className="absolute inset-0 rounded-full bg-primary/30 blur-[6px] transition-opacity duration-300 group-hover:opacity-0" />
@@ -140,7 +140,7 @@ export default function MyLayout() {
           />
 
           {/* 用户区：头像 + 用户名 + 退出（悬浮用户栏时浮现退出按钮） */}
-          <div className="absolute bottom-0 left-0 w-full border-t border-ashen/70 bg-white">
+          <div className="absolute bottom-0 left-0 w-full border-t border-line bg-white">
             <div className="user-bar group relative flex items-center h-16 overflow-hidden px-5">
               <span className={`flex-none w-7 h-7 ${collapsed ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' : 'relative'}`}>
                 <Avatar

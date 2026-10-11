@@ -132,7 +132,7 @@ function ProjectPanel({ list, modelList, initialId }) {
   ))
 
   return (
-    <div className="relative bg-moon border-r border-ashen flex-0">
+    <div className="relative bg-surface border-r border-line flex-0">
       <div className={`overflow-hidden h-full transition-all duration-300 ${panelVisible ? 'w-55' : 'w-0'}`}>
         <div className="overflow-hidden p-4 w-55 h-full">
           <div className="flex items-center justify-between mb-4">
@@ -159,7 +159,7 @@ function ProjectPanel({ list, modelList, initialId }) {
         </div>
       </div>
       <div
-        className="absolute top-[50%] right-[-32px] w-5 h-11 flex items-center justify-center bg-moon color-primary text-sm hover:text-base border border-ashen rounded text-gray-500 cursor-pointer"
+        className="absolute top-[50%] right-[-32px] w-5 h-11 flex items-center justify-center bg-surface border border-line rounded text-primary text-sm hover:text-base text-gray-500 cursor-pointer"
         onClick={() => setPanelVisible(!panelVisible)}>
         {panelVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
       </div>

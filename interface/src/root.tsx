@@ -1,10 +1,29 @@
 import { Outlet, Scripts, ScrollRestoration, Meta, Links } from 'react-router'
 import { XProvider } from '@ant-design/x'
-import { App as AntdApp } from 'antd'
+import { App as AntdApp, ConfigProvider } from 'antd'
 import './assets/styles/index.css'
 import { setMessageInstance } from './http/handler'
 import { applyCompact, getPreferences } from './utils/preferences'
 import React from 'react'
+
+const auraTheme = {
+  token: {
+    colorPrimary: '#2266D1',
+    colorInfo: '#2266D1',
+    colorSuccess: '#2F7D5C',
+    colorWarning: '#AD6D18',
+    colorError: '#C0392B',
+    colorTextBase: '#16202A',
+    colorBgLayout: '#F5F7F9',
+    colorBorder: '#C6CFD8',
+    colorBorderSecondary: '#E4EAF0',
+    borderRadius: 8,
+    controlHeight: 34,
+    fontSize: 13,
+    fontFamily:
+      "'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif",
+  },
+}
 
 function MessageProvider({ children }: { children: React.ReactNode }) {
   const { message } = AntdApp.useApp()
@@ -32,11 +51,15 @@ export default function App() {
       </head>
       <body>
         <XProvider>
-          <AntdApp className="h-full">
-            <MessageProvider>
-              <Outlet />
-            </MessageProvider>
-          </AntdApp>
+          <ConfigProvider theme={auraTheme}>
+            <div className="aura-theme h-full">
+              <AntdApp className="h-full">
+                <MessageProvider>
+                  <Outlet />
+                </MessageProvider>
+              </AntdApp>
+            </div>
+          </ConfigProvider>
         </XProvider>
         <ScrollRestoration />
         <Scripts />

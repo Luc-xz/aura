@@ -23,7 +23,7 @@ function ContextRow({ label, children }: { label: string; children: React.ReactN
 // 沉淀占位：结论/待办/记忆在远期实装
 function PlaceholderSection({ title, description }: { title: string; description: string }) {
   return (
-    <div className="border border-dashed border-ashen rounded p-4 text-center">
+    <div className="border border-dashed border-line-strong rounded-md p-4 text-center">
       <div className="text-sm text-gray-600 mb-1">{title}</div>
       <div className="text-xs text-gray-400">{description}</div>
     </div>
@@ -40,7 +40,7 @@ export default function ProjectContext({ workspace, notes, onSaveSessionNote }: 
   const navigate = useNavigate()
 
   return (
-    <div className="flex-none w-80 h-full border-l border-ashen bg-white overflow-y-auto">
+    <div className="flex-none w-80 h-full border-l border-line bg-white overflow-y-auto">
       <div className="p-4 space-y-4">
         <div className="title-ter">项目上下文</div>
         {workspace ? (
@@ -98,7 +98,7 @@ export default function ProjectContext({ workspace, notes, onSaveSessionNote }: 
                   </div>
                 ))
               ) : (
-                <div className="border border-dashed border-ashen rounded p-3 text-center text-xs text-gray-400">
+                <div className="border border-dashed border-line-strong rounded-md p-3 text-center text-xs text-gray-400">
                   暂无关联笔记，会话中保存的笔记会出现在这里
                 </div>
               )}
