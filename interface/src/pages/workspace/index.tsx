@@ -8,6 +8,7 @@ import { getModelConfigList } from '@/api/setting'
 import WorkspaceModal, { toWorkspacePayload } from '@/components/workspace-modal'
 import type { WorkspaceFormValues } from '@/components/workspace-modal'
 import StatusPill, { WORKSPACE_STATUS } from '@/components/status-pill'
+import { CREATE_WORKSPACE_EVENT, dispatchWorkspaceChanged } from '@/components/shell/workspace-events'
 import { formatRelative } from '@/utils/time'
 
 const fetchWorkspaceList = async (params?: WorkspaceListParams) => {
@@ -51,6 +52,15 @@ export default function Page({ loaderData }) {
   const [editing, setEditing] = useState<WorkspaceItem | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
 
+  useEffect(() => {
+    const openCreateModal = () => {
+      setEditing(null)
+      setModalOpen(true)
+    }
+    window.addEventListener(CREATE_WORKSPACE_EVENT, openCreateModal)
+    return () => window.removeEventListener(CREATE_WORKSPACE_EVENT, openCreateModal)
+  }, [])
+
   const refresh = async (opts?: { label?: string; title?: string; sort?: string }) => {
     const label = opts?.label ?? filter
     const status = WORKSPACE_STATUS.find((s) => s.label === label)?.value
@@ -64,6 +74,7 @@ export default function Page({ loaderData }) {
     setList(nextList)
     setStats(nextStats)
     setLoading(false)
+    dispatchWorkspaceChanged()
   }
 
   // 搜索防抖：停止输入 400ms 后刷新列表（挂载时 keyword 与输入一致则跳过）
