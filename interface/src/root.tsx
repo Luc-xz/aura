@@ -17,11 +17,20 @@ const auraTheme = {
     colorBgLayout: '#F5F7F9',
     colorBorder: '#C6CFD8',
     colorBorderSecondary: '#E4EAF0',
+    colorBgContainerDisabled: '#F1F3F5',
     borderRadius: 8,
     controlHeight: 34,
     fontSize: 13,
     fontFamily:
       "'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif",
+  },
+  // D5（原型 15）：弹窗与二次确认规格 —— 10px 圆角、pop 级阴影、28px 内边距
+  components: {
+    Modal: {
+      borderRadius: 10,
+      paddingContentHorizontal: 28,
+      boxShadow: '0 18px 44px -8px rgba(13, 20, 28, 0.26)',
+    },
   },
 }
 
