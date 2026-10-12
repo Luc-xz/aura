@@ -107,6 +107,71 @@
   }
 }
 
+/* D2：原型 field/input 密度（登录卡、项目弹窗等 antd 表单上下文，间距由容器 gap 提供） */
+.aura-form .ant-form-item {
+  margin-bottom: 0;
+}
+
+.aura-form .ant-form-item-label {
+  padding-bottom: 6px;
+}
+
+.aura-form .ant-form-item-label > label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.aura-form .ant-input-affix-wrapper,
+.aura-form .ant-input:not(textarea) {
+  height: 38px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.aura-form .ant-select-single {
+  height: 38px;
+}
+
+.aura-form .ant-select-single .ant-select-selector {
+  height: 38px;
+  border-radius: 8px;
+}
+
+.aura-form .ant-select-single .ant-select-selection-search-input {
+  height: 36px;
+}
+
+.aura-form textarea.ant-input {
+  border-radius: 8px;
+}
+
+/* D2：筛选行控件的紧凑密度（30px，与筛选胶囊同高） */
+.aura-compact .ant-select-single {
+  height: 30px;
+}
+
+.aura-compact .ant-select-single .ant-select-selector {
+  height: 30px;
+  border-radius: 6px;
+}
+
+.aura-compact .ant-select-single .ant-select-selection-search-input {
+  height: 28px;
+}
+
+.aura-compact .ant-input,
+.aura-compact .ant-input-affix-wrapper {
+  height: 30px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* 原型卡片动作链接的可点击反馈 */
+.project-card__actions span {
+  cursor: pointer;
+}
+
 /* 紧凑模式（偏好设置开关）：收紧会话气泡间距 */
 .compact-mode .chat-record > .ant-flex {
   gap: 8px !important;

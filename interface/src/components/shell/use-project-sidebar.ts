@@ -55,7 +55,8 @@ export function useProjectSidebar() {
     keyword,
     setKeyword,
     loading,
-    selectedId: workspace?.id ?? null,
+    // 原型 03：未进入过推进页时首项默认选中（纯视觉，点击才切换）
+    selectedId: workspace?.id ?? filteredProjects[0]?.id ?? null,
     selectProject,
   }
 }

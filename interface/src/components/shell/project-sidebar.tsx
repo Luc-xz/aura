@@ -47,7 +47,7 @@ export function ProjectList({
   }
 
   if (!projects.length) {
-    return <div className="px-2 py-3 text-xs text-muted">暂无项目</div>
+    return <div className="px-2.5 py-5 text-center text-xs text-placeholder">还没有项目</div>
   }
 
   return (

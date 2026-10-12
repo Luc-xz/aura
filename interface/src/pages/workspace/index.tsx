@@ -1,5 +1,5 @@
-import { App, Button, Card, Divider, Empty, Input, Segmented, Select, Skeleton, Space, Tag } from 'antd'
-import { PlusOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons'
+import { App, Input, Select } from 'antd'
+import { SearchOutlined } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { createWorkspace, deleteWorkspace, getWorkspaceList, getWorkspaceStats, updateWorkspace } from '@/api/workspace'
@@ -7,7 +7,8 @@ import type { WorkspaceItem, WorkspaceListParams, WorkspaceStats } from '@/api/w
 import { getModelConfigList } from '@/api/setting'
 import WorkspaceModal, { toWorkspacePayload } from '@/components/workspace-modal'
 import type { WorkspaceFormValues } from '@/components/workspace-modal'
-import StatusPill, { WORKSPACE_STATUS } from '@/components/status-pill'
+import { WORKSPACE_STATUS } from '@/components/status-pill'
+import { EmptyState, FilterPill, SkeletonCard, StatCard } from '@/components/ui'
 import { CREATE_WORKSPACE_EVENT, dispatchWorkspaceChanged } from '@/components/shell/workspace-events'
 import { formatRelative } from '@/utils/time'
 
@@ -35,6 +36,49 @@ const SORT_OPTIONS = [
   { value: 'created_at', label: '最近创建' },
   { value: 'title', label: '名称' },
 ]
+
+// 状态 → 卡片状态行文案与配色（原型 project-card__status：同色圆点 + 文字）
+const STATUS_TEXT: Record<number, { label: string; cls: string }> = {
+  0: { label: '进行中', cls: 't-success' },
+  1: { label: '暂停', cls: 't-warning' },
+  2: { label: '已归档', cls: 't-muted' },
+}
+
+const PlusIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 14 14"
+    fill="none"
+    stroke="#fff"
+    strokeWidth="1.6"
+    strokeLinecap="round">
+    <path d="M7 1.5v11M1.5 7h11" />
+  </svg>
+)
+
+// 原型 04 空态手提箱图形
+const EmptyProjectsIcon = () => (
+  <svg
+    width="56"
+    height="56"
+    viewBox="0 0 56 56"
+    fill="none"
+    stroke="#b9c4ce"
+    strokeWidth="1.6">
+    <rect
+      x="8"
+      y="15"
+      width="40"
+      height="30"
+      rx="4"
+    />
+    <path
+      d="M8 23h40M19 15v-3.5A2.5 2.5 0 0 1 21.5 9h13a2.5 2.5 0 0 1 2.5 2.5V15"
+      strokeLinecap="round"
+    />
+  </svg>
+)
 
 export default function Page({ loaderData }) {
   const navigate = useNavigate()
@@ -118,7 +162,7 @@ export default function Page({ loaderData }) {
     if (editing) confirmDelete(editing)
   }
 
-  // 状态流转操作组：0 进行中 ⇄ 1 暂停，任意 → 2 归档；仅归档态提供删除
+  // 状态流转：卡片内联归档/恢复；暂停⇄恢复经编辑弹窗的「当前状态」（原型 05b）
   const changeStatus = async (item: WorkspaceItem, status: number) => {
     const [err, res] = await updateWorkspace({ id: item.id, status })
     if (res) {
@@ -144,205 +188,193 @@ export default function Page({ loaderData }) {
     })
   }
 
+  const activeCount = stats?.active ?? 0
+  const pausedCount = stats?.paused ?? 0
+  const archivedCount = stats?.archived ?? 0
+  const weekCount = stats?.advancedThisWeek ?? 0
+  const totalCount = activeCount + pausedCount + archivedCount
+  const countOf = (value: number) => ({ 0: activeCount, 1: pausedCount, 2: archivedCount })[value] ?? 0
+
+  // 统计卡取值配色：有值用语义色，归零态统一灰（原型 04）
   const statsItems = [
-    { key: 'active', label: '进行中', value: stats?.active ?? 0 },
-    { key: 'paused', label: '暂停', value: stats?.paused ?? 0 },
-    { key: 'archived', label: '已归档', value: stats?.archived ?? 0 },
-    { key: 'advancedThisWeek', label: '本周推进', value: stats?.advancedThisWeek ?? 0 },
-  ]
+    { key: 'active', label: '进行中', value: activeCount, tone: activeCount > 0 ? 'active' : 'archived' },
+    { key: 'paused', label: '暂停', value: pausedCount, tone: pausedCount > 0 ? 'paused' : 'archived' },
+    { key: 'archived', label: '已归档', value: archivedCount, tone: 'archived' },
+    { key: 'week', label: '本周有推进', value: weekCount, tone: weekCount > 0 ? 'stream' : 'archived' },
+  ] as const
 
   return (
-    <div className="h-full overflow-y-auto bg-white">
-      <div className="mx-auto max-w-250 p-8">
-        {/* 页头 */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="title-pri mb-1">项目工作台</div>
-            <div className="text-sm text-gray-500">Aura 是用于长期项目推进的 AI 工作台，从选择一个项目开始。</div>
-          </div>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={openCreate}>
-            新建项目
-          </Button>
+    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
+      {/* 页头（原型 04：零项目时不渲染页头新建按钮，仅空态卡内保留） */}
+      <div className="page-head">
+        <div className="page-head__text">
+          <span className="t-title">项目工作台</span>
+          <span className="t-body t-muted">Aura 是面向长期项目推进的 AI 工作台 · 选一个项目继续推进，或新建一个项目</span>
         </div>
+        {totalCount > 0 ? (
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={openCreate}>
+            <PlusIcon />
+            新建项目
+          </button>
+        ) : null}
+      </div>
 
-        {/* 统计卡 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
-          {statsItems.map((item) => (
-            <Card
-              key={item.key}
-              size="small">
-              <div className="text-2xl font-bold">{item.value}</div>
-              <div className="text-sm text-gray-500">{item.label}</div>
-            </Card>
+      {/* 统计卡 */}
+      <div className="stats">
+        {statsItems.map((item) => (
+          <StatCard
+            key={item.key}
+            label={item.label}
+            value={item.value}
+            tone={item.tone}
+          />
+        ))}
+      </div>
+
+      {/* 筛选胶囊 + 排序 + 搜索 */}
+      <div className="aura-compact flex items-center gap-2">
+        <div className="filters">
+          <FilterPill
+            active={filter === '全部'}
+            onClick={() => {
+              setFilter('全部')
+              refresh({ label: '全部' })
+            }}>
+            全部 {totalCount}
+          </FilterPill>
+          {WORKSPACE_STATUS.map((status) => (
+            <FilterPill
+              key={status.value}
+              active={filter === status.label}
+              onClick={() => {
+                setFilter(status.label)
+                refresh({ label: status.label })
+              }}>
+              {status.label} {countOf(status.value)}
+            </FilterPill>
           ))}
         </div>
+        <div className="flex-1" />
+        <Select
+          options={SORT_OPTIONS}
+          value={sortKey}
+          onChange={(value) => {
+            setSortKey(value)
+            refresh({ sort: value })
+          }}
+          style={{ width: 104 }}
+        />
+        <Input
+          allowClear
+          prefix={<SearchOutlined style={{ fontSize: 12, color: 'var(--placeholder)' }} />}
+          placeholder="搜索项目名称"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          style={{ width: 150 }}
+        />
+      </div>
 
-        {/* 筛选胶囊 + 搜索 + 排序 */}
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <Segmented
-            options={['全部', ...WORKSPACE_STATUS.map((s) => s.label)]}
-            value={filter}
-            onChange={(value) => {
-              setFilter(value as string)
-              refresh({ label: value as string })
-            }}
-          />
-          <div className="flex-1" />
-          <Select
-            options={SORT_OPTIONS}
-            value={sortKey}
-            onChange={(value) => {
-              setSortKey(value)
-              refresh({ sort: value })
-            }}
-            className="w-32"
-          />
-          <Input
-            allowClear
-            prefix={<SearchOutlined className="text-gray-400" />}
-            placeholder="搜索项目名称"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="w-52"
-          />
+      {/* 项目卡片列表（加载态为骨架卡） */}
+      {loading ? (
+        <div className="card-grid">
+          {[1, 2, 3, 4, 5, 6].map((key) => (
+            <SkeletonCard
+              key={key}
+              rows={4}
+              className="w-[340px]"
+            />
+          ))}
         </div>
-
-        {/* 项目卡片列表（加载态为骨架卡） */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((key) => (
-              <Card key={key}>
-                <Skeleton
-                  active
-                  title
-                  paragraph={{ rows: 3 }}
-                />
-              </Card>
-            ))}
-          </div>
-        ) : list.length ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {list.map((item) => (
-              <Card
+      ) : list.length ? (
+        <div className="card-grid">
+          {list.map((item) => {
+            const status = STATUS_TEXT[item.status] ?? STATUS_TEXT[2]
+            return (
+              <article
                 key={item.id}
-                hoverable
-                className={item.status === 2 ? 'opacity-60' : ''}
-                styles={{ body: { padding: 16 } }}
+                className={`project-card ${item.status === 2 ? 'project-card--archived' : ''}`}
                 onClick={() => enterChat(item)}>
-                <div className="flex items-start justify-between gap-2">
-                  <div
-                    className="text-base font-bold truncate"
-                    title={item.title}>
-                    {item.title}
-                  </div>
-                  <StatusPill status={item.status} />
-                </div>
-                <div className="mt-2 text-sm text-gray-700 truncate">
-                  {item.goal ? `目标：${item.goal}` : <span className="text-gray-400">未设置目标</span>}
-                </div>
-                <div className="mt-1 text-sm text-gray-500 line-clamp-2 min-h-10">
-                  {item.description || '暂无背景描述'}
-                </div>
-                <Divider className="my-3" />
-                <div className="flex items-center justify-between gap-2 text-xs text-gray-500">
-                  <Space size={6}>
-                    {item.modelName ? (
-                      <Tag
-                        color="blue"
-                        bordered={false}
-                        className="m-0">
-                        {item.modelName}
-                      </Tag>
-                    ) : (
-                      <span>未挂载模型</span>
-                    )}
-                    <span>{item.chatCount} 条对话</span>
-                  </Space>
-                  <span>{formatRelative(item.updatedAt)}</span>
-                </div>
+                <span className={`project-card__status ${status.cls}`}>{status.label}</span>
+                <span
+                  className="project-card__title"
+                  title={item.title}>
+                  {item.title}
+                </span>
+                <span className="project-card__goal">
+                  {item.goal ? `目标：${item.goal}` : <span className="t-placeholder">未设置目标</span>}
+                </span>
+                <span className="project-card__desc">{item.description || '暂无背景描述'}</span>
+                <span className="project-card__meta">
+                  {[item.modelName || '未挂载模型', formatRelative(item.updatedAt), `${item.chatCount} 条对话`].join(' · ')}
+                </span>
                 <div
-                  className="mt-3 flex items-center justify-between gap-2"
+                  className="project-card__actions"
                   onClick={(e) => e.stopPropagation()}>
-                  <Space size={0}>
-                    {item.status !== 0 ? (
-                      <Button
-                        size="small"
-                        type="text"
-                        onClick={() => changeStatus(item, 0)}>
-                        恢复推进
-                      </Button>
-                    ) : null}
-                    {item.status === 0 ? (
-                      <Button
-                        size="small"
-                        type="text"
-                        onClick={() => changeStatus(item, 1)}>
-                        暂停
-                      </Button>
-                    ) : null}
-                    {item.status !== 2 ? (
-                      <Button
-                        size="small"
-                        type="text"
+                  {item.status !== 2 ? (
+                    <>
+                      <span
+                        className="t-primary w-semi"
+                        onClick={() => enterChat(item)}>
+                        继续推进
+                      </span>
+                      <span
+                        className="t-muted"
+                        onClick={() => openEdit(item)}>
+                        编辑
+                      </span>
+                      <span
+                        className="t-muted"
                         onClick={() => changeStatus(item, 2)}>
                         归档
-                      </Button>
-                    ) : (
-                      <Button
-                        size="small"
-                        type="text"
-                        danger
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span
+                        className="t-primary w-semi"
+                        onClick={() => enterChat(item)}>
+                        查看
+                      </span>
+                      <span
+                        className="t-muted"
+                        onClick={() => changeStatus(item, 0)}>
+                        恢复为进行中
+                      </span>
+                      <span
+                        className="t-danger"
                         onClick={() => confirmDelete(item)}>
                         删除
-                      </Button>
-                    )}
-                  </Space>
-                  <Space>
-                    <Button
-                      size="small"
-                      onClick={() => openEdit(item)}>
-                      编辑
-                    </Button>
-                    <Button
-                      size="small"
-                      type="primary"
-                      icon={<RightOutlined />}
-                      onClick={() => enterChat(item)}>
-                      继续推进
-                    </Button>
-                  </Space>
+                      </span>
+                    </>
+                  )}
                 </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="flex justify-center py-16">
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={
-                keyword
-                  ? `没有匹配「${keyword}」的项目`
-                  : filter === '全部'
-                    ? '还没有项目，创建第一个项目开始推进'
-                    : '该状态下暂无项目'
-              }>
-              {!keyword && filter === '全部' ? (
-                <Space>
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={openCreate}>
-                    新建项目
-                  </Button>
-                </Space>
-              ) : null}
-            </Empty>
-          </div>
-        )}
-      </div>
+              </article>
+            )
+          })}
+        </div>
+      ) : (
+        <EmptyState
+          icon={<EmptyProjectsIcon />}
+          title={keyword ? `没有匹配「${keyword}」的项目` : filter === '全部' ? '还没有项目' : '该状态下暂无项目'}
+          description={
+            !keyword && filter === '全部' ? '创建第一个项目，设定目标与背景，开始推进与沉淀' : '切换筛选条件或清除搜索看看'
+          }
+          action={
+            !keyword && filter === '全部' ? (
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={openCreate}>
+                <PlusIcon />
+                新建项目
+              </button>
+            ) : null
+          }
+        />
+      )}
 
       <WorkspaceModal
         open={modalOpen}
