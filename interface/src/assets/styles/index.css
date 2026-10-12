@@ -172,6 +172,109 @@
   cursor: pointer;
 }
 
+/* ---------- D3：推进页消息流（原型 06 msg 体系） ---------- */
+/* 用户气泡：主色浅底 + 左下小圆角 */
+.chat-record .ant-bubble-end .ant-bubble-content {
+  background: var(--primary-bg);
+  border: 1px solid #dbe9fb;
+  border-radius: 12px 12px 4px 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 21px;
+  color: var(--ink);
+  box-shadow: none;
+  max-width: 560px;
+}
+
+/* AI 面板：Bubble 外壳透明，视觉由 msg__panel 白卡承担 */
+.chat-record .ant-bubble-start .ant-bubble-content {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.chat-record .ant-bubble-start .ant-bubble-content-loading {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px 12px 12px 12px;
+}
+
+.msg__actions span {
+  cursor: pointer;
+}
+
+/* composer 输入（原型 06：无边框原生 textarea） */
+.composer .composer-input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 21px;
+  color: var(--ink);
+  background: transparent;
+}
+
+.composer .composer-input::placeholder {
+  color: var(--placeholder);
+}
+
+.composer__send {
+  border: 0;
+  cursor: pointer;
+}
+
+.composer__send:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* 可点击标签（空态建议词 / 笔记标签筛选） */
+.tag-btn {
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+.tag-btn:hover {
+  border-color: var(--primary-line);
+  color: var(--primary);
+  background: var(--primary-tint);
+}
+
+/* ---------- D3：笔记编辑器（原型 09 editor） ---------- */
+.editor-title-input,
+.editor-textarea {
+  display: block;
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-family: var(--font);
+  color: var(--ink);
+}
+
+.editor-title-input {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 12px;
+}
+
+.editor-title-input::placeholder,
+.editor-textarea::placeholder {
+  color: var(--placeholder);
+}
+
+.editor-textarea {
+  font-size: 14px;
+  line-height: 26px;
+  min-height: 320px;
+}
+
 /* 紧凑模式（偏好设置开关）：收紧会话气泡间距 */
 .compact-mode .chat-record > .ant-flex {
   gap: 8px !important;

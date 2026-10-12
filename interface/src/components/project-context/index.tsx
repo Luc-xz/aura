@@ -1,129 +1,127 @@
-import { Button, Divider, Empty } from 'antd'
-import { CheckCircleOutlined, SaveOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router'
-import StatusPill from '@/components/status-pill'
+import { CheckCircleOutlined } from '@ant-design/icons'
+import { Pill } from '@/components/ui'
 import type { WorkspaceItem } from '@/api/workspace'
 import { formatRelative } from '@/utils/time'
 
 interface NoteBrief {
   id: number
   title: string
+  description?: string | null
+  content?: string | null
   updatedAt: string
 }
 
-function ContextRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex text-sm leading-6">
-      <div className="flex-none w-14 text-gray-500">{label}</div>
-      <div className="flex-1 min-w-0 break-words">{children}</div>
-    </div>
-  )
+const STATUS_TONE: Record<number, { tone: 'active' | 'paused' | 'archived'; label: string }> = {
+  0: { tone: 'active', label: '进行中' },
+  1: { tone: 'paused', label: '已暂停' },
+  2: { tone: 'archived', label: '已归档' },
 }
 
-// 沉淀占位：结论/待办/记忆在远期实装
-function PlaceholderSection({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="border border-dashed border-line-strong rounded-md p-4 text-center">
-      <div className="text-sm text-gray-600 mb-1">{title}</div>
-      <div className="text-xs text-gray-400">{description}</div>
-    </div>
-  )
+const excerpt = (text?: string | null, max = 48) => {
+  const plain = (text || '').replace(/\s+/g, ' ').trim()
+  return plain.length > max ? `${plain.slice(0, max)}…` : plain || '（无摘要）'
 }
 
 interface ProjectContextProps {
   workspace: WorkspaceItem | null
   notes: NoteBrief[]
   onSaveSessionNote: () => void
+  onOpenSettings: () => void
 }
 
-export default function ProjectContext({ workspace, notes, onSaveSessionNote }: ProjectContextProps) {
+// 右栏「上下文沉淀」（原型 06/07 col-right）：项目卡 / 会话占位 / 已沉淀结论（关联笔记映射为米色结论卡）
+export default function ProjectContext({ workspace, notes, onSaveSessionNote, onOpenSettings }: ProjectContextProps) {
   const navigate = useNavigate()
+  const status = workspace ? STATUS_TONE[workspace.status] ?? STATUS_TONE[2] : null
 
   return (
-    <div className="flex-none w-80 h-full border-l border-line bg-white overflow-y-auto">
-      <div className="p-4 space-y-4">
-        <div className="title-ter">项目上下文</div>
-        {workspace ? (
-          <>
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span
-                  className="font-bold text-base truncate"
-                  title={workspace.title}>
-                  {workspace.title}
-                </span>
-                <StatusPill status={workspace.status} />
-              </div>
-              <div className="space-y-1">
-                <ContextRow label="目标">{workspace.goal || <span className="text-gray-400">未设置</span>}</ContextRow>
-                <ContextRow label="背景">{workspace.description || <span className="text-gray-400">未设置</span>}</ContextRow>
-                <ContextRow label="模型">{workspace.modelName || <span className="text-gray-400">未挂载</span>}</ContextRow>
-              </div>
-              {/* B7 上下文注入透出：仅 goal/description 已注入，笔记注入为远期 */}
-              {workspace.goal || workspace.description ? (
-                <div className="flex items-center gap-1 mt-2 text-xs text-green-600">
-                  <CheckCircleOutlined />
-                  项目目标与背景已注入对话上下文
-                </div>
-              ) : (
-                <div className="text-xs text-gray-400 mt-2">设置项目目标与背景后，将自动注入对话上下文</div>
-              )}
-            </div>
-            <Divider className="my-2" />
-
-            {/* 关联笔记：会话中保存的笔记按项目沉淀；「存为笔记」为会话级入口 */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">关联笔记{notes.length ? `（${notes.length}）` : ''}</span>
-                <Button
-                  size="small"
-                  type="text"
-                  icon={<SaveOutlined />}
-                  onClick={onSaveSessionNote}>
-                  存为笔记
-                </Button>
-              </div>
-              {notes.length ? (
-                notes.map((note) => (
-                  <div
-                    key={note.id}
-                    className="p-2 rounded cursor-pointer hover:bg-blue-50"
-                    onClick={() => navigate(`/note/edit/${note.id}`)}>
-                    <div
-                      className="truncate text-sm"
-                      title={note.title}>
-                      {note.title || '未命名笔记'}
-                    </div>
-                    <div className="text-xs text-gray-400">{formatRelative(note.updatedAt)}</div>
-                  </div>
-                ))
-              ) : (
-                <div className="border border-dashed border-line-strong rounded-md p-3 text-center text-xs text-gray-400">
-                  暂无关联笔记，会话中保存的笔记会出现在这里
-                </div>
-              )}
-            </div>
-
-            <PlaceholderSection
-              title="项目结论"
-              description="功能准备中"
-            />
-            <PlaceholderSection
-              title="待办事项"
-              description="功能准备中"
-            />
-            <PlaceholderSection
-              title="项目记忆"
-              description="功能准备中"
-            />
-          </>
-        ) : (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="选择项目后展示上下文"
-          />
-        )}
+    <aside className="col-right">
+      <div className="row-between">
+        <span className="t-h3">上下文沉淀</span>
       </div>
-    </div>
+
+      {workspace && status ? (
+        <>
+          <div className="side-card">
+            <div className="row-between">
+              <Pill
+                tone={status.tone}
+                size="sm">
+                {status.label}
+              </Pill>
+              <span className="t-xs t-placeholder">{workspace.modelName || '未挂载模型'}</span>
+            </div>
+            <span className="t-body w-medium">{workspace.goal ? `目标：${workspace.goal}` : '未设置项目目标'}</span>
+            <span className="t-sm t-muted">{workspace.description || '暂无背景描述'}</span>
+            <span className="t-xs t-placeholder">
+              创建于 {workspace.createdAt?.slice(0, 10) || '—'} · {workspace.chatCount} 条对话
+            </span>
+            {/* B7 上下文注入透出：仅 goal/description 已注入，笔记注入为远期 */}
+            {workspace.goal || workspace.description ? (
+              <span className="t-xs t-success flex items-center gap-1">
+                <CheckCircleOutlined />
+                项目目标与背景已注入对话上下文
+              </span>
+            ) : (
+              <span className="t-xs t-placeholder">设置项目目标与背景后，将自动注入对话上下文</span>
+            )}
+          </div>
+
+          {/* 项目 = 单会话（多会话拆分为远期）：零对话时按原型 07 显示「新会话」 */}
+          <div className="group-title">会话</div>
+          <div className="session-item session-item--active">
+            <span className="session-item__title">{workspace.chatCount > 0 ? workspace.title : '新会话'}</span>
+            <span className="session-item__meta">{workspace.chatCount > 0 ? `共 ${workspace.chatCount} 条对话` : '刚刚 · 0 条'}</span>
+          </div>
+
+          <div className="group-title">已沉淀结论</div>
+          {notes.length ? (
+            notes.map((note) => (
+              <div
+                key={note.id}
+                className="conclusion cursor-pointer"
+                title="打开笔记"
+                onClick={() => navigate(`/note/edit/${note.id}`)}>
+                <span className="conclusion__title">{note.title || '未命名笔记'}</span>
+                <span className="conclusion__body">{excerpt(note.description || note.content)}</span>
+                <span className="conclusion__source">来自笔记 · {formatRelative(note.updatedAt)}</span>
+              </div>
+            ))
+          ) : (
+            <div
+              className="side-card side-card--plain items-center px-3.5 py-5 text-center"
+              style={{ padding: '20px 14px' }}>
+              <span className="t-sm t-muted">还没有沉淀结论</span>
+              <span className="t-xs t-placeholder">推进过程中可随时把关键结论存为笔记</span>
+            </div>
+          )}
+        </>
+      ) : (
+        <div
+          className="side-card side-card--plain items-center px-3.5 py-5 text-center"
+          style={{ padding: '20px 14px' }}>
+          <span className="t-sm t-muted">选择项目后展示上下文</span>
+          <span className="t-xs t-placeholder">在左侧列表中选择一个项目开始推进</span>
+        </div>
+      )}
+
+      <div className="side-foot">
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          disabled={!workspace}
+          onClick={onSaveSessionNote}>
+          存为笔记
+        </button>
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          disabled={!workspace}
+          onClick={onOpenSettings}>
+          项目设置
+        </button>
+      </div>
+    </aside>
   )
 }

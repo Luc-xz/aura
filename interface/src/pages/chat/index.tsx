@@ -1,41 +1,25 @@
-import { App, Button, Card, Divider, Dropdown, Flex, Space, Modal, Form, Input, Tag } from 'antd'
-import { Bubble, Attachments, Sender } from '@ant-design/x'
-import {
-  PlusOutlined,
-  CaretLeftFilled,
-  CaretRightFilled,
-  SwapOutlined,
-  SettingOutlined,
-  UserOutlined,
-  MehOutlined,
-  SyncOutlined,
-  CopyOutlined,
-  BookOutlined,
-  FileDoneOutlined,
-  CloudUploadOutlined,
-  LinkOutlined,
-  AppstoreOutlined,
-  CheckOutlined,
-} from '@ant-design/icons'
+import { App, Dropdown, Form, Input, Modal } from 'antd'
+import { Bubble } from '@ant-design/x'
+import { CheckOutlined } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
-import { getWorkspaceList, createWorkspace, updateWorkspace } from '@/api/workspace'
+import { useNavigate } from 'react-router'
+import { getWorkspaceList, updateWorkspace, deleteWorkspace } from '@/api/workspace'
 import { getChatListByWorkspaceId, chatToWorkspace, streamChatToWorkspace } from '@/api/chat'
 import { getNotePage, createNote } from '@/api/note'
 import { getModelConfigList } from '@/api/setting'
 import { useWorkspaceStore } from '@/store'
 import { createSSEParser } from '@/utils/sse'
 import { getPreferences } from '@/utils/preferences'
-import WorkspaceModal, { toWorkspacePayload } from '@/components/workspace-modal'
+import { Pill } from '@/components/ui'
+import WorkspaceModal from '@/components/workspace-modal'
 import ProjectContext from '@/components/project-context'
-import StatusPill, { statusDotClass } from '@/components/status-pill'
+import { SettingIcon } from '@/components/shell/icons'
+import { dispatchWorkspaceChanged } from '@/components/shell/workspace-events'
 
 const fetchWorkspaceList = async () => {
   const [err, res] = await getWorkspaceList()
-  console.log('[API]::[fetchWorkspaceList]::', res, err)
   if (res) {
-    let list = res.data || []
-    return list
+    return res.data || []
   }
   return []
 }
@@ -43,8 +27,7 @@ const fetchWorkspaceList = async () => {
 const fetchModelList = async () => {
   const [err, res] = await getModelConfigList()
   if (res) {
-    let list = res.data || []
-    return list
+    return res.data || []
   }
   return []
 }
@@ -55,124 +38,69 @@ export async function clientLoader({ request }) {
   return [await fetchWorkspaceList(), await fetchModelList(), workspaceId]
 }
 
-function ProjectPanel({ list, modelList, initialId }) {
-  const { message } = App.useApp()
-  const navigate = useNavigate()
-  const [, setSearchParams] = useSearchParams()
+// 原型 06：AI 面板内 11px 文字动作行（复制 / 存为笔记 / 重新生成）
+const CheckSmIcon = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 14 14"
+    fill="none"
+    stroke="#2f7d5c"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round">
+    <path d="M2.5 7.5l3 3 6-6" />
+  </svg>
+)
 
-  const workspace = useWorkspaceStore((state) => state.workspace)
-  const setWorkspace = useWorkspaceStore((state) => state.setWorkspace)
+const CheckCurrentIcon = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 14 14"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round">
+    <path d="M2.5 7.5l3 3 6-6" />
+  </svg>
+)
 
-  const [workspaceList, setWorkspaceList] = useState(list)
-  const [panelVisible, setPanelVisible] = useState(true)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [confirmLoading, setConfirmLoading] = useState(false)
-  // URL 参数只在首轮选中消费一次，之后的切换由用户点击或 store 持久化决定
-  const initialIdRef = useRef(initialId)
-  // 首帧对账（渲染期）：持久化的项目已被删/不在列表时先置空，避免 ChatPanel 带脏 id 发起 404；
-  // 对账完成后不再介入，保证“新建项目后立即选中”不被误清
-  const reconciledRef = useRef(false)
-  if (!reconciledRef.current) {
-    if (workspace && !workspaceList.some((item) => item.id === workspace.id)) {
-      setWorkspace(null)
-    } else {
-      reconciledRef.current = true
-    }
-  }
+// 原型 07：空会话气泡图形
+const ChatEmptyIcon = () => (
+  <svg
+    width="56"
+    height="56"
+    viewBox="0 0 56 56"
+    fill="none"
+    stroke="#b9c4ce"
+    strokeWidth="1.6">
+    <path
+      d="M10 14h36v24H24l-10 8V38h-4z"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M20 24h16M20 30h10"
+      strokeLinecap="round"
+    />
+  </svg>
+)
 
-  // 选中优先级：URL 参数 > store 已持久化选择 > 兜底首个
-  useEffect(() => {
-    if (!workspaceList?.length) {
-      if (workspace) setWorkspace(null)
-      return
-    }
-    let next = null
-    if (initialIdRef.current) {
-      next = workspaceList.find((item) => String(item.id) === initialIdRef.current) || null
-      initialIdRef.current = null
-    }
-    if (!next && workspace?.id) {
-      next = workspaceList.find((item) => item.id === workspace.id) || null
-    }
-    if (!next) next = workspaceList[0]
-    if (next?.id !== workspace?.id) setWorkspace(next)
-  }, [workspaceList])
-
-  const selectWorkspace = (item) => {
-    setWorkspace(item)
-    // 清掉 URL 参数，避免后续列表刷新时旧参数反选
-    setSearchParams({}, { replace: true })
-  }
-
-  const handleCreate = async (values) => {
-    setConfirmLoading(true)
-    const [err, res] = await createWorkspace(toWorkspacePayload(values, 'create'))
-    setConfirmLoading(false)
-    if (res) {
-      message.success('项目已创建')
-      setModalOpen(false)
-      setWorkspace(res.data)
-      setWorkspaceList(await fetchWorkspaceList())
-    }
-  }
-
-  const ProjectCardList = workspaceList.map((item) => (
-    <div
-      key={item.id}
-      onClick={() => selectWorkspace(item)}
-      className={`p-3 mb-1 w-full cursor-pointer rounded hover:bg-blue-100 ${
-        item.id === workspace?.id ? 'card-active' : 'card-inactive'
-      }`}>
-      <div className="flex items-center gap-2 w-full">
-        <span className={`flex-none w-2 h-2 rounded-full ${statusDotClass(item.status)}`} />
-        <div className="truncate">{item.title}</div>
-      </div>
-      <div className="truncate text-sm text-gray-500 pl-4">{item.modelName || '默认模型'}</div>
-    </div>
-  ))
-
-  return (
-    <div className="relative bg-surface border-r border-line flex-0">
-      <div className={`overflow-hidden h-full transition-all duration-300 ${panelVisible ? 'w-55' : 'w-0'}`}>
-        <div className="overflow-hidden p-4 w-55 h-full">
-          <div className="flex items-center justify-between mb-4">
-            <span className="title-ter">项目</span>
-            <Button
-              type="text"
-              size="small"
-              icon={<AppstoreOutlined />}
-              title="返回工作台"
-              onClick={() => navigate('/workspace')}
-            />
-          </div>
-          <Button
-            onClick={() => setModalOpen(true)}
-            className="w-full mb-2"
-            color="default"
-            variant="outlined"
-            icon={<PlusOutlined />}>
-            新建项目
-          </Button>
-          <div className="overflow-y-auto h-[calc(100%-88px)]">
-            {workspaceList.length ? ProjectCardList : <div className="p-2 text-sm text-gray-400">暂无项目，点击上方按钮创建</div>}
-          </div>
-        </div>
-      </div>
-      <div
-        className="absolute top-[50%] right-[-32px] w-5 h-11 flex items-center justify-center bg-surface border border-line rounded text-primary text-sm hover:text-base text-gray-500 cursor-pointer"
-        onClick={() => setPanelVisible(!panelVisible)}>
-        {panelVisible ? <CaretLeftFilled /> : <CaretRightFilled />}
-      </div>
-      <WorkspaceModal
-        open={modalOpen}
-        modelList={modelList}
-        confirmLoading={confirmLoading}
-        onOk={handleCreate}
-        onCancel={() => setModalOpen(false)}
-      />
-    </div>
-  )
-}
+// 原型 06：composer 发送箭头
+const SendIcon = () => (
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 18 18"
+    fill="none"
+    stroke="#fff"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round">
+    <path d="M3 9h11M9.5 4.5 14 9l-4.5 4.5" />
+  </svg>
+)
 
 function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, onSessionNoteSaved }) {
   const [conversation, setConversation] = useState<any[]>([])
@@ -189,12 +117,8 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
   const { message } = App.useApp()
   const setWorkspace = useWorkspaceStore((state) => state.setWorkspace)
 
-  // P0 空态引导提示词：静态配置，后续可按项目 goal 生成
-  const SUGGESTED_PROMPTS = [
-    '帮我梳理这个项目的当前进展',
-    '基于项目目标，列出下一步行动清单',
-    '总结一下已经讨论过的要点',
-  ]
+  // P0 空态引导提示词：对齐原型 07 静态文案，后续可按项目 goal 生成
+  const SUGGESTED_PROMPTS = ['梳理官网信息架构', '生成主导航文案', '复盘上次对话结论']
 
   const deriveTitle = (text: string) => {
     const firstLine = text.split('\n').find((l) => l.trim()) ?? '对话笔记'
@@ -242,7 +166,7 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
 
   const toNote = (id) => navigate(`/note/edit/${id}`)
 
-  // 会话级存为笔记：拼接当前会话为内容（P2 右栏入口经 Page 桥接触发）
+  // 会话级存为笔记：拼接当前会话为内容（右栏 side-foot 入口经 Page 桥接触发）
   useEffect(() => {
     if (!sessionNoteOpen) return
     const content = conversation
@@ -259,89 +183,75 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
   }, [sessionNoteOpen])
 
   const chatBubbleList = workspace
-    ? conversation?.map?.((item, index) => (
-        <Bubble
-          placement={item.proposer === 'user' ? 'end' : 'start'}
-          content={
-            <div className="whitespace-pre-wrap">
-              {/* 工具调用期间正文还没来，用 status 占位（正在检索笔记…）；正文到了就只显示正文 */}
-              {item.proposer !== 'user' && item.status && !item.content ? <span className="text-sm text-gray-400">{item.status}</span> : item.content}
+    ? conversation?.map?.((item, index) => {
+        // AI 面板：工具状态 + 正文 + 动作行 + 引用来源 + 保存回执（原型 06 msg__panel）
+        const assistantPanel = (
+          <div className="msg__panel">
+            {item.status && !item.content ? (
+              <span className="tool-status">
+                <CheckSmIcon />
+                {item.status}
+              </span>
+            ) : null}
+            <div className="msg__text whitespace-pre-wrap">{item.content}</div>
+            <div className="msg__actions">
+              <span
+                className="cursor-pointer hover:text-primary"
+                onClick={() => handleCopy(item.content)}>
+                复制
+              </span>
+              {item.id ? (
+                <span
+                  className="cursor-pointer hover:text-primary"
+                  onClick={(e) => openSave(e, item)}>
+                  存为笔记
+                </span>
+              ) : null}
+              {index === conversation.length - 1 && !loading ? (
+                <span
+                  className="cursor-pointer hover:text-primary"
+                  onClick={() => handleRegenerate(index)}>
+                  重新生成
+                </span>
+              ) : null}
             </div>
-          }
-          typing={item.proposer !== 'user' && !item.id ? true : false}
-          avatar={{ icon: item.proposer === 'user' ? <UserOutlined /> : <MehOutlined /> }}
-          variant={item.proposer === 'user' ? 'filled' : 'shadow'}
-          key={index}
-          footer={
-            item.proposer === 'user' ? null : (
-              <Space
-                direction="vertical"
-                size={4}>
-              <Space>
-                {index === conversation.length - 1 && item.proposer !== 'user' && !loading ? (
-                  <Button
-                    color="default"
-                    variant="text"
-                    size="small"
-                    icon={<SyncOutlined />}
-                    title="重新生成"
-                    onClick={() => handleRegenerate(index)}
-                  />
-                ) : null}
-                <Button
-                  color="default"
-                  variant="text"
-                  size="small"
-                  icon={<CopyOutlined />}
-                  onClick={() => handleCopy(item.content)}
-                />
-                  {item.id ? (
-                    <Button
-                      color="default"
-                      variant="text"
-                      size="small"
-                      icon={<BookOutlined />}
-                      onClick={(e) => openSave(e, item)}
-                    />
-                  ) : null}
-                </Space>
-                {item.references?.length ? (
-                  <Space
-                    wrap
-                    size={4}>
-                    {item.references.map((ref) => (
-                      <Tag
-                        key={ref.id}
-                        icon={<LinkOutlined />}
-                        color="blue"
-                        className="cursor-pointer"
-                        onClick={() => toNote(ref.id)}>
-                        {ref.title}
-                      </Tag>
-                    ))}
-                  </Space>
-                ) : null}
-                {item.savedNotes?.length ? (
-                  <Space
-                    wrap
-                    size={4}>
-                    {item.savedNotes.map((n) => (
-                      <Tag
-                        key={n.id}
-                        icon={<FileDoneOutlined />}
-                        color="green"
-                        className="cursor-pointer"
-                        onClick={() => toNote(n.id)}>
-                        已保存：{n.title}
-                      </Tag>
-                    ))}
-                  </Space>
-                ) : null}
-              </Space>
-            )
-          }
-        />
-      ))
+            {item.references?.length ? (
+              <div className="ref-row">
+                <span className="t-xs t-placeholder">引用来源：</span>
+                {item.references.map((ref) => (
+                  <span
+                    key={ref.id}
+                    className="ref-tag"
+                    onClick={() => toNote(ref.id)}>
+                    📄 {ref.title}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {item.savedNotes?.length ? (
+              <div className="flex flex-col items-start gap-1.5">
+                {item.savedNotes.map((n) => (
+                  <span
+                    key={n.id}
+                    className="save-receipt"
+                    onClick={() => toNote(n.id)}>
+                    <CheckCurrentIcon />
+                    已保存：{n.title} · 查看笔记
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        )
+        return (
+          <Bubble
+            placement={item.proposer === 'user' ? 'end' : 'start'}
+            content={item.proposer === 'user' ? <div className="whitespace-pre-wrap">{item.content}</div> : assistantPanel}
+            typing={item.proposer !== 'user' && !item.id ? true : false}
+            key={index}
+          />
+        )
+      })
     : null
 
   // 统一发送：流式与否由本地偏好决定；base 供重新生成基于截断后的历史重建会话
@@ -386,7 +296,6 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
     } else {
       setConversation(newConversation)
       const [err, res] = await chatToWorkspace(workspace.id, content)
-      console.log('[API]::[chatToWorkspace]::', res, err)
       if (res) {
         // 非流式响应同样是 { content, references } 信封
         setConversation([...newConversation, { proposer: 'assistant', content: res.data.content, references: res.data.references || [] }])
@@ -401,7 +310,7 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
 
   const handleSubmit = () => {
     const content = prompt.trim()
-    if (!content) return
+    if (!content || loading) return
     setPrompt('')
     send(content)
   }
@@ -425,14 +334,18 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
     }
   }
 
+  // 会话列表请求代际：URL 参数切换项目时丢弃乱序返回的过期响应
+  const fetchSeqRef = useRef(0)
+
   const fetchConversation = async () => {
+    const seq = ++fetchSeqRef.current
     if (!workspace?.id) {
       setConversation([])
       setHistoryLoaded(true)
       return false
     }
     const [err, res] = await getChatListByWorkspaceId(workspace.id)
-    console.log('[API]::[getChatListByWorkspaceId]::', res, err)
+    if (seq !== fetchSeqRef.current) return
     if (res) {
       setConversation(res.data || [])
       setHistoryLoaded(true)
@@ -453,142 +366,119 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
   }, [conversation])
 
   return (
-    <div className="flex flex-4 flex-col">
-      {/* Header */}
-      <div className="relative flex-none basis-18 flex items-center justify-center shadow-sm">
-        <Card
-          className="relative z-1 flex-1 mx-10 my-1 max-w-210 h-14"
-          size="small">
-          <div className="flex items-center px-2 w-full gap-2">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-md font-bold truncate">{workspace?.title || '未选择项目'}</span>
-                {workspace ? <StatusPill status={workspace.status} /> : null}
-              </div>
-              <div className="text-xs text-gray-500 truncate">
-                {workspace ? workspace.goal || '未设置项目目标' : '从左侧选择或新建一个项目'}
-              </div>
-            </div>
-            {workspace?.modelName ? (
-              <Tag
-                bordered={false}
-                className="m-0">
-                {workspace.modelName}
-              </Tag>
-            ) : null}
-            {streamStatus === 'streaming' ? (
-              <Tag
-                color="processing"
-                bordered={false}
-                className="m-0"
-                icon={<SyncOutlined spin />}>
-                生成中
-              </Tag>
-            ) : null}
-            {streamStatus === 'interrupted' ? (
-              <Tag
-                color="warning"
-                bordered={false}
-                className="m-0">
-                已中断
-              </Tag>
-            ) : null}
-            <Dropdown
-              menu={{
-                items: modelList.map((item) => ({
-                  key: item.id,
-                  label: item.modelName,
-                  icon: item.id === workspace?.modelId ? <CheckOutlined /> : null,
-                })),
-                onClick: ({ key }) => handleModelSwitch(Number(key)),
-              }}
-              placement="bottomRight"
-              disabled={!workspace}>
-              <div
-                className="text-gray cursor-pointer"
-                title="切换模型">
-                <SwapOutlined />
-              </div>
-            </Dropdown>
-            <Divider type="vertical" />
-            <div
-              className="text-gray cursor-pointer"
-              title="模型配置"
-              onClick={() => navigate('/setting/model-config')}>
-              <SettingOutlined />
-            </div>
-          </div>
-        </Card>
-        <img
-          className="absolute top-0 left-0 z-0 w-full h-full"
-          src="src/assets/images/chat-header-bg.jpg"></img>
-      </div>
-      {/* Record */}
+    <div className="col-mid h-full">
+      {/* 项目头（原型 06 mid-head：60px，标题 + 目标 + 模型 chip + 会话状态） */}
+      <header className="mid-head">
+        <div className="page-head__text">
+          <span className="mid-head__title">{workspace?.title || '未选择项目'}</span>
+          <span className="mid-head__sub">{workspace ? (workspace.goal ? `目标：${workspace.goal}` : '未设置项目目标') : '从左侧选择一个项目'}</span>
+        </div>
+        <div className="mid-head__right">
+          {streamStatus === 'streaming' ? (
+            <Pill
+              tone="stream"
+              size="sm">
+              生成中
+            </Pill>
+          ) : null}
+          {streamStatus === 'interrupted' ? (
+            <Pill
+              tone="aborted"
+              size="sm">
+              已中断
+            </Pill>
+          ) : null}
+          <Dropdown
+            menu={{
+              items: modelList.map((item) => ({
+                key: item.id,
+                label: item.modelName,
+                icon: item.id === workspace?.modelId ? <CheckOutlined /> : null,
+              })),
+              onClick: ({ key }) => handleModelSwitch(Number(key)),
+            }}
+            placement="bottomRight"
+            disabled={!workspace}>
+            <span
+              className="model-chip cursor-pointer"
+              title="切换模型">
+              ✦ {workspace?.modelName || '默认模型'}
+            </span>
+          </Dropdown>
+          <button
+            type="button"
+            className="mt-[-2px] flex h-4 w-4 items-center justify-center text-muted hover:text-primary"
+            title="模型配置"
+            onClick={() => navigate('/setting/model-config')}>
+            <SettingIcon />
+          </button>
+        </div>
+      </header>
+
+      {/* 消息流 / 空会话引导（原型 07） */}
       <div
-        className="flex-1 overflow-y-auto"
+        className="mid-body"
         ref={scrollRef}>
         {workspace && historyLoaded && !conversation?.length && !loading ? (
-          <div className="h-full flex flex-col items-center justify-center px-8 text-center">
-            <div className="text-xl font-bold mb-2">开始推进「{workspace.title}」</div>
-            <div className="text-sm text-gray-500 mb-2">从下面的话题开始，或直接输入你的问题</div>
-            {workspace.goal || workspace.description ? (
-              <div className="text-xs text-blue-500 mb-6">已注入项目目标与背景，助手了解你的项目上下文</div>
-            ) : (
-              <div className="text-xs text-gray-400 mb-6">设置项目目标与背景后，将自动注入对话上下文</div>
-            )}
-            <Space
-              wrap
-              size="middle"
-              className="justify-center max-w-160">
-              {SUGGESTED_PROMPTS.map((text) => (
-                <Tag
-                  key={text}
-                  color="blue"
-                  className="cursor-pointer !px-3 !py-1 !text-sm"
-                  onClick={() => setPrompt(text)}>
-                  {text}
-                </Tag>
-              ))}
-            </Space>
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <div className="flex w-120 flex-col items-center gap-3">
+              <ChatEmptyIcon />
+              <span className="t-h3">开始推进「{workspace.title}」</span>
+              <span className="t-body t-muted">说清你要解决的问题，模型会结合项目目标与已沉淀的结论给出建议。</span>
+              {workspace.goal || workspace.description ? (
+                <span className="t-xs t-success">已注入项目目标与背景，助手了解你的项目上下文</span>
+              ) : (
+                <span className="t-xs t-placeholder">设置项目目标与背景后，将自动注入对话上下文</span>
+              )}
+              <div className="mt-1.5 flex flex-wrap justify-center gap-2">
+                {SUGGESTED_PROMPTS.map((text) => (
+                  <button
+                    key={text}
+                    type="button"
+                    className="tag tag-btn"
+                    style={{ height: 28, padding: '0 12px' }}
+                    onClick={() => setPrompt(text)}>
+                    {text}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="mx-auto my-4 w-210 chat-record">
-            <Flex
-              gap="middle"
-              vertical>
-              {chatBubbleList}
-            </Flex>
-          </div>
+          <div className="chat-record mx-auto flex w-full max-w-210 flex-col gap-4">{chatBubbleList}</div>
         )}
       </div>
-      {/* Prompt */}
-      <div className="flex-none basis-13 flex items-center justify-center mb-10">
-        <div className="w-210">
-          <Sender
+
+      {/* 输入区（原型 06 composer：白卡 + Enter 提示 + 30px 渐变发送钮） */}
+      <div className="mid-foot">
+        <div className="composer">
+          <textarea
+            className="composer-input"
+            rows={2}
+            placeholder="就这个项目继续提问"
             value={prompt}
-            loading={loading}
-            onChange={(v) => {
-              setPrompt(v)
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault()
+                handleSubmit()
+              }
             }}
-            onSubmit={handleSubmit}
-            prefix={
-              <Attachments
-                beforeUpload={() => false}
-                onChange={({ file }) => {}}
-                placeholder={{
-                  icon: <CloudUploadOutlined />,
-                  title: 'Drag & Drop files here',
-                  description: 'Support file type: image, video, audio, document, etc.',
-                }}>
-                <Button
-                  type="text"
-                  icon={<LinkOutlined />}
-                />
-              </Attachments>
-            }
           />
+          <div className="composer__tools">
+            <span>Enter 发送</span>
+            <button
+              type="button"
+              className="composer__send"
+              disabled={loading}
+              title={loading ? '生成中…' : '发送'}
+              onClick={handleSubmit}>
+              <SendIcon />
+            </button>
+          </div>
         </div>
       </div>
+
       <Modal
         title="保存为笔记"
         open={!!saveTarget}
@@ -630,11 +520,48 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
   )
 }
 
-export default function Page({ loaderData, actionData, params, matches }) {
+export default function Page({ loaderData }) {
   const workspace = useWorkspaceStore((state) => state.workspace)
+  const setWorkspace = useWorkspaceStore((state) => state.setWorkspace)
+  const { message, modal } = App.useApp()
   // 右栏关联笔记由页面层持有：会话级保存成功后可主动刷新（P2 沉淀联动）
   const [notes, setNotes] = useState<any[]>([])
   const [sessionNoteOpen, setSessionNoteOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsSaving, setSettingsSaving] = useState(false)
+  const navigate = useNavigate()
+
+  const workspaceList = loaderData[0]
+  const modelList = loaderData[1]
+  // URL 参数只在首轮选中消费一次，之后的切换由用户点击或 store 持久化决定
+  const initialIdRef = useRef(loaderData[2])
+  // 首帧对账：持久化的项目已被删/不在列表时先置空；对账完成后不再介入
+  const reconciledRef = useRef(false)
+  if (!reconciledRef.current) {
+    if (workspace && !workspaceList.some((item) => item.id === workspace.id)) {
+      setWorkspace(null)
+    } else {
+      reconciledRef.current = true
+    }
+  }
+
+  // 选中优先级：URL 参数 > store 已持久化选择 > 兜底首个（左栏列表点击经 store 生效）
+  useEffect(() => {
+    if (!workspaceList?.length) {
+      if (workspace) setWorkspace(null)
+      return
+    }
+    let next = null
+    if (initialIdRef.current) {
+      next = workspaceList.find((item) => String(item.id) === initialIdRef.current) || null
+      initialIdRef.current = null
+    }
+    if (!next && workspace?.id) {
+      next = workspaceList.find((item) => item.id === workspace.id) || null
+    }
+    if (!next) next = workspaceList[0]
+    if (next?.id !== workspace?.id) setWorkspace(next)
+  }, [workspaceList])
 
   const refreshNotes = async () => {
     if (!workspace?.id) {
@@ -655,16 +582,48 @@ export default function Page({ loaderData, actionData, params, matches }) {
     refreshNotes()
   }, [workspace?.id])
 
+  // 右栏「项目设置」：编辑弹窗保存后合并回 store 并联动侧栏
+  const handleSettingsOk = async (values) => {
+    if (!workspace) return
+    setSettingsSaving(true)
+    const [err, res] = await updateWorkspace({ ...values, id: workspace.id })
+    setSettingsSaving(false)
+    if (res) {
+      message.success('项目已更新')
+      setSettingsOpen(false)
+      setWorkspace({ ...workspace, ...values })
+      dispatchWorkspaceChanged()
+    }
+  }
+
+  // 编辑弹窗删除入口（原型 05b）：删除约束由后端 409 兜底（仅归档可删）
+  const handleSettingsDelete = () => {
+    if (!workspace) return
+    modal.confirm({
+      title: `确定删除「${workspace.title}」？`,
+      content: '删除后项目下的会话与笔记将一并移除，不可恢复。',
+      okText: '删除',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        const [err, res] = await deleteWorkspace(workspace.id)
+        if (res) {
+          message.success('项目已删除')
+          setSettingsOpen(false)
+          setWorkspace(null)
+          dispatchWorkspaceChanged()
+          navigate('/workspace')
+        } else {
+          message.error(err?.message || '删除失败')
+        }
+      },
+    })
+  }
+
   return (
-    <div className="flex w-full h-full">
-      <ProjectPanel
-        list={loaderData[0]}
-        modelList={loaderData[1]}
-        initialId={loaderData[2]}
-      />
+    <div className="flex h-full w-full min-w-0">
       <ChatPanel
         workspace={workspace}
-        modelList={loaderData[1]}
+        modelList={modelList}
         sessionNoteOpen={sessionNoteOpen}
         onSessionNoteClose={() => setSessionNoteOpen(false)}
         onSessionNoteSaved={refreshNotes}
@@ -673,6 +632,16 @@ export default function Page({ loaderData, actionData, params, matches }) {
         workspace={workspace}
         notes={notes}
         onSaveSessionNote={() => setSessionNoteOpen(true)}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+      <WorkspaceModal
+        open={settingsOpen}
+        modelList={modelList}
+        editing={workspace}
+        confirmLoading={settingsSaving}
+        onOk={handleSettingsOk}
+        onCancel={() => setSettingsOpen(false)}
+        onDelete={handleSettingsDelete}
       />
     </div>
   )

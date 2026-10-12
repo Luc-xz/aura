@@ -78,7 +78,7 @@ D0 设计基座 ──▶ G-D0 ──▶ D1 外壳重构 ──▶ G-D1 ──�
 | **G-D2~D4** | 对应屏 1440×900 并排比对通过（结构、色值、字号、间距、状态）；交互回归不破坏 F2 已验收功能 |
 | **G-D5** | 15 号屏比对通过；全路由交互状态走查清单勾销；收口文档落盘 |
 
-> 进度：**D0 已完成**（[d0 验收](./design-alignment-d0-acceptance.md)）、**D1 已完成**（[d1 验收](./design-alignment-d1-acceptance.md)）、**D2 已完成**（[d2 验收](./design-alignment-d2-acceptance.md)，截图存档 `screenshots/d2/`）；下一步 D3。
+> 进度：**D0 已完成**（[d0 验收](./design-alignment-d0-acceptance.md)）、**D1 已完成**（[d1 验收](./design-alignment-d1-acceptance.md)）、**D2 已完成**（[d2 验收](./design-alignment-d2-acceptance.md)，截图存档 `screenshots/d2/`）、**D3 已完成**（[d3 验收](./design-alignment-d3-acceptance.md)，截图存档 `screenshots/d3/`）；下一步 D4。
 
 ### D0 设计基座（约 1.5 天）
 
