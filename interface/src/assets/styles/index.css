@@ -172,6 +172,21 @@
   cursor: pointer;
 }
 
+/* D4：表格行内操作与开关 */
+.cell-link,
+.cell-danger {
+  cursor: pointer;
+}
+
+.switch {
+  border: 0;
+  cursor: pointer;
+}
+
+.switch:disabled {
+  cursor: not-allowed;
+}
+
 /* ---------- D3：推进页消息流（原型 06 msg 体系） ---------- */
 /* 用户气泡：主色浅底 + 左下小圆角 */
 .chat-record .ant-bubble-end .ant-bubble-content {

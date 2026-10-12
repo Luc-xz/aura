@@ -1,4 +1,4 @@
-import { App, Button, Card, Divider, Form, Input, Select, Switch } from 'antd'
+import { App, Button, Form, Input, Select } from 'antd'
 import { useEffect, useState } from 'react'
 import { update } from '@/api/user'
 import { getModelConfigList } from '@/api/setting'
@@ -6,6 +6,8 @@ import { getUserSettings, updateUserSettings } from '@/api/user-settings'
 import type { UserSettings } from '@/api/user-settings'
 import { useUserStore } from '@/store'
 import { getPreferences, setPreferences } from '@/utils/preferences'
+import { SwitchCtl } from '@/components/ui'
+import { UserIcon } from '@/components/shell/icons'
 
 export async function clientLoader() {
   const [modelErr, modelRes] = await getModelConfigList({})
@@ -16,21 +18,44 @@ export async function clientLoader() {
   }
 }
 
+// 偏好行：标题 + 说明 + 右侧控件，行间细分隔线（原型 10 spec-card）
+function PrefRow({ title, desc, extra, children }: { title: string; desc?: React.ReactNode; extra?: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div
+      className="row-between"
+      style={{ padding: '4px 0' }}>
+      <div className="flex flex-col gap-0.5">
+        <span className="t-body">{title}</span>
+        {desc ? <span className="t-sm t-muted">{desc}</span> : null}
+      </div>
+      {extra}
+      {children}
+    </div>
+  )
+}
+
+const Hairline = () => <div style={{ height: 1, background: 'var(--line)' }} />
+
 export default function Page({ loaderData }) {
   const { message } = App.useApp()
   const user = useUserStore((state) => state.user)
   const setUser = useUserStore((state) => state.setUser)
 
   const [accountForm] = Form.useForm()
-  const [modelForm] = Form.useForm()
+  const [editingAccount, setEditingAccount] = useState(false)
   const [accountSaving, setAccountSaving] = useState(false)
-  const [modelSaving, setModelSaving] = useState(false)
+  const [defaultModelId, setDefaultModelId] = useState<number | null | undefined>(undefined)
   const [prefs, setPrefs] = useState(getPreferences())
 
   // 服务端默认模型回填（无存量行时 defaultModelId 为 null → 清空选择）
   useEffect(() => {
-    modelForm.setFieldsValue({ defaultModelId: loaderData.settings?.defaultModelId ?? undefined })
+    setDefaultModelId(loaderData.settings?.defaultModelId ?? undefined)
   }, [loaderData.settings])
+
+  const openAccountEdit = () => {
+    accountForm.setFieldsValue({ name: user?.name, email: user?.email })
+    setEditingAccount(true)
+  }
 
   const handleAccountSave = async (values) => {
     setAccountSaving(true)
@@ -39,14 +64,15 @@ export default function Page({ loaderData }) {
     if (res) {
       message.success('账户信息已更新')
       setUser({ ...user!, ...values })
+      setEditingAccount(false)
     }
   }
 
-  const handleModelSave = async (values) => {
-    setModelSaving(true)
-    const [err, res] = await updateUserSettings({ defaultModelId: values.defaultModelId ?? null })
-    setModelSaving(false)
+  const handleDefaultModel = async (value?: number) => {
+    const next = value ?? null
+    const [err, res] = await updateUserSettings({ defaultModelId: next })
     if (res) {
+      setDefaultModelId(value)
       message.success('默认模型已保存')
     }
   }
@@ -58,98 +84,131 @@ export default function Page({ loaderData }) {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-white">
-      <div className="mx-auto max-w-180 p-8 space-y-6">
-        <div className="title-pri">账户设置</div>
-
-        {/* 账户信息卡：本人修改（PUT /user/:id） */}
-        <Card title="账户信息">
-          <Form
-            form={accountForm}
-            layout="vertical"
-            className="max-w-90"
-            initialValues={{ name: user?.name, email: user?.email }}
-            onFinish={handleAccountSave}>
-            <Form.Item
-              name="name"
-              label="用户名"
-              rules={[
-                { required: true, message: '请输入用户名' },
-                { pattern: /^[a-zA-Z0-9_-]{4,16}$/, message: '用户名只能包含字母、数字、下划线和减号，且长度在4-16之间' },
-              ]}>
-              <Input maxLength={16} />
-            </Form.Item>
-            <Form.Item
-              name="email"
-              label="邮箱"
-              rules={[
-                { required: true, message: '请输入邮箱' },
-                { type: 'email', message: '请输入正确的邮箱' },
-              ]}>
-              <Input maxLength={255} />
-            </Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={accountSaving}
-              disabled={accountSaving}>
-              保存
-            </Button>
-          </Form>
-        </Card>
-
-        {/* 偏好设置：默认模型接 B3 设置接口；流式/紧凑为本地偏好 */}
-        <Card title="偏好设置">
-          <Form
-            form={modelForm}
-            layout="vertical"
-            className="max-w-90"
-            onFinish={handleModelSave}>
-            <Form.Item
-              name="defaultModelId"
-              label="默认模型"
-              tooltip="新建项目未指定模型时使用">
-              <Select
-                allowClear
-                showSearch
-                optionFilterProp="label"
-                placeholder="未设置"
-                options={loaderData.modelList.map((item) => ({ value: item.id, label: item.modelName }))}
-              />
-            </Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={modelSaving}
-              disabled={modelSaving}>
-              保存
-            </Button>
-          </Form>
-          <Divider className="my-6" />
-          <div className="max-w-90 space-y-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm">流式输出</div>
-                <div className="text-xs text-gray-500">开启后回答将逐字输出；关闭则等待完整回复</div>
-              </div>
-              <Switch
-                checked={prefs.stream}
-                onChange={(value) => handlePrefChange('stream', value)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm">紧凑模式</div>
-                <div className="text-xs text-gray-500">收窄会话气泡间距，一屏展示更多内容</div>
-              </div>
-              <Switch
-                checked={prefs.compact}
-                onChange={(value) => handlePrefChange('compact', value)}
-              />
-            </div>
+    <div className="h-full overflow-y-auto bg-canvas">
+      <main className="main">
+        <div className="page-head">
+          <div className="page-head__text">
+            <span className="t-title">设置</span>
+            <span className="t-body t-muted">管理账户信息与工作台偏好</span>
           </div>
-        </Card>
-      </div>
+        </div>
+
+        {/* 账户信息（原型 10：头像行 + 修改资料） */}
+        <div className="spec-card">
+          <span className="spec-card__title">账户信息</span>
+          <div className="row-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white">
+                <UserIcon size={20} />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="t-body w-semi">{user?.name}</span>
+                <span className="t-sm t-muted">{user?.email}</span>
+              </div>
+            </div>
+            {!editingAccount ? (
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={openAccountEdit}>
+                修改资料
+              </button>
+            ) : null}
+          </div>
+          {editingAccount ? (
+            <Form
+              form={accountForm}
+              className="aura-form flex flex-col gap-3"
+              onFinish={handleAccountSave}>
+              <Form.Item
+                name="name"
+                label="用户名"
+                rules={[
+                  { required: true, message: '请输入用户名' },
+                  { pattern: /^[a-zA-Z0-9_-]{4,16}$/, message: '用户名只能包含字母、数字、下划线和减号，且长度在4-16之间' },
+                ]}>
+                <Input
+                  maxLength={16}
+                  style={{ maxWidth: 320 }}
+                />
+              </Form.Item>
+              <Form.Item
+                name="email"
+                label="邮箱"
+                rules={[
+                  { required: true, message: '请输入邮箱' },
+                  { type: 'email', message: '请输入正确的邮箱' },
+                ]}>
+                <Input
+                  maxLength={255}
+                  style={{ maxWidth: 320 }}
+                />
+              </Form.Item>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="btn btn--primary btn--sm"
+                  disabled={accountSaving}>
+                  保存
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => setEditingAccount(false)}>
+                  取消
+                </button>
+              </div>
+            </Form>
+          ) : null}
+        </div>
+
+        {/* 偏好设置（原型 10 spec-card 行组） */}
+        <div className="spec-card">
+          <span className="spec-card__title">偏好设置</span>
+
+          <PrefRow
+            title="流式输出"
+            desc="开启后回答将逐字输出；关闭则等待完整回复">
+            <SwitchCtl
+              checked={prefs.stream}
+              onChange={(value) => handlePrefChange('stream', value)}
+            />
+          </PrefRow>
+
+          <Hairline />
+
+          <PrefRow
+            title="界面密度 · 紧凑模式"
+            desc="紧凑模式会收窄会话气泡间距，一屏展示更多内容">
+            <SwitchCtl
+              checked={prefs.compact}
+              onChange={(value) => handlePrefChange('compact', value)}
+            />
+          </PrefRow>
+
+          <Hairline />
+
+          <PrefRow
+            title="新会话默认模型"
+            desc={
+              <span className="flex items-center gap-1.5">
+                新建项目未指定模型时使用
+                <span className="t-xs t-placeholder">可在单个项目中临时切换</span>
+              </span>
+            }>
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="未设置"
+              value={defaultModelId}
+              options={loaderData.modelList.map((item) => ({ value: item.id, label: item.modelName }))}
+              onChange={handleDefaultModel}
+              style={{ width: 160 }}
+            />
+          </PrefRow>
+        </div>
+      </main>
     </div>
   )
 }
