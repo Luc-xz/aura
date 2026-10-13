@@ -649,9 +649,10 @@
   border-radius: var(--r-lg); padding: 24px; display: flex; flex-direction: column; gap: 12px;
   box-shadow: var(--sh-md);
 }
-.auth__title { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.auth__title { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
 .auth__intro { display: flex; flex-direction: column; gap: 4px; }
-.auth__foot { font-size: 12px; color: var(--muted); text-align: center; margin-top: 4px; }
+.auth__intro .t-sm { line-height: 1.4; }
+.auth__foot { font-size: 12px; color: var(--muted); text-align: center; margin-top: 4px; line-height: 1.4; }
 .input .input-icon { margin-right: 8px; flex: 0 0 auto; }
 .auth__code {
   height: 38px; border-radius: var(--r-md); border: 1px solid var(--line-strong);

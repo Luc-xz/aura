@@ -178,17 +178,6 @@ export default function Page({ loaderData }) {
           <Hairline />
 
           <PrefRow
-            title="界面密度 · 紧凑模式"
-            desc="紧凑模式会收窄会话气泡间距，一屏展示更多内容">
-            <SwitchCtl
-              checked={prefs.compact}
-              onChange={(value) => handlePrefChange('compact', value)}
-            />
-          </PrefRow>
-
-          <Hairline />
-
-          <PrefRow
             title="新会话默认模型"
             desc={
               <span className="flex items-center gap-1.5">
@@ -205,6 +194,17 @@ export default function Page({ loaderData }) {
               options={loaderData.modelList.map((item) => ({ value: item.id, label: item.modelName }))}
               onChange={handleDefaultModel}
               style={{ width: 160 }}
+            />
+          </PrefRow>
+
+          <Hairline />
+
+          <PrefRow
+            title="界面密度 · 紧凑模式"
+            desc="紧凑模式会收窄会话气泡间距，一屏展示更多内容">
+            <SwitchCtl
+              checked={prefs.compact}
+              onChange={(value) => handlePrefChange('compact', value)}
             />
           </PrefRow>
         </div>

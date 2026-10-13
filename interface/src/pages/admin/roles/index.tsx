@@ -269,6 +269,30 @@ export default function Page() {
                 </div>
               )
             })}
+
+            {/* 网格内新建入口（原型 13 虚线卡） */}
+            <AuthButton permission="role:create">
+              <div
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl bg-surface"
+                style={{
+                  width: 256,
+                  minHeight: 148,
+                  border: `1px dashed var(--line-strong)`,
+                }}
+                onClick={openCreate}>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
+                  fill="none"
+                  stroke="#2266d1"
+                  strokeWidth="1.6"
+                  strokeLinecap="round">
+                  <path d="M9 2v14M2 9h14" />
+                </svg>
+                <span className="t-body t-primary w-medium">新建自定义角色</span>
+              </div>
+            </AuthButton>
           </div>
         )}
 

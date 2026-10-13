@@ -175,7 +175,7 @@ export default function Page({ loaderData }) {
     modal.confirm({
       title: `确定删除「${item.title}」？`,
       content: '删除后项目下的会话与笔记将一并移除，不可恢复。',
-      okText: '删除',
+      okText: '确认删除',
       okButtonProps: { danger: true },
       onOk: async () => {
         const [err, res] = await deleteWorkspace(item.id)
@@ -234,48 +234,50 @@ export default function Page({ loaderData }) {
         ))}
       </div>
 
-      {/* 筛选胶囊 + 排序 + 搜索 */}
-      <div className="aura-compact flex items-center gap-2">
-        <div className="filters">
-          <FilterPill
-            active={filter === '全部'}
-            onClick={() => {
-              setFilter('全部')
-              refresh({ label: '全部' })
-            }}>
-            全部 {totalCount}
-          </FilterPill>
-          {WORKSPACE_STATUS.map((status) => (
+      {/* 筛选胶囊 + 排序 + 搜索（原型 04：无项目时不渲染筛选行） */}
+      {totalCount > 0 ? (
+        <div className="aura-compact flex items-center gap-2">
+          <div className="filters">
             <FilterPill
-              key={status.value}
-              active={filter === status.label}
+              active={filter === '全部'}
               onClick={() => {
-                setFilter(status.label)
-                refresh({ label: status.label })
+                setFilter('全部')
+                refresh({ label: '全部' })
               }}>
-              {status.label} {countOf(status.value)}
+              全部 {totalCount}
             </FilterPill>
-          ))}
+            {WORKSPACE_STATUS.map((status) => (
+              <FilterPill
+                key={status.value}
+                active={filter === status.label}
+                onClick={() => {
+                  setFilter(status.label)
+                  refresh({ label: status.label })
+                }}>
+                {status.label} {countOf(status.value)}
+              </FilterPill>
+            ))}
+          </div>
+          <div className="flex-1" />
+          <Select
+            options={SORT_OPTIONS}
+            value={sortKey}
+            onChange={(value) => {
+              setSortKey(value)
+              refresh({ sort: value })
+            }}
+            style={{ width: 104 }}
+          />
+          <Input
+            allowClear
+            prefix={<SearchOutlined style={{ fontSize: 12, color: 'var(--placeholder)' }} />}
+            placeholder="搜索项目名称"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            style={{ width: 150 }}
+          />
         </div>
-        <div className="flex-1" />
-        <Select
-          options={SORT_OPTIONS}
-          value={sortKey}
-          onChange={(value) => {
-            setSortKey(value)
-            refresh({ sort: value })
-          }}
-          style={{ width: 104 }}
-        />
-        <Input
-          allowClear
-          prefix={<SearchOutlined style={{ fontSize: 12, color: 'var(--placeholder)' }} />}
-          placeholder="搜索项目名称"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          style={{ width: 150 }}
-        />
-      </div>
+      ) : null}
 
       {/* 项目卡片列表（加载态为骨架卡） */}
       {loading ? (

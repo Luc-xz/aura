@@ -114,12 +114,15 @@
 
 .aura-form .ant-form-item-label {
   padding-bottom: 6px;
+  line-height: 1.4;
 }
 
 .aura-form .ant-form-item-label > label {
   font-size: 12px;
   font-weight: 500;
   color: var(--ink);
+  line-height: 1.4;
+  height: auto;
 }
 
 .aura-form .ant-input-affix-wrapper,
@@ -294,7 +297,15 @@
 /* antd message 内容容器无类型 class，按内部 icon 归类着色（:has 需 Chrome 105+）。
    message 弹层挂在 body 下（不在 .aura-theme 容器内），规则须全局生效 */
 /* antd 的弹层样式经 :where() 注入且晚于静态 CSS，基础规则需提升选择器权重 */
+/* content 改为 flex 后失去 antd 默认 inline-block 收缩，需 fit-content 并由 notice 居中 */
+.ant-message .ant-message-notice {
+  display: flex;
+  justify-content: center;
+}
+
 .ant-message .ant-message-notice .ant-message-notice-content {
+  width: fit-content;
+  max-width: min(480px, calc(100vw - 32px));
   border-radius: 8px;
   border: 1px solid var(--line);
   box-shadow: var(--sh-sm);

@@ -179,6 +179,7 @@ export function LoginPanel() {
   return (
     <Form
       name="login"
+      layout="vertical"
       className="auth__card aura-form"
       requiredMark={false}
       colon={false}
@@ -249,6 +250,7 @@ export function RegisterPanel() {
   return (
     <Form
       name="register"
+      layout="vertical"
       form={form}
       className="auth__card aura-form"
       requiredMark={false}

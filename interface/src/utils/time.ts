@@ -9,7 +9,7 @@ export const formatDate = (input: string | number | Date) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
-// 相对时间：7 天内给相对描述，更早（或时钟偏差导致的未来时间）回退为日期
+// 相对时间：一年内给相对描述（对齐原型「9 天前 / 1 个月前」），更早（或时钟偏差导致的未来时间）回退为日期
 export const formatRelative = (input: string | number | Date): string => {
   const date = new Date(input)
   if (Number.isNaN(date.getTime())) return ''
@@ -19,6 +19,7 @@ export const formatRelative = (input: string | number | Date): string => {
   if (diff < HOUR) return `${Math.floor(diff / MINUTE)} 分钟前`
   if (diff < DAY) return `${Math.floor(diff / HOUR)} 小时前`
   if (diff < DAY * 2) return '昨天'
-  if (diff < DAY * 7) return `${Math.floor(diff / DAY)} 天前`
+  if (diff < DAY * 30) return `${Math.floor(diff / DAY)} 天前`
+  if (diff < DAY * 365) return `${Math.floor(diff / DAY / 30)} 个月前`
   return formatDate(date)
 }

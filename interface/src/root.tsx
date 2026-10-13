@@ -1,6 +1,7 @@
 import { Outlet, Scripts, ScrollRestoration, Meta, Links } from 'react-router'
 import { XProvider } from '@ant-design/x'
 import { App as AntdApp, ConfigProvider } from 'antd'
+import zhCN from 'antd/es/locale/zh_CN'
 import './assets/styles/index.css'
 import { setMessageInstance } from './http/handler'
 import { applyCompact, getPreferences } from './utils/preferences'
@@ -65,7 +66,10 @@ export default function App() {
       </head>
       <body>
         <XProvider>
-          <ConfigProvider theme={auraTheme}>
+          <ConfigProvider
+            locale={zhCN}
+            theme={auraTheme}
+            button={{ autoInsertSpace: false }}>
             <div className="aura-theme h-full">
               <AntdApp className="h-full">
                 <MessageProvider>

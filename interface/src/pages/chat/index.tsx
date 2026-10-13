@@ -602,7 +602,7 @@ export default function Page({ loaderData }) {
     modal.confirm({
       title: `确定删除「${workspace.title}」？`,
       content: '删除后项目下的会话与笔记将一并移除，不可恢复。',
-      okText: '删除',
+      okText: '确认删除',
       okButtonProps: { danger: true },
       onOk: async () => {
         const [err, res] = await deleteWorkspace(workspace.id)
