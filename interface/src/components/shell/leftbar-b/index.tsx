@@ -37,11 +37,12 @@ export default function LeftbarBShell() {
       ? 'notes'
       : 'work'
   const canEnterChat = canChat || canWorkspace
+  // 方案 B 转正：工作台模块 = 项目网格（/workspace）+ 推进页（/chat），modnav 入口指向网格
   const primaryModules = [
     canEnterChat && {
-      key: 'chat',
+      key: 'workspace',
       label: '工作台',
-      path: '/chat',
+      path: '/workspace',
       Icon: WorkspaceIcon,
     },
     canNotes && { key: 'notes', label: '笔记', path: '/note', Icon: NoteIcon },
@@ -71,6 +72,8 @@ export default function LeftbarBShell() {
 
   const isActivePath = (path: string, prefix = false) =>
     prefix ? pathname.startsWith(path) : pathname === path
+  // 工作台模块激活覆盖网格页与推进页（原型 03 data-key=workspace / 06 data-key=chat）
+  const isWorkspaceModule = pathname.startsWith('/workspace') || pathname === '/chat'
 
   return (
     <LeftbarNavContext.Provider value={{ setNav: setCustomNav }}>
@@ -157,7 +160,11 @@ export default function LeftbarBShell() {
                   <button
                     key={key}
                     type="button"
-                    className={`modnav__item ${isActivePath(path, path === '/note') ? 'is-active' : ''}`}
+                    className={`modnav__item ${
+                      (key === 'workspace' ? isWorkspaceModule : isActivePath(path, path === '/note'))
+                        ? 'is-active'
+                        : ''
+                    }`}
                     onClick={() => navigate(path)}>
                     <Icon />
                     {label}
@@ -191,6 +198,7 @@ export default function LeftbarBShell() {
 }
 
 function LeftbarProjects() {
+  const location = useLocation()
   const { filteredProjects, keyword, setKeyword, loading, selectedId, selectProject } =
     useProjectSidebar()
 
@@ -205,7 +213,8 @@ function LeftbarProjects() {
       <ProjectList
         projects={filteredProjects}
         loading={loading}
-        selectedId={selectedId}
+        // 网格页侧栏无选中态（原型 03），推进页默认首项高亮（原型 06）
+        selectedId={location.pathname.startsWith('/workspace') ? null : selectedId}
         onSelect={selectProject}
       />
     </>

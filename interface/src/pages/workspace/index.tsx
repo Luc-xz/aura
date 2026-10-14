@@ -5,11 +5,12 @@ import { useNavigate } from 'react-router'
 import { createWorkspace, deleteWorkspace, getWorkspaceList, getWorkspaceStats, updateWorkspace } from '@/api/workspace'
 import type { WorkspaceItem, WorkspaceListParams, WorkspaceStats } from '@/api/workspace'
 import { getModelConfigList } from '@/api/setting'
+import { getUserSettings } from '@/api/user-settings'
 import WorkspaceModal, { toWorkspacePayload } from '@/components/workspace-modal'
 import type { WorkspaceFormValues } from '@/components/workspace-modal'
 import { WORKSPACE_STATUS } from '@/components/status-pill'
 import { EmptyState, FilterPill, SkeletonCard, StatCard } from '@/components/ui'
-import { CREATE_WORKSPACE_EVENT, dispatchWorkspaceChanged } from '@/components/shell/workspace-events'
+import { dispatchWorkspaceChanged } from '@/components/shell/workspace-events'
 import { formatRelative } from '@/utils/time'
 
 const fetchWorkspaceList = async (params?: WorkspaceListParams) => {
@@ -27,8 +28,18 @@ const fetchModelList = async () => {
   return res?.data || []
 }
 
+const fetchUserSettings = async () => {
+  const [err, res] = await getUserSettings()
+  return res?.data || null
+}
+
 export async function clientLoader() {
-  return [await fetchWorkspaceList(), await fetchWorkspaceStats(), await fetchModelList()]
+  return [
+    await fetchWorkspaceList(),
+    await fetchWorkspaceStats(),
+    await fetchModelList(),
+    await fetchUserSettings(),
+  ]
 }
 
 const SORT_OPTIONS = [
@@ -86,7 +97,11 @@ export default function Page({ loaderData }) {
 
   const [list, setList] = useState<WorkspaceItem[]>(loaderData[0])
   const [stats, setStats] = useState<WorkspaceStats | null>(loaderData[1])
-  const [modelList] = useState(loaderData[2])
+  // 默认模型名（原型 05「默认模型」为规划中禁用展示，取账户默认模型）
+  const defaultModelName =
+    (loaderData[2] as Array<{ id: number; modelName: string }>).find(
+      (model) => model.id === loaderData[3]?.defaultModelId
+    )?.modelName ?? null
   const [filter, setFilter] = useState<string>('全部')
   const [searchInput, setSearchInput] = useState('')
   const [keyword, setKeyword] = useState('')
@@ -95,15 +110,6 @@ export default function Page({ loaderData }) {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<WorkspaceItem | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
-
-  useEffect(() => {
-    const openCreateModal = () => {
-      setEditing(null)
-      setModalOpen(true)
-    }
-    window.addEventListener(CREATE_WORKSPACE_EVENT, openCreateModal)
-    return () => window.removeEventListener(CREATE_WORKSPACE_EVENT, openCreateModal)
-  }, [])
 
   const refresh = async (opts?: { label?: string; title?: string; sort?: string }) => {
     const label = opts?.label ?? filter
@@ -204,12 +210,12 @@ export default function Page({ loaderData }) {
   ] as const
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
+    <main className="main main--scroll">
       {/* 页头（原型 04：零项目时不渲染页头新建按钮，仅空态卡内保留） */}
       <div className="page-head">
         <div className="page-head__text">
           <span className="t-title">项目工作台</span>
-          <span className="t-body t-muted">Aura 是面向长期项目推进的 AI 工作台 · 选一个项目继续推进，或新建一个项目</span>
+          <span className="t-body t-muted">选一个项目继续推进，或新建一个项目——推进与沉淀都在项目内完成</span>
         </div>
         {totalCount > 0 ? (
           <button
@@ -380,13 +386,13 @@ export default function Page({ loaderData }) {
 
       <WorkspaceModal
         open={modalOpen}
-        modelList={modelList}
+        defaultModelName={defaultModelName}
         editing={editing}
         confirmLoading={confirmLoading}
         onOk={handleModalOk}
         onCancel={() => setModalOpen(false)}
         onDelete={handleDelete}
       />
-    </div>
+    </main>
   )
 }

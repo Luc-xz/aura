@@ -91,7 +91,7 @@ const UserIcon = () => (
 const BRAND: Record<'login' | 'register', { headline: [string, string]; sub: [string, string]; rows: [{ accent: boolean; height: number }, { accent: boolean; height: number }] }> = {
   login: {
     headline: ['面向长期项目推进的', 'AI 工作台'],
-    sub: ['每个项目都有目标、背景与当前状态。聊天是推进方式，沉淀下来的', '结论才是资产。'],
+    sub: ['每个项目都有目标、背景与当前状态。聊天是推进方式，', '沉淀下来的结论才是资产。'],
     rows: [
       { accent: true, height: 54 },
       { accent: false, height: 54 },
@@ -110,7 +110,8 @@ const BRAND: Record<'login' | 'register', { headline: [string, string]; sub: [st
 function AuthBrandPanel({ type }: { type: 'login' | 'register' }) {
   const brand = BRAND[type]
   return (
-    <div className="auth__brand">
+    // 方案 B 转正：品牌区改浅色（原型 01/02 auth__brand--light）
+    <div className="auth__brand auth__brand--light">
       <div className="auth__logo">
         <span className="auth__logo-mark">
           <svg
@@ -125,6 +126,7 @@ function AuthBrandPanel({ type }: { type: 'login' | 'register' }) {
           </svg>
         </span>
         Aura
+        <span className="brand__tag">自主体验</span>
       </div>
 
       <h1 className="auth__headline">
@@ -161,7 +163,7 @@ function AuthBrandPanel({ type }: { type: 'login' | 'register' }) {
         </div>
       </div>
 
-      <p className="auth__caption">Aura Workspace · 项目工作台入口</p>
+      <p className="auth__caption">Aura Workspace · 登录后进入项目工作台</p>
     </div>
   )
 }

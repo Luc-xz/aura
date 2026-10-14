@@ -1,9 +1,8 @@
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
+import { SearchOutlined } from '@ant-design/icons'
 import type { WorkspaceItem } from '@/api/workspace'
 import { SkeletonCard } from '@/components/ui'
 import { formatRelative } from '@/utils/time'
 import { projectStatusLabel, useProjectSidebar } from './use-project-sidebar'
-import { dispatchCreateWorkspace } from './workspace-events'
 
 export function ProjectSearch({
   keyword,
@@ -65,36 +64,5 @@ export function ProjectList({
         </button>
       ))}
     </div>
-  )
-}
-
-export default function ProjectSidebar() {
-  const { projects, filteredProjects, keyword, setKeyword, loading, selectedId, selectProject } =
-    useProjectSidebar()
-
-  return (
-    <aside className="sidebar">
-      <div className="sidebar__head">
-        <span className="sidebar__title">项目</span>
-        <span className="counter">{projects.length}</span>
-      </div>
-      <button
-        type="button"
-        className="btn-block"
-        onClick={dispatchCreateWorkspace}>
-        <PlusOutlined />
-        新建项目
-      </button>
-      <ProjectSearch
-        keyword={keyword}
-        onChange={setKeyword}
-      />
-      <ProjectList
-        projects={filteredProjects}
-        loading={loading}
-        selectedId={selectedId}
-        onSelect={selectProject}
-      />
-    </aside>
   )
 }

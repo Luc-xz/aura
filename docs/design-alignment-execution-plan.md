@@ -68,7 +68,7 @@
 截图存档：`docs/design-alignment/screenshots/dN/`（实现页与原型页成对保存）。
 
 ```
-D0 设计基座 ──▶ G-D0 ──▶ D1 外壳重构 ──▶ G-D1 ──▶ D2 方案A入口层 ──▶ D3 方案B主体验 ──▶ D4 设置与管理 ──▶ D5 状态规范收口
+D0 设计基座 ──▶ G-D0 ──▶ D1 外壳重构 ──▶ G-D1 ──▶ D2 方案A入口层 ──▶ D3 方案B主体验 ──▶ D4 设置与管理 ──▶ D5 状态规范收口 ──▶ D6 方案B转正对齐
 ```
 
 | 门槛 | 准出标准 |
@@ -80,6 +80,7 @@ D0 设计基座 ──▶ G-D0 ──▶ D1 外壳重构 ──▶ G-D1 ──�
 
 > 进度：**D0–D5 全部完成，计划整体收口**（2026-10-12）。验收记录：[d0](./design-alignment-d0-acceptance.md) · [d1](./design-alignment-d1-acceptance.md) · [d2](./design-alignment-d2-acceptance.md) · [d3](./design-alignment-d3-acceptance.md) · [d4](./design-alignment-d4-acceptance.md) · [d5 收口](./design-alignment-d5-acceptance.md)；截图存档 `screenshots/d2–d5`。
 > 2026-10-13 全量复查：修复 8 处还原缺口（登录表单布局 / 相对时间 / 空态筛选行 / 设置行序 / 13 虚线新建卡 / Toast 全宽 / 中文 locale 与按钮空格），详见 [recheck 复查记录](./design-alignment-recheck-acceptance.md)，截图存档 `screenshots/recheck/`。
+> 2026-10-14 方案 B 全面转正（原型决策）：入口六屏按新原型重做对齐 + rail-a 外壳退役，详见 [d6 验收记录](./design-alignment-d6-acceptance.md)，截图存档 `screenshots/d6/`。
 
 ### D0 设计基座（约 1.5 天）
 
@@ -132,6 +133,18 @@ D0 设计基座 ──▶ G-D0 ──▶ D1 外壳重构 ──▶ G-D1 ──�
 - 全量回归：17 屏路由走查 + 交互状态矩阵（hover/active/disabled/loading/empty/error）勾销；F2 已验收功能（状态流转、存为笔记、模型切换等）不回退。
 - 收口文档 `docs/design-alignment-close-out.md`。
 
+### D6 方案 B 转正对齐（原型 2026-10-14 决策，约 1 天）
+
+> 原型 `094e634`：双方案策略结束，方案 B 全面转正，入口六屏重画并归档方案 A。
+
+| 任务 | 落点 |
+| --- | --- |
+| 路由收敛 | `routes.tsx`：`/workspace` 由 rail-a 迁挂 leftbar-b；**删除 `components/shell/rail-a/`** 与 `ProjectSidebar` 默认导出、`CREATE_WORKSPACE_EVENT` 链路、rail/sidebar 死样式 |
+| modnav 激活态 | `leftbar-b`：「工作台」入口指向 `/workspace`（原型 03 data-key=workspace），激活态覆盖 `/workspace` + `/chat`（原型 06 data-key=chat）；网格页侧栏无项目选中态（原型 03），推进页保持默认首项高亮（原型 06） |
+| 01/02 登录注册 | `pages/login/index.tsx`：品牌区换浅色 `auth__brand--light`（`#f8fbff→#ecf3fc` 渐变 + 右描边 + ink 文字）+ logo 加「自主体验」标签；caption 改「登录后进入项目工作台」；登录副文案断行对齐原型 |
+| 03/04 工作台 | `pages/workspace/index.tsx`：补自带 `.main` 容器（原 rail-a 提供）；页头副标题对齐原型；空态/数据态主区此前已对齐，不动 |
+| 05/05b 弹窗 | `components/workspace-modal/index.tsx`：「默认模型」按原型标注改为**规划中字段**——label 加 pill--info「规划中」，控件为 `input--filled` 静态展示（新建显账户默认模型名、编辑显已挂载模型名）；`toWorkspacePayload` 不再传 modelId（新建走账户默认回退、编辑不动既有挂载） |
+
 ## 5. 验收流程（逐屏并排比对）
 
 1. 本地起 `pnpm dev:ui`，浏览器视口固定 **1440×900**。
@@ -154,7 +167,8 @@ D0 设计基座 ──▶ G-D0 ──▶ D1 外壳重构 ──▶ G-D1 ──�
 | 管理端目标态路由/权限码 | 沿用现状 | 以 `/admin/*` 现状做视觉对齐 |
 | 窄屏断点 | 约定 | 仅 ≥1440 严格对齐，以下自然回流 |
 | 03 工作台筛选行右侧「最近更新 + 搜索」 | 功能需要 | 原型筛选行仅有胶囊，实现保留 F2 排序/搜索功能（2026-10-13 复查登记） |
-| 05 项目弹窗「默认模型」label ⓘ 图标 | 实现增强 | 提示留空走默认模型，原型无（2026-10-13 复查登记） |
+| 05/05b 弹窗「默认模型」字段 | 规划中字段（原型标注） | 原型标注「规划中」：控件为禁用展示（新建显账户默认模型名、编辑显已挂载模型名），项目级模型选择待远期；后端 modelId 字段与接口保留，编辑保存不改挂载（2026-10-14 D6 登记取代原 ⓘ 图标条目） |
+| 05b 编辑中项目在左栏高亮 | 示意态 | 原型编辑弹窗将所编项目在左栏置 active，实现左栏选中态由「当前进入的项目」驱动，未与编辑动作联动（2026-10-14 D6 登记） |
 | 07 空态引导第三行提示 | 实现增强 | 「设置项目目标与背景后，将自动注入到上下文」，原型无（2026-10-13 复查登记） |
 | 02 注册卡用户名格式提示 | 文案形态 | 原型为静态提示行，实现为校验失败时的错误文案（2026-10-13 复查登记） |
 
@@ -179,5 +193,6 @@ D0 设计基座 ──▶ G-D0 ──▶ D1 外壳重构 ──▶ G-D1 ──�
 | M-D3 | 06–09 四屏对齐 | ~10 人日 |
 | M-D4 | 10–14 五屏对齐 | ~13 人日 |
 | M-D5 | 15 规范收口 + 全量回归 | ~14.5 人日 |
+| M-D6 | 方案 B 转正：入口六屏重对齐 + rail-a 退役 | ~15.5 人日 |
 
 按既有节奏（每天 2~3 小时）折算约 **6~8 周**；D3/D4 内部可按屏拆分提交。

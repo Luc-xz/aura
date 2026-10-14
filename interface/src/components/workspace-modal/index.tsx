@@ -8,12 +8,12 @@ export interface WorkspaceFormValues {
   goal?: string
   description?: string
   status?: number
-  modelId?: number | null
 }
 
 interface WorkspaceModalProps {
   open: boolean
-  modelList: Array<{ id: number; modelName: string }>
+  /** 账户默认模型名（原型 05「默认模型」为规划中字段的禁用展示） */
+  defaultModelName?: string | null
   /** 传入项目行进入编辑态（回填），null 为新建 */
   editing?: WorkspaceItem | null
   confirmLoading?: boolean
@@ -23,17 +23,17 @@ interface WorkspaceModalProps {
   onDelete?: () => void
 }
 
-// 表单值 → 请求体：新建时空 modelId 不传（走 B4 用户默认模型回退）；编辑时清空传 null 解除挂载
+// 表单值 → 请求体：默认模型为「规划中」字段（原型 05/05b），新建走账户默认模型回退、编辑不动既有挂载
 export const toWorkspacePayload = (values: WorkspaceFormValues, mode: 'create' | 'update'): WorkspacePayload => {
-  const { title, goal = '', description = '', status, modelId } = values
+  const { title, goal = '', description = '', status } = values
   if (mode === 'create') {
-    return { title, goal, description, status: status ?? 0, ...(modelId ? { modelId } : {}) }
+    return { title, goal, description, status: status ?? 0 }
   }
-  return { title, goal, description, status, modelId: modelId ?? null }
+  return { title, goal, description, status }
 }
 
 // 原型 05/05b：560px 弹窗、28px 内边距、字段 label 上置、状态与模型双列、底部按钮右对齐
-export default function WorkspaceModal({ open, modelList, editing = null, confirmLoading = false, onOk, onCancel, onDelete }: WorkspaceModalProps) {
+export default function WorkspaceModal({ open, defaultModelName, editing = null, confirmLoading = false, onOk, onCancel, onDelete }: WorkspaceModalProps) {
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -44,7 +44,6 @@ export default function WorkspaceModal({ open, modelList, editing = null, confir
         goal: editing.goal ?? '',
         description: editing.description ?? '',
         status: editing.status,
-        modelId: editing.modelId ?? undefined,
       })
     } else {
       form.resetFields()
@@ -54,6 +53,9 @@ export default function WorkspaceModal({ open, modelList, editing = null, confir
   const handleFinish = async (values: WorkspaceFormValues) => {
     await onOk(values, editing ? 'update' : 'create')
   }
+
+  // 默认模型展示值：编辑态优先已挂载模型，否则账户默认模型（原型 05b 回填已选模型）
+  const modelDisplay = editing?.modelName ?? defaultModelName ?? '未设置'
 
   return (
     <Modal
@@ -120,17 +122,29 @@ export default function WorkspaceModal({ open, modelList, editing = null, confir
             <Select options={WORKSPACE_STATUS} />
           </Form.Item>
           <Form.Item
-            name="modelId"
-            label="默认模型"
-            className="flex-1"
-            tooltip="留空时使用账户默认模型">
-            <Select
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              placeholder="留空使用默认模型"
-              options={modelList.map((item) => ({ value: item.id, label: item.modelName }))}
-            />
+            label={
+              <span className="inline-flex items-center gap-1">
+                默认模型
+                <span className="pill pill--sm pill--info">规划中</span>
+              </span>
+            }
+            className="flex-1">
+            {/* 规划中字段：禁用展示（原型 05/05b 为 input--filled 静态样式），项目级模型选择待远期 */}
+            <div
+              className="input input--filled"
+              style={{ justifyContent: 'space-between' }}>
+              {modelDisplay}
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="#6b7785"
+                strokeWidth="1.4"
+                strokeLinecap="round">
+                <path d="M3.5 5.5 7 9l3.5-3.5" />
+              </svg>
+            </div>
           </Form.Item>
         </div>
         <div className="modal__foot">

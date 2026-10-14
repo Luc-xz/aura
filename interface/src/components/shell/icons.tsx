@@ -45,14 +45,6 @@ export function SettingIcon(props: IconProps) {
   )
 }
 
-export function AdminIcon(props: IconProps) {
-  return (
-    <svg className="nav-icon" viewBox="0 0 18 18" fill="none" aria-hidden="true" {...props}>
-      <path d="M9 2.5l5.5 2v4.3c0 3.3-2.3 5.6-5.5 6.7-3.2-1.1-5.5-3.4-5.5-6.7V4.5z" />
-    </svg>
-  )
-}
-
 export function UserIcon(props: IconProps) {
   return (
     <svg className="nav-icon" viewBox="0 0 18 18" fill="none" aria-hidden="true" style={{ strokeWidth: 1.6 }} {...props}>
