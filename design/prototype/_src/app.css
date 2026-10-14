@@ -763,6 +763,22 @@ body[data-setnav='menus'] .setnav__item[data-key='menus'] {
   border-radius: 6px; padding: 3px 8px;
 }
 
+/* ---------- 方案 B 登录/注册：浅色品牌区 ---------- */
+.auth__brand--light {
+  background: linear-gradient(165deg, #f8fbff 0%, #ecf3fc 100%);
+  border-right: 1px solid var(--line);
+  color: var(--ink);
+}
+.auth__brand--light .auth__logo { color: var(--ink); }
+.auth__brand--light .auth__sub { color: var(--muted); }
+.auth__brand--light .auth__caption { color: var(--placeholder); }
+.auth__brand--light .auth__preview { box-shadow: var(--sh-md); }
+.auth__brand--light .auth__preview-row { background: #eef2f7; }
+.auth__panel--onlight { background: var(--canvas); }
+
+/* ---------- 方案 B 工作台：项目网格页 ---------- */
+.workspace-grid { display: flex; flex-wrap: wrap; gap: 16px; align-content: flex-start; }
+
 /* 缩放提示（不影响画布内容） */
 .zoom-hint {
   position: fixed; left: 12px; bottom: 10px; z-index: 9;
