@@ -1,0 +1,128 @@
+<!--# title: 03 项目工作台 · 方案A -->
+<!--# desc: 系统入口门户，选定项目后再进入方案 B 三栏工作区 -->
+<!--# body: data-nav="workspace" -->
+<section class="screen">
+  <!-- @include rail-a.html -->
+  <!-- @include sidebar-projects.html -->
+
+  <main class="main">
+    <div class="page-head">
+      <div class="page-head__text">
+        <span class="t-title">项目工作台</span>
+        <span class="t-body t-muted">Aura 是面向长期项目推进的 AI 工作台 · 选一个项目继续推进，或新建一个项目</span>
+      </div>
+      <button class="btn btn--primary">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+          <path d="M7 1.5v11M1.5 7h11" />
+        </svg>
+        新建项目
+      </button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <span class="stat-card__value t-success">3</span>
+        <span class="stat-card__label">进行中</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value t-warning">2</span>
+        <span class="stat-card__label">暂停</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value t-muted">1</span>
+        <span class="stat-card__label">已归档</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__value t-primary">4</span>
+        <span class="stat-card__label">本周有推进</span>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="filter filter--active">全部 6</div>
+      <div class="filter">进行中 3</div>
+      <div class="filter">暂停 2</div>
+      <div class="filter">已归档 1</div>
+    </div>
+
+    <div class="card-grid">
+      <article class="project-card">
+        <span class="project-card__status t-success">进行中</span>
+        <span class="project-card__title">品牌官网改版</span>
+        <span class="project-card__goal">目标：三个月内完成官网信息架构与视觉改版</span>
+        <span class="project-card__desc">重构首页叙事，统一组件库，建立可维护的内容审核流程。</span>
+        <span class="project-card__meta">GPT-4o · 2 小时前 · 24 条对话</span>
+        <div class="project-card__actions">
+          <span class="t-primary w-semi">继续推进</span>
+          <span class="t-muted">编辑</span>
+          <span class="t-muted">归档</span>
+        </div>
+      </article>
+
+      <article class="project-card">
+        <span class="project-card__status t-success">进行中</span>
+        <span class="project-card__title">Aura 前端工作台改造</span>
+        <span class="project-card__goal">目标：把聊天工具升级为项目工作台</span>
+        <span class="project-card__desc">新增项目目标、描述与状态字段，改造为三栏推进布局。</span>
+        <span class="project-card__meta">Claude 3.5 Sonnet · 昨天 · 12 条对话</span>
+        <div class="project-card__actions">
+          <span class="t-primary w-semi">继续推进</span>
+          <span class="t-muted">编辑</span>
+          <span class="t-muted">归档</span>
+        </div>
+      </article>
+
+      <article class="project-card">
+        <span class="project-card__status t-warning">暂停</span>
+        <span class="project-card__title">用户增长实验</span>
+        <span class="project-card__goal">目标：验证邀请机制对次日留存的影响</span>
+        <span class="project-card__desc">已完成两轮 A/B 实验，等待数据团队补充埋点后继续。</span>
+        <span class="project-card__meta">GPT-4o mini · 3 天前 · 8 条对话</span>
+        <div class="project-card__actions">
+          <span class="t-primary w-semi">继续推进</span>
+          <span class="t-muted">编辑</span>
+          <span class="t-muted">归档</span>
+        </div>
+      </article>
+
+      <article class="project-card">
+        <span class="project-card__status t-success">进行中</span>
+        <span class="project-card__title">客服知识库搭建</span>
+        <span class="project-card__goal">目标：沉淀 200 条高频问答</span>
+        <span class="project-card__desc">从历史工单中抽取高频问题，形成可检索的客服知识库。</span>
+        <span class="project-card__meta">DeepSeek-V3 · 上周 · 31 条对话</span>
+        <div class="project-card__actions">
+          <span class="t-primary w-semi">继续推进</span>
+          <span class="t-muted">编辑</span>
+          <span class="t-muted">归档</span>
+        </div>
+      </article>
+
+      <article class="project-card">
+        <span class="project-card__status t-warning">暂停</span>
+        <span class="project-card__title">数据看板重构</span>
+        <span class="project-card__goal">目标：统一核心指标口径</span>
+        <span class="project-card__desc">指标口径已对齐，等待数据仓库迁移完成后继续推进。</span>
+        <span class="project-card__meta">GPT-4o · 2 周前 · 17 条对话</span>
+        <div class="project-card__actions">
+          <span class="t-primary w-semi">继续推进</span>
+          <span class="t-muted">编辑</span>
+          <span class="t-muted">归档</span>
+        </div>
+      </article>
+
+      <article class="project-card project-card--archived">
+        <span class="project-card__status" style="color:#6b7785">已归档</span>
+        <span class="project-card__title">2025 Q4 复盘</span>
+        <span class="project-card__goal">目标：完成第四季度业务复盘</span>
+        <span class="project-card__desc">复盘已完成并归档，保留上下文以备后续查阅。</span>
+        <span class="project-card__meta">Claude 3.5 Sonnet · 1 个月前 · 42 条对话</span>
+        <div class="project-card__actions">
+          <span class="t-primary w-semi">查看</span>
+          <span class="t-muted">恢复为进行中</span>
+          <span class="t-danger">删除</span>
+        </div>
+      </article>
+    </div>
+  </main>
+</section>

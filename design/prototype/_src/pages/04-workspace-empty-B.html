@@ -1,0 +1,74 @@
+<!--# title: 04 工作台空状态 · 方案B -->
+<!--# desc: 无项目时的引导态：左栏空列表 + 主区空状态卡 -->
+<!--# body: data-nav="workspace" -->
+<section class="screen">
+  <aside class="col-left">
+    <div class="brand">
+      <div class="brand__logo">
+        <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M9 2.5 3.2 15.5h11.6L9 2.5Z" fill="#fff" /></svg>
+      </div>
+      <span class="brand__name">Aura</span>
+      <span class="brand__tag">自主体验</span>
+    </div>
+
+    <div class="modnav modnav--row">
+      <div class="modnav__item" data-key="workspace">工作台</div>
+      <div class="modnav__item" data-key="notes">笔记</div>
+      <div class="modnav__item" data-key="setting">设置</div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="group-title">项目</div>
+
+    <div class="search">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+        <circle cx="6" cy="6" r="4.2" /><path d="M9.2 9.2 12.5 12.5" stroke-linecap="round" />
+      </svg>
+      搜索项目
+    </div>
+
+    <div class="project-list">
+      <div style="padding: 20px 10px; text-align: center" class="t-sm t-placeholder">还没有项目</div>
+    </div>
+
+    <div class="user-bar">
+      <div class="user-bar__avatar">
+        <svg class="nav-icon" viewBox="0 0 18 18" style="width:14px;height:14px;stroke-width:1.6">
+          <circle cx="9" cy="6.4" r="3" /><path d="M3.6 15c.6-2.6 2.8-4 5.4-4s4.8 1.4 5.4 4" />
+        </svg>
+      </div>
+      <span class="user-bar__name">yanqing</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div class="page-head__text">
+        <span class="t-title">项目工作台</span>
+        <span class="t-body t-muted">选一个项目继续推进，或新建一个项目——推进与沉淀都在项目内完成</span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card t-muted"><span class="stat-card__value">0</span><span class="stat-card__label">进行中</span></div>
+      <div class="stat-card t-muted"><span class="stat-card__value">0</span><span class="stat-card__label">暂停</span></div>
+      <div class="stat-card t-muted"><span class="stat-card__value">0</span><span class="stat-card__label">已归档</span></div>
+      <div class="stat-card t-muted"><span class="stat-card__value">0</span><span class="stat-card__label">本周有推进</span></div>
+    </div>
+
+    <div class="empty">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="#b9c4ce" stroke-width="1.6">
+        <rect x="8" y="15" width="40" height="30" rx="4" />
+        <path d="M8 23h40M19 15v-3.5A2.5 2.5 0 0 1 21.5 9h13a2.5 2.5 0 0 1 2.5 2.5V15" stroke-linecap="round" />
+      </svg>
+      <span class="empty__title">还没有项目</span>
+      <span class="empty__desc">创建第一个项目，设定目标与背景，开始推进与沉淀</span>
+      <button class="btn btn--primary" style="margin-top: 6px">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+          <path d="M7 1.5v11M1.5 7h11" />
+        </svg>
+        新建项目
+      </button>
+    </div>
+  </main>
+</section>

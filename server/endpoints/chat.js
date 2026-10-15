@@ -1,25 +1,37 @@
 import express from 'express'
-import sql from '../sql/index.js'
 import Chat from '../models/chat.js'
+import ModelConfig from '../models/model-config.js'
+import Workspace from '../models/workspace.js'
+import UserSettings from '../models/user-settings.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
+import rateLimit from '../middlewares/rate-limit.js'
 import { authMiddleware } from '../middlewares/auth.js'
+import { requireOwnership } from '../middlewares/rbac.js'
+import { createModelInstance } from '../utils/model-factory.js'
+import { generateText, streamText, stepCountIs } from 'ai'
+import Validator from '../../shared/utils/validator.js'
+import { BadRequest, NotFound, BadGateway } from '../utils/appError.js'
+import { logger } from '../utils/logger.js'
+import { buildNoteTools, NOTE_TOOLS_SYSTEM_PROMPT } from '../tool/index.js'
+
+const TOOL_MAX_STEPS = 5
 
 const router = express.Router()
 
 function chatEndpoints(apiRouter) {
   apiRouter.use('/chat', asyncHandler(authMiddleware), router)
 
-  router.get('/list/:workspaceId', asyncHandler(async (req, res) => {
+  router.get('/list/:workspaceId', asyncHandler(requireOwnership({ resource: 'chat_workspace', idFrom: 'params.workspaceId' })), asyncHandler(async (req, res) => {
+    const { workspaceId } = req.params
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await Chat.findByWorkspaceId(
-      req.params.workspaceId,
+      workspaceId,
       {
         filters: {
           ...rest,
           createdAt: rest?.createdAt?.split(',') || null,
           updatedAt: rest?.updatedAt?.split(',') || null,
         },
-        pagination: null,
         sort: {
           orderBy,
           orderDir
@@ -27,109 +39,184 @@ function chatEndpoints(apiRouter) {
       })
     res.status(200).json({
       data,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
 
-  router.post('/:workspaceId', asyncHandler(async (req, res) => {
-    const { workspaceId } = req.params
-    const { content, stream = true, think = true } = req.body
+  router.post('/:workspaceId',
+    rateLimit({ prefix: 'chat', windowSeconds: 3600, max: 30 }),
+    asyncHandler(requireOwnership({ resource: 'chat_workspace', idFrom: 'params.workspaceId' })),
+    asyncHandler(async (req, res) => {
+      const { workspaceId } = req.params
+      const { content, stream = true, think = true } = req.body
 
-    const { rows } = await Chat.findByWorkspaceId(
-      workspaceId,
-      {
-        filters: {
-        },
-        pagination: {
-          page: 1,
-          pageSize: 20
-        },
-        sort: {
-          orderBy: 'created_at',
-          orderDir: 'asc'
+      if (!content) {
+        throw BadRequest('content is required')
+      }
+      if (!Validator.isNonEmptyString(content)) {
+        throw BadRequest('content cannot be empty')
+      }
+
+      const workspace = await Workspace.findById(workspaceId)
+      let modelConfig = null
+      if (workspace.modelId) {
+        modelConfig = await ModelConfig.findById(workspace.modelId)
+      } else {
+        // B4：项目未挂模型时回退用户默认模型（use_default_model 语义）；默认配置已被删除视为未配置
+        const settings = await UserSettings.findByUserId(req.user.id)
+        if (settings.defaultModelId) {
+          modelConfig = await ModelConfig.findById(settings.defaultModelId)
+        }
+        if (!modelConfig) {
+          throw BadRequest('当前账号未配置默认模型，请先在偏好设置中选择，或为项目挂载模型')
+        }
+      }
+      if (!modelConfig) {
+        throw NotFound('model config not found')
+      }
+
+      const sourceChatId = await Chat.create({
+        workspaceId,
+        modelId: modelConfig.id,
+        content,
+        proposer: 'user'
+      })
+
+      const { rows } = await Chat.findByWorkspaceId(
+        workspaceId,
+        {
+          filters: {
+          },
+          pagination: {
+            page: 1,
+            pageSize: 20
+          },
+          sort: {
+            orderBy: 'id',
+            orderDir: 'desc'
+          }
+        })
+
+      const messages = rows.reverse().map(item => {
+        return {
+          role: item.proposer,
+          content: item.content
         }
       })
 
-    const messages = [...rows, { workspaceId, content, proposer: 'user' }].map(item => {
-      return {
-        role: item.proposer,
-        content: item.content
+      const model = createModelInstance(modelConfig)
+      // B7：项目目标与背景拼进 system prompt（笔记工具提示词在前，未设置时不加段落）
+      const projectContext = []
+      if (workspace.goal) projectContext.push(`项目目标：${workspace.goal}`)
+      if (workspace.description) projectContext.push(`项目背景：${workspace.description}`)
+      const systemPrompt = projectContext.length
+        ? `${NOTE_TOOLS_SYSTEM_PROMPT}\n\n# 项目上下文\n${projectContext.join('\n')}`
+        : NOTE_TOOLS_SYSTEM_PROMPT
+      const sendEvent = (payload) => res.write(`data: ${JSON.stringify(payload)}\n\n`)
+
+      const references = []
+      const savedNotes = []
+      const tools = buildNoteTools(req.user, {
+        workspaceId: Number(workspaceId),
+        sourceChatId,
+        onNoteFound: (ref) => {
+          if (!references.some((r) => r.id === ref.id)) {
+            references.push(ref)
+          }
+        },
+        onNoteSaved: (note) => {
+          if (!savedNotes.some((n) => n.id === note.id)) savedNotes.push(note)
+          if (stream) sendEvent({ type: 'note-saved', note })
+        }
+      })
+
+      if (!stream) {
+        let result
+        try {
+          result = await generateText({
+            model,
+            messages,
+            system: systemPrompt,
+            tools,
+            stopWhen: stepCountIs(TOOL_MAX_STEPS),
+          })
+        } catch (err) {
+          // 直透上游错误信息（如 Incorrect API key provided），空响应才兜底
+          logger.warn(`[chat] upstream error (non-stream): ${err.message}`)
+          throw BadGateway(err?.message || '上游模型调用失败')
+        }
+        const chatId = await Chat.create({ workspaceId, content: result.text, proposer: 'assistant' })
+        res.status(200).json({
+          data: {
+            content: result.text,
+            references,
+            savedNotes,
+            chatId
+          },
+          code: 200,
+          message: 'success'
+        })
+        return
       }
-    })
-    await Chat.create({ workspaceId, content, proposer: 'user' })
-    const response = await fetch('http://localhost:11434/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'deepseek-r1:7b',
+
+      res.setHeader('Content-Type', 'text/event-stream')
+      res.setHeader('Cache-Control', 'no-cache')
+      res.setHeader('Connection', 'keep-alive')
+
+      // 客户端提前断开（关页面/切项目）时中止上游请求，避免继续消耗模型配额
+      const upstreamAbort = new AbortController()
+      res.on('close', () => {
+        if (!res.writableEnded) upstreamAbort.abort()
+      })
+
+      const result = streamText({
+        model,
         messages,
-        stream,
-        think,
-      })
-    })
-    if (!stream) {
-      const data = await response.json()
-      await Chat.create({ workspaceId, content: data.message?.content, proposer: 'assistant' })
-      res.status(200).json({
-        data: data.message?.content,
-        code: 1,
-        message: 'success'
-      })
-      return
-    }
+        system: systemPrompt,
+        tools,
+        stopWhen: stepCountIs(TOOL_MAX_STEPS),
+        abortSignal: upstreamAbort.signal,
+        // 上游错误会被 SDK 转成 fullStream 的 error part（不 throw），这里只负责日志归一
+        onError: ({ error }) => logger.warn(`[chat] upstream stream error: ${error?.message}`),
+      });
+      let full = ''
 
-    res.setHeader('Content-Type', 'text/event-stream')
-    res.setHeader('Cache-Control', 'no-cache')
-    res.setHeader('Connection', 'keep-alive')
-
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let data = ''
-    let thinking = true
-    let thinkingStartedMarkerSent = false
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      const chunk = decoder.decode(value, { stream: true })
-      for (const line of chunk.split('\n')) {
-        if (!line.trim()) continue
-        const obj = JSON.parse(line)
-        const thinkPiece = obj?.message?.thinking || ''
-        const piece = obj?.message?.content || ''
-
-        if (thinking && !thinkPiece && piece) {
-          thinking = false
-          if (thinkingStartedMarkerSent) {
-            res.write('[THINKING_END]\n')
+      try {
+        let streamError = null
+        for await (const part of result.fullStream) {
+          if (part.type === 'error') {
+            streamError = part.error
+            break
+          }
+          if (part.type === 'text-delta') {
+            full += part.text
+            sendEvent({ type: 'text', value: part.text })
+          } else if (part.type === 'tool-call') {
+            if (part.toolName === 'search_notes') sendEvent({ type: 'status', value: '正在检索笔记…' })
+            if (part.toolName === 'get_note_detail') sendEvent({ type: 'status', value: '正在读取笔记…' })
+            if (part.toolName === 'save_note') sendEvent({ type: 'status', value: '正在保存笔记…' })
           }
         }
-
-        if (thinking && thinkPiece) {
-          if (!thinkingStartedMarkerSent) {
-            res.write('[THINKING_START]\n')
-            thinkingStartedMarkerSent = true
+        if (streamError) {
+          // 中途失败但已有部分内容：把半截存下来，刷新后不丢；一句没出就不落库
+          if (full.trim()) {
+            await Chat.create({ workspaceId, content: full, proposer: 'assistant' })
           }
-          data += thinkPiece
-          res.write(thinkPiece)
-        } else if (!thinking && piece) {
-          data += piece
-          res.write(piece)
+          // 直透上游错误信息，空响应才兜底；statusCode 为上游 HTTP 状态码（无则为 null）
+          sendEvent({ type: 'error', statusCode: streamError?.statusCode ?? null, message: streamError?.message || '上游模型调用失败' })
+          return
         }
-
-        if (obj?.done) {
-          if (thinking && thinkingStartedMarkerSent) {
-            res.write('[THINKING_END]')
-          }
-          await Chat.create({ workspaceId, content: data, proposer: 'assistant' })
-          res.end()
-        }
+        const chatId = await Chat.create({ workspaceId, content: full, proposer: 'assistant' })
+        sendEvent({ type: 'references', notes: references })
+        sendEvent({ type: 'done', chatId })
+      } catch (err) {
+        // 流消费/落库阶段的本地异常同样以 error 事件收尾，前端不会悬挂
+        sendEvent({ type: 'error', statusCode: err?.statusCode ?? null, message: err?.message || '上游模型调用失败' })
+      } finally {
+        res.end()
       }
-    }
-  }))
+    }))
 }
 
 export default chatEndpoints

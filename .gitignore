@@ -2,4 +2,10 @@ dist/
 node_modules/
 logs/
 *.local
+*.rdb
+
 .ace-tool/
+.omc
+.workbuddy
+.claude
+.zcode

@@ -1,13 +1,14 @@
+import { NotFound } from '../utils/appError.js'
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
-import { formatResponse } from '../utils/formatter.js'
+import { formatResponse } from '../../shared/utils/formatter.js'
 
 export default class Chat {
   static filterFields(chat) {
     return formatResponse(chat)
   }
 
-  static async findByWorkspaceId(workspaceId, { filters = {}, pagination = {}, sort = {} } = {}) {
+  static async findByWorkspaceId(workspaceId, { filters = {}, pagination = null, sort = {} } = {}) {
     if (!workspaceId) {
       throw new Error('workspaceId is required')
     }
@@ -17,7 +18,7 @@ export default class Chat {
       const options = {
         page: pagination.page,
         pageSize: pagination.pageSize,
-        allowedSortFields: ['proposer', 'created_at', 'updated_at'],
+        allowedSortFields: ['id', 'proposer', 'created_at', 'updated_at'],
         orderBy: sort.orderBy || 'created_at',
         orderDir: sort.orderDir || 'DESC',
       }
@@ -37,13 +38,29 @@ export default class Chat {
     }
   }
 
-  static async create({ workspaceId, proposer, content } = {}) {
+  static async create({ workspaceId, proposer, content, modelId } = {}) {
     if (!workspaceId) {
       throw new Error('workspaceId is required')
     }
-    const baseSql = 'INSERT INTO chat (workspace_id, proposer, content) VALUES (?, ?, ?)'
-    const [result] = await db.query(baseSql, [workspaceId, proposer, content])
-    return result.insertId
+    const connection = await db.getConnection()
+    try {
+      await connection.beginTransaction()
+      // Lock the parent before writing so deletion cannot leave orphan messages.
+      const [[workspace]] = await connection.query('SELECT id FROM workspace WHERE id = ? FOR UPDATE', [workspaceId])
+      if (!workspace) throw NotFound('workspace not found')
+      const [result] = await connection.query(
+        'INSERT INTO chat (workspace_id, proposer, content, model_id) VALUES (?, ?, ?, ?)',
+        [workspaceId, proposer, content, modelId ?? null]
+      )
+      await connection.query('UPDATE workspace SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [workspaceId])
+      await connection.commit()
+      return result.insertId
+    } catch (error) {
+      await connection.rollback()
+      throw error
+    } finally {
+      connection.release()
+    }
   }
 
   static async update(id, payload) {

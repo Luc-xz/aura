@@ -35,4 +35,10 @@ export default [
       ],
     },
   },
+  {
+    files: ['vite.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ]

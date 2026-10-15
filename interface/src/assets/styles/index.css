@@ -1,39 +1,381 @@
-@import "tailwindcss";
-
-html,
-body {
-  @apply w-screen h-screen;
-}
+@import '@fontsource-variable/inter';
+@import 'tailwindcss';
+@import './aura.css';
 
 @theme {
-  --color-primary: #1890ff;
-  --color-moon: #f0f3f9;
-  --color-ashen: #e0e0e0;
-  --flex-content: 0 0 max-content;
+  --font-sans: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+
+  --color-primary: #2266d1;
+  --color-primary-hover: #1b54af;
+  --color-primary-active: #17479a;
+  --color-primary-bg: #eef6ff;
+  --color-primary-border: #9cc0ee;
+  --color-success: #2f7d5c;
+  --color-success-bg: #e8f3ee;
+  --color-warning: #ad6d18;
+  --color-warning-bg: #fbf1e1;
+  --color-neutral: #6b7785;
+  --color-neutral-bg: #f1f3f5;
+  --color-error: #c0392b;
+  --color-error-bg: #fbe9e9;
+
+  --color-ink: #16202a;
+  --color-ink-secondary: #4a5563;
+  --color-muted: #6b7785;
+  --color-placeholder: #8a97a3;
+  --color-disabled: #a3aeb8;
+  --color-canvas: #f5f7f9;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f7f9fb;
+  --color-surface-hover: #f8fafc;
+  --color-skeleton: #e6ebf0;
+  --color-line: #e4eaf0;
+  --color-line-strong: #d0d9e2;
+  --color-rail: #18222d;
+  --color-rail-active: #2c3b4b;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --shadow-xs: 0 1px 2px rgba(22, 32, 42, 0.04);
+  --shadow-sm: 0 1px 3px rgba(22, 32, 42, 0.07), 0 1px 2px rgba(22, 32, 42, 0.04);
+  --shadow-md: 0 6px 16px -4px rgba(22, 32, 42, 0.12);
+  --shadow-pop: 0 18px 44px -8px rgba(13, 20, 28, 0.26);
 }
 
-@layer base {}
+@layer base {
+  html,
+  body {
+    @apply h-full w-full overflow-hidden bg-canvas font-sans text-[13px] text-ink antialiased;
+  }
+
+  #root {
+    @apply h-full;
+  }
+}
 
 @layer utilities {
   .title-pri {
-    @apply text-3xl font-bold;
+    @apply text-2xl font-bold tracking-[-0.01em];
   }
 
   .title-sec {
-    @apply text-2xl font-bold;
+    @apply text-[22px] font-bold tracking-[-0.01em];
   }
 
   .title-ter {
-    @apply text-xl;
+    @apply text-[15px] font-semibold tracking-[-0.005em];
   }
 }
 
 @layer components {
   .card-active {
-    @apply border border-primary rounded bg-gradient-to-b from-blue-100 via-transparent to-transparent;
+    @apply rounded-md border border-primary-border bg-primary-bg shadow-xs;
   }
 
   .card-inactive {
-    @apply border border-transparent;
+    @apply rounded-md border border-transparent;
   }
+}
+
+/* Antd injects styles after static CSS, so state overrides need extra specificity. */
+.aura-theme {
+  & .ant-btn-primary:not(.ant-btn-dangerous) {
+    background-image: linear-gradient(180deg, #2f7ae2 0%, #2266d1 100%);
+    border-color: #1b54af;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 2px 6px rgba(34, 102, 209, 0.32);
+  }
+
+  /* 渐变皮肤盖住了 antd 默认 hover（改的是背景色变量），需显式补 hover/active */
+  & .ant-btn-primary:not(.ant-btn-dangerous):hover {
+    background-image: linear-gradient(180deg, #3a84e8 0%, #1f5fc7 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 4px 12px rgba(34, 102, 209, 0.38);
+  }
+  & .ant-btn-primary:not(.ant-btn-dangerous):active {
+    background-image: linear-gradient(180deg, #2f7ae2 0%, #2266d1 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      0 1px 4px rgba(34, 102, 209, 0.3);
+  }
+
+  & .ant-input:focus,
+  & .ant-input-affix-wrapper:focus,
+  & .ant-input-affix-wrapper-focused,
+  & .ant-select-focused .ant-select-selector,
+  & .ant-picker-focused {
+    border-color: #2266d1 !important;
+    box-shadow: 0 0 0 3px rgba(34, 102, 209, 0.12) !important;
+  }
+
+  & .ant-input-status-error:focus,
+  & .ant-input-affix-wrapper-status-error:focus,
+  & .ant-select-status-error.ant-select-focused .ant-select-selector {
+    border-color: #c0392b !important;
+    box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.1) !important;
+  }
+}
+
+/* D2：原型 field/input 密度（登录卡、项目弹窗等 antd 表单上下文，间距由容器 gap 提供） */
+.aura-form .ant-form-item {
+  margin-bottom: 0;
+}
+
+.aura-form .ant-form-item-label {
+  padding-bottom: 6px;
+  line-height: 1.4;
+}
+
+.aura-form .ant-form-item-label > label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+  height: auto;
+}
+
+.aura-form .ant-input-affix-wrapper,
+.aura-form .ant-input:not(textarea) {
+  height: 38px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.aura-form .ant-select-single {
+  height: 38px;
+}
+
+.aura-form .ant-select-single .ant-select-selector {
+  height: 38px;
+  border-radius: 8px;
+}
+
+.aura-form .ant-select-single .ant-select-selection-search-input {
+  height: 36px;
+}
+
+.aura-form textarea.ant-input {
+  border-radius: 8px;
+}
+
+/* D2：筛选行控件的紧凑密度（30px，与筛选胶囊同高） */
+.aura-compact .ant-select-single {
+  height: 30px;
+}
+
+.aura-compact .ant-select-single .ant-select-selector {
+  height: 30px;
+  border-radius: 6px;
+}
+
+.aura-compact .ant-select-single .ant-select-selection-search-input {
+  height: 28px;
+}
+
+.aura-compact .ant-input,
+.aura-compact .ant-input-affix-wrapper {
+  height: 30px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* 原型卡片动作链接的可点击反馈 */
+.project-card__actions span {
+  cursor: pointer;
+}
+
+/* D4：表格行内操作与开关 */
+.cell-link,
+.cell-danger {
+  cursor: pointer;
+}
+
+.switch {
+  border: 0;
+  cursor: pointer;
+}
+
+.switch:disabled {
+  cursor: not-allowed;
+}
+
+/* ---------- D3：推进页消息流（原型 06 msg 体系） ---------- */
+/* 用户气泡：主色浅底 + 左下小圆角 */
+.chat-record .ant-bubble-end .ant-bubble-content {
+  background: var(--primary-bg);
+  border: 1px solid #dbe9fb;
+  border-radius: 12px 12px 4px 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 21px;
+  color: var(--ink);
+  box-shadow: none;
+  max-width: 560px;
+}
+
+/* AI 面板：Bubble 外壳透明，视觉由 msg__panel 白卡承担 */
+.chat-record .ant-bubble-start .ant-bubble-content {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.chat-record .ant-bubble-start .ant-bubble-content-loading {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px 12px 12px 12px;
+}
+
+.msg__actions span {
+  cursor: pointer;
+}
+
+/* composer 输入（原型 06：无边框原生 textarea） */
+.composer .composer-input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 21px;
+  color: var(--ink);
+  background: transparent;
+}
+
+.composer .composer-input::placeholder {
+  color: var(--placeholder);
+}
+
+.composer__send {
+  border: 0;
+  cursor: pointer;
+}
+
+.composer__send:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* 可点击标签（空态建议词 / 笔记标签筛选） */
+.tag-btn {
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+.tag-btn:hover {
+  border-color: var(--primary-line);
+  color: var(--primary);
+  background: var(--primary-tint);
+}
+
+/* ---------- D3：笔记编辑器（原型 09 editor） ---------- */
+.editor-title-input,
+.editor-textarea {
+  display: block;
+  width: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-family: var(--font);
+  color: var(--ink);
+}
+
+.editor-title-input {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 12px;
+}
+
+.editor-title-input::placeholder,
+.editor-textarea::placeholder {
+  color: var(--placeholder);
+}
+
+.editor-textarea {
+  font-size: 14px;
+  line-height: 26px;
+  min-height: 320px;
+}
+
+/* ---------- D5（原型 15）：Toast 浅底同色描边 ---------- */
+/* antd message 内容容器无类型 class，按内部 icon 归类着色（:has 需 Chrome 105+）。
+   message 弹层挂在 body 下（不在 .aura-theme 容器内），规则须全局生效 */
+/* antd 的弹层样式经 :where() 注入且晚于静态 CSS，基础规则需提升选择器权重 */
+/* content 改为 flex 后失去 antd 默认 inline-block 收缩，需 fit-content 并由 notice 居中 */
+.ant-message .ant-message-notice {
+  display: flex;
+  justify-content: center;
+}
+
+.ant-message .ant-message-notice .ant-message-notice-content {
+  width: fit-content;
+  max-width: min(480px, calc(100vw - 32px));
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-sm);
+  padding: 0 12px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  overflow: hidden;
+  background-color: var(--surface);
+}
+
+.ant-message .ant-message-notice .ant-message-notice-content:has(.anticon-check-circle) {
+  background-color: var(--success-bg);
+  color: var(--success);
+  border-color: #c4e0d4;
+}
+
+.ant-message .ant-message-notice .ant-message-notice-content:has(.anticon-close-circle) {
+  background-color: var(--danger-bg);
+  color: var(--danger);
+  border-color: #f0c6c2;
+}
+
+.ant-message .ant-message-notice .ant-message-notice-content:has(.anticon-info-circle),
+.ant-message .ant-message-notice .ant-message-notice-content:has(.anticon-warning-circle) {
+  background-color: var(--warning-bg);
+  color: var(--warning);
+  border-color: #efd9b4;
+}
+
+.ant-message-notice-content .anticon {
+  color: inherit;
+  margin-inline-end: 0;
+}
+
+/* D5：原型按钮禁用态（btn--disabled：skeleton 底 + disabled 字） */
+.btn:disabled,
+.btn--disabled {
+  background: var(--skeleton);
+  color: var(--disabled);
+  box-shadow: none;
+  cursor: default;
+}
+
+/* D5：二次确认（modal.confirm）按钮对齐原型 32px（弹层在 body 下，全局规则） */
+.ant-modal-confirm-btns .ant-btn {
+  height: 32px;
+}
+
+/* 紧凑模式（偏好设置开关）：收紧会话气泡间距 */
+.compact-mode .chat-record > .ant-flex {
+  gap: 8px !important;
+}
+
+.compact-mode .chat-record .ant-bubble-content {
+  padding-block: 8px;
 }

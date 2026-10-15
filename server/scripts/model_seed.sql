@@ -1,0 +1,151 @@
+INSERT INTO
+    model_config (
+        user_id,
+        provider_type,
+        base_url,
+        api_key,
+        model_name,
+        temperature,
+        max_tokens
+    )
+VALUES
+    -- OpenAI
+    (
+        1,
+        'OpenAI',
+        'https://api.openai.com/v1',
+        'sk-placeholder-openai-1',
+        'gpt-4o',
+        0.7,
+        4096
+    ),
+    (
+        1,
+        'OpenAI',
+        'https://api.openai.com/v1',
+        'sk-placeholder-openai-2',
+        'gpt-4o-mini',
+        0.5,
+        2048
+    ),
+    (
+        1,
+        'OpenAI',
+        'https://api.openai.com/v1',
+        'sk-placeholder-openai-3',
+        'gpt-4-turbo',
+        0.8,
+        2048
+    ),
+    (
+        1,
+        'OpenAI',
+        'https://api.openai.com/v1',
+        'sk-placeholder-openai-4',
+        'o1-preview',
+        0.7,
+        2048
+    ),
+    (
+        1,
+        'OpenAI',
+        'https://api.openai.com/v1',
+        'sk-placeholder-openai-5',
+        'o1-mini',
+        0.7,
+        2048
+    ),
+
+-- Anthropic
+(
+    1,
+    'Anthropic',
+    'https://api.anthropic.com/v1',
+    'sk-ant-placeholder-1',
+    'claude-3-5-sonnet-20240620',
+    0.7,
+    8192
+),
+(
+    1,
+    'Anthropic',
+    'https://api.anthropic.com/v1',
+    'sk-ant-placeholder-2',
+    'claude-3-opus-20240229',
+    0.9,
+    2048
+),
+(
+    1,
+    'Anthropic',
+    'https://api.anthropic.com/v1',
+    'sk-ant-placeholder-3',
+    'claude-3-sonnet-20240229',
+    0.7,
+    2048
+),
+(
+    1,
+    'Anthropic',
+    'https://api.anthropic.com/v1',
+    'sk-ant-placeholder-4',
+    'claude-3-haiku-20240307',
+    0.3,
+    2048
+),
+(
+    1,
+    'Anthropic',
+    'https://api.anthropic.com/v1',
+    'sk-ant-placeholder-5',
+    'claude-2.1',
+    0.7,
+    4096
+),
+
+-- Google
+(
+    1,
+    'Google',
+    'https://generativelanguage.googleapis.com/v1beta',
+    'ai-placeholder-1',
+    'gemini-1.5-pro',
+    1.0,
+    2048
+),
+(
+    1,
+    'Google',
+    'https://generativelanguage.googleapis.com/v1beta',
+    'ai-placeholder-2',
+    'gemini-1.5-flash',
+    0.7,
+    2048
+),
+(
+    1,
+    'Google',
+    'https://generativelanguage.googleapis.com/v1beta',
+    'ai-placeholder-3',
+    'gemini-1.0-pro',
+    0.7,
+    2048
+),
+(
+    1,
+    'Google',
+    'https://generativelanguage.googleapis.com/v1beta',
+    'ai-placeholder-4',
+    'palm-2-chat-bison',
+    0.7,
+    2048
+),
+(
+    1,
+    'Google',
+    'https://generativelanguage.googleapis.com/v1beta',
+    'ai-placeholder-5',
+    'codechat-bison',
+    0.2,
+    2048
+);

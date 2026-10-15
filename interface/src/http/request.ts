@@ -18,15 +18,26 @@ service.interceptors.request.use(config => {
 
 service.interceptors.response.use(response => {
   // console.log('response-interceptors', response)
-  if (response.data?.code !== 1) {
+  if (response.config?.data && JSON.parse(response.config.data).stream === true) {
+    return response
+  }
+  if (response.data?.code !== 200) {
     handleErrMsg(response.data?.message)
     return Promise.reject(response.data)
   }
   return response.data
 }, error => {
   // console.log('response-interceptors-error', error)
-  handleNetworkError(error.status)
-  if (error.status === 401) {
+  const errStatus = error.status ?? error.response?.status
+  const errMsg = error.response?.data.message
+  if (errMsg) {
+    handleErrMsg(errMsg)
+  } else {
+    handleNetworkError(errStatus)
+  }
+  if (errStatus === 401) {
+    // 跳转前清掉过期用户，避免残留 store 造成登录后仍显示旧身份
+    useUserStore.getState().clearUser()
     window.location.href = '/login'
   }
   return Promise.reject(error)

@@ -1,3 +1,5 @@
 packages:
   - 'interface'
   - 'server'
+allowBuilds:
+  esbuild: true

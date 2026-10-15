@@ -1,0 +1,159 @@
+<!--# title: 13 角色管理 · 方案B -->
+<!--# desc: 角色卡片 + 权限配置面板（菜单/按钮树勾选，细粒度权限码）；系统内置角色只读锁定 -->
+<!--# body: data-setnav="roles" -->
+<section class="screen">
+  <!-- @include setnav-b.html -->
+
+  <main class="main">
+    <div class="page-head">
+      <div class="page-head__text">
+        <span class="t-title">角色管理</span>
+        <span class="t-body t-muted">定义角色并分配菜单 / 按钮级权限（成员数为示意，需后端提供统计接口）</span>
+      </div>
+      <button class="btn btn--primary">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+          <path d="M7 1.5v11M1.5 7h11" />
+        </svg>
+        新增角色
+      </button>
+    </div>
+
+    <div style="display: flex; gap: 16px">
+      <div style="width: 256px; padding: 16px; border: 1px solid var(--line); border-radius: var(--r-xl); background: #fafbfc; display: flex; flex-direction: column; gap: 8px">
+        <div class="row-between">
+          <span class="t-h3" style="color: var(--muted)">管理员</span>
+          <span class="badge-lock">
+            <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+              <rect x="3" y="6" width="8" height="6" rx="1.5" /><path d="M4.6 6V4.6a2.4 2.4 0 0 1 4.8 0V6" />
+            </svg>
+            系统内置 · 只读
+          </span>
+        </div>
+        <span class="t-sm t-placeholder">拥有全部模块的配置、管理与成员权限</span>
+        <span class="t-sm w-semi num">8 位成员</span>
+        <span class="t-sm t-placeholder">全部权限（不可修改）</span>
+      </div>
+
+      <div style="width: 256px; padding: 16px; border: 1.5px solid var(--primary); border-radius: var(--r-xl); background: var(--surface); box-shadow: var(--sh-sm); display: flex; flex-direction: column; gap: 8px">
+        <div class="row-between">
+          <span class="t-h3">编辑者</span>
+          <span class="pill pill--sm pill--info">配置中</span>
+        </div>
+        <span class="t-sm t-muted">可推进项目与沉淀笔记，不能改动系统配置</span>
+        <span class="t-sm w-semi num">12 位成员</span>
+        <span class="t-sm t-muted">已选 8 / 21 项权限</span>
+      </div>
+
+      <div style="width: 256px; padding: 16px; border: 1px solid var(--line); border-radius: var(--r-xl); background: var(--surface); box-shadow: var(--sh-xs); display: flex; flex-direction: column; gap: 8px">
+        <div class="row-between">
+          <span class="t-h3">只读成员</span>
+          <span class="badge-lock" style="border-style: dashed">自定义</span>
+        </div>
+        <span class="t-sm t-muted">仅可浏览项目与笔记内容，不参与编辑</span>
+        <span class="t-sm w-semi num">6 位成员</span>
+        <span class="t-sm t-muted">已选 4 / 21 项权限</span>
+      </div>
+
+      <div style="width: 256px; padding: 16px; border: 1px dashed var(--line-strong); border-radius: var(--r-xl); background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 148px">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#2266d1" stroke-width="1.6" stroke-linecap="round">
+          <path d="M9 2v14M2 9h14" />
+        </svg>
+        <span class="t-body t-primary w-medium">新建自定义角色</span>
+      </div>
+    </div>
+
+    <div class="perm-panel" style="flex: 1 1 auto">
+      <div class="perm-panel__head">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span class="section-title">权限配置 · 编辑者</span>
+          <span class="pill pill--sm pill--info" title="实现中为右侧滑出抽屉，此处示意">抽屉示意</span>
+          <span class="t-xs t-placeholder">勾选粒度为「菜单 + 按钮权限码」，与后端 RBAC 对齐</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <button class="btn btn--ghost btn--sm">取消</button>
+          <button class="btn btn--primary btn--sm">保存权限</button>
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="#8a97a3" stroke-width="1.5" stroke-linecap="round">
+            <path d="M4.5 4.5l9 9M13.5 4.5l-9 9" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="perm-panel__body">
+        <div class="tree-group">
+          <div class="tree-row">
+            <svg class="tree-caret" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+              <path d="M3 4.5 6 8l3-3.5" />
+            </svg>
+            <span class="tree-check tree-check--on"></span>
+            <span class="w-semi">工作台</span>
+          </div>
+          <div class="tree-row tree-row--child">
+            <span class="tree-check tree-check--on"></span>
+            <span>项目工作台</span>
+            <span class="t-xs t-placeholder" style="margin-left: auto">菜单</span>
+          </div>
+          <div class="tree-row tree-row--btn">
+            <span class="tree-check tree-check--on"></span>
+            <span>新建项目</span>
+            <span class="perm-code">project:create</span>
+          </div>
+          <div class="tree-row tree-row--btn">
+            <span class="tree-check"></span>
+            <span>导出项目</span>
+            <span class="perm-code">project:export</span>
+          </div>
+
+          <div class="tree-row">
+            <svg class="tree-caret" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+              <path d="M3 4.5 6 8l3-3.5" />
+            </svg>
+            <span class="tree-check tree-check--on"></span>
+            <span class="w-semi">笔记</span>
+          </div>
+          <div class="tree-row tree-row--child">
+            <span class="tree-check tree-check--on"></span>
+            <span>笔记库</span>
+            <span class="t-xs t-placeholder" style="margin-left: auto">菜单</span>
+          </div>
+          <div class="tree-row tree-row--btn">
+            <span class="tree-check tree-check--on"></span>
+            <span>新建笔记</span>
+            <span class="perm-code">note:create</span>
+          </div>
+          <div class="tree-row tree-row--btn">
+            <span class="tree-check tree-check--on"></span>
+            <span>归档笔记</span>
+            <span class="perm-code">note:archive</span>
+          </div>
+
+          <div class="tree-row">
+            <svg class="tree-caret" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+              <path d="M6 3.5 9.5 8h-7z" />
+            </svg>
+            <span class="tree-check tree-check--on"></span>
+            <span class="w-semi">设置</span>
+          </div>
+          <div class="tree-row tree-row--child">
+            <span class="tree-check tree-check--on"></span>
+            <span>账户设置</span>
+            <span class="t-xs t-placeholder" style="margin-left: auto">菜单</span>
+          </div>
+          <div class="tree-row tree-row--child">
+            <span class="tree-check tree-check--on"></span>
+            <span>我的模型</span>
+            <span class="t-xs t-placeholder" style="margin-left: auto">菜单</span>
+          </div>
+
+          <div class="tree-row">
+            <svg class="tree-caret" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+              <path d="M4.5 3 8 6l-3.5 3" />
+            </svg>
+            <span class="tree-check"></span>
+            <span class="w-semi">系统管理</span>
+            <span class="t-xs t-placeholder" style="margin-left: auto">目录 · 未展开</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</section>

@@ -1,0 +1,81 @@
+<!--# title: 05b 编辑项目弹窗 · 方案A -->
+<!--# desc: 新建弹窗的编辑态：字段预填、状态与模型已选、含删除入口 -->
+<!--# body: data-nav="workspace" -->
+<section class="screen">
+  <!-- @include rail-a.html -->
+  <!-- @include sidebar-projects.html -->
+
+  <main class="main">
+    <div class="page-head">
+      <div class="page-head__text">
+        <span class="t-title">项目工作台</span>
+        <span class="t-body t-muted">Aura 是面向长期项目推进的 AI 工作台 · 选一个项目继续推进，或新建一个项目</span>
+      </div>
+      <button class="btn btn--primary">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round">
+          <path d="M7 1.5v11M1.5 7h11" />
+        </svg>
+        新建项目
+      </button>
+    </div>
+    <div class="stats">
+      <div class="stat-card"><span class="stat-card__value t-success">3</span><span class="stat-card__label">进行中</span></div>
+      <div class="stat-card"><span class="stat-card__value t-warning">2</span><span class="stat-card__label">暂停</span></div>
+      <div class="stat-card"><span class="stat-card__value t-muted">1</span><span class="stat-card__label">已归档</span></div>
+      <div class="stat-card"><span class="stat-card__value t-primary">4</span><span class="stat-card__label">本周有推进</span></div>
+    </div>
+  </main>
+
+  <div class="overlay">
+    <div class="modal">
+      <div class="auth__intro">
+        <span class="t-h2">编辑项目</span>
+        <span class="t-sm t-muted">更新目标与状态，改动会同步到项目上下文</span>
+      </div>
+
+      <div class="field">
+        <span class="field__label">项目名称</span>
+        <div class="input input--filled">品牌官网改版</div>
+      </div>
+
+      <div class="field">
+        <span class="field__label">项目目标</span>
+        <div class="input input--filled">三个月内完成官网信息架构与视觉改版</div>
+      </div>
+
+      <div class="field">
+        <span class="field__label">背景描述</span>
+        <div class="textarea" style="color: var(--ink)">
+          重构首页叙事，统一组件库，建立可维护的内容审核流程。
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px">
+        <div class="field" style="flex: 1 1 0">
+          <span class="field__label">当前状态</span>
+          <div class="input input--filled" style="justify-content: space-between">
+            进行中
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+              <path d="M3.5 5.5 7 9l3.5-3.5" />
+            </svg>
+          </div>
+        </div>
+        <div class="field" style="flex: 1 1 0">
+          <span class="field__label">默认模型</span>
+          <div class="input input--filled" style="justify-content: space-between">
+            GPT-4o
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#6b7785" stroke-width="1.4" stroke-linecap="round">
+              <path d="M3.5 5.5 7 9l3.5-3.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal__foot">
+        <span class="t-danger t-sm w-medium" style="margin-right: auto; align-self: center">删除项目</span>
+        <button class="btn btn--ghost">取消</button>
+        <button class="btn btn--primary">保存修改</button>
+      </div>
+    </div>
+  </div>
+</section>
