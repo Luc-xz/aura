@@ -1,111 +1,144 @@
 # Aura 🌟
 
-一个基于本地大模型的智能笔记应用，让 AI 成为你的私人知识助手。
+**English** | [简体中文](./README.zh-CN.md)
 
-## ✨ 特性
+An AI workbench for long-term projects: workspaces sit at the center, and AI conversations are distilled into notes, conclusions, and other reusable project assets.
 
-- 📝 **智能笔记** - 创建、编辑和管理个人笔记
-- 🤖 **AI 对话** - 基于 Ollama 本地大模型的智能对话
-- 🔒 **数据私有** - 所有数据存储在本地，保护隐私
-- 🚀 **工作区管理** - 多工作区支持，按项目组织对话
+> Ask a question → discuss options → reach a conclusion → save it as a note → pick up where you left off next time
 
-## 🛠 技术栈
+## ✨ Features
 
-| 层级   | 技术                        |
-| ------ | --------------------------- |
-| 后端   | Express.js + MySQL          |
-| 前端   | React Router 7 + TypeScript |
-| 大模型 | Ollama (本地运行)           |
-| 认证   | JWT                         |
+- 🗂 **Project workspaces** - Workspaces are project containers (goal / description / status) that organize conversations and notes
+- 🤖 **Multi-provider models** - Users configure their own models: OpenAI-compatible APIs (incl. Ollama) / Anthropic / Google, per-user config
+- 🛠 **Agent tool calling** - Conversations automatically search notes, read note details, and save notes
+- 📝 **Conversations to notes** - Save a full reply or a selected fragment as a note in one click, with source chat back-linking
+- 🔐 **RBAC permission system** - Role / menu / button-level permission codes, with an admin console (users / roles / menus)
+- 🔒 **Private by default** - Data stays in your local MySQL, and models can run fully locally
 
-## 📦 项目结构
+## 🛠 Tech Stack
+
+| Layer    | Technology                                                      |
+| -------- | --------------------------------------------------------------- |
+| Backend  | Express.js + MySQL (mysql2) + Redis (ioredis)                   |
+| AI       | Vercel AI SDK (OpenAI-compatible / Anthropic / Google, streaming) |
+| Frontend | React 19 + React Router 7 + Ant Design 5 + Tailwind CSS 4       |
+| State    | Zustand                                                         |
+| Auth     | JWT + RBAC + Redis rate limiting                                |
+| Testing  | Vitest + Supertest                                              |
+
+## 📦 Project Structure
 
 ```
 aura/
-├── interface/          # 前端 (React Router 7)
-│   ├── src/
-│   │   ├── api/        # API 请求
-│   │   ├── pages/      # 页面组件
-│   │   └── store/      # 状态管理
-│   └── package.json
-├── server/             # 后端 (Express.js)
-│   ├── endpoints/      # API 端点
-│   ├── models/         # 数据模型
-│   ├── middlewares/    # 中间件
-│   ├── sql/            # 数据库脚本
-│   └── package.json
-└── package.json        # Monorepo 配置
+├── interface/            # Frontend (React Router 7)
+│   └── src/
+│       ├── pages/        # chat / note / setting / admin / workspace / login
+│       ├── components/   # shell layout, route guard, workspace modal, etc.
+│       ├── api/          # API requests
+│       ├── http/         # axios wrapper
+│       └── store/        # Zustand state management
+├── server/               # Backend (Express.js)
+│   ├── endpoints/        # API endpoints (chat / note / workspace / model-config / role / user / menu)
+│   ├── models/           # Data models
+│   ├── middlewares/      # auth / rbac / rate-limit
+│   ├── tool/             # Agent tools (search_notes / get_note_detail / save_note)
+│   ├── sql/              # init.sql and migrations
+│   ├── scripts/          # Test service bootstrap scripts, etc.
+│   └── test/             # Vitest integration tests
+├── shared/               # Constants and utils shared by frontend and backend
+├── design/prototype/     # UI prototypes (scheme B, 17 screens, readable HTML)
+└── docs/                 # Product planning docs
 ```
 
-## 🚀 快速开始
+## 🚀 Getting Started
 
-### 前置要求
+### Prerequisites
 
 - Node.js 18+
-- pnpm
+- [pnpm](https://pnpm.io/)
 - MySQL 8.0+
-- [Ollama](https://ollama.ai/) (本地大模型运行环境)
+- Redis
 
-### 安装
+### Installation
 
 ```bash
-# 克隆项目
-git clone https://github.com/your-username/aura.git
+# Clone the repository
+git clone <your-repo-url>
 cd aura
 
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# 初始化数据库
+# Initialize the database (creates the aura schema and all tables)
 mysql -u root -p < server/sql/init.sql
 
-# 配置环境变量
-cp server/.env.example server/.env.local
-# 编辑 .env.local 填入数据库配置
-
-# 下载 Ollama 模型
-ollama pull deepseek-r1:7b
+# Configure environment variables (the repo ships a default .env;
+# put local overrides in .env.local, which is not committed)
+cp server/.env server/.env.local
+# Edit .env.local with DB_HOST / DB_USER / DB_PASSWORD / REDIS_* / JWT_SECRET
 ```
 
-### 启动开发环境
+### Start the dev environment
 
 ```bash
-# 启动后端 (端口 3000)
+# Backend (port 3000)
 pnpm dev:server
 
-# 启动前端 (端口 5173)
+# Frontend (port 5173)
 pnpm dev:ui
 ```
 
-访问 http://localhost:5173 开始使用。
+Open http://localhost:5173 and register.
+
+### Configure a model
+
+After signing in, add a model config under **Settings → My Models** (per-user, visible only to you):
+
+- **OpenAI-compatible API**: set `baseUrl` + model name; for Ollama use `http://localhost:11434/v1`
+- **Anthropic / Google**: just fill in the API key
+
+## 🧪 Testing
+
+The test suite resets a dedicated `aura_test` database and FLUSHDBs the test Redis — isolated services are mandatory. See [server/test/README.md](./server/test/README.md) for details.
+
+```powershell
+# Windows: one-shot bootstrap of isolated MySQL (13306) and Redis (16379), plus .env.test.local
+.\server\scripts\start-test-services.ps1
+
+# From the repo root: run the full suite
+pnpm test:server
+```
 
 ---
 
-## 📅 开发路线图
+## 📅 Roadmap
 
-### Phase 1：核心能力建设 🚧
+See [docs/product-roadmap.md](./docs/product-roadmap.md) for the full plan.
 
-| 功能           | 描述                                                       | 状态      |
-| -------------- | ---------------------------------------------------------- | --------- |
-| 大模型调用改造 | 用户自行配置模型，支持多种提供商 (Ollama/OpenAI/Anthropic) | 📋 计划中 |
-| RBAC 权限系统  | 基于角色的访问控制                                         | 📋 计划中 |
+### Done ✅
 
-### Phase 2：核心功能实现 📋
+| Feature            | Notes                                                            |
+| ------------------ | ---------------------------------------------------------------- |
+| Multi-model access | Per-user model config via Vercel AI SDK (OpenAI-compatible / Anthropic / Google) |
+| RBAC               | Roles, menus, button-level permission codes                      |
+| Admin console      | User management, role assignment, menu permission config         |
+| Agent tool calling | search_notes / get_note_detail / save_note                       |
+| Chat to notes      | Message-level save, text-fragment save, source back-linking      |
+| Workspace projects | Project goal / description / status, project grid view           |
+| UI design alignment| Scheme B fully landed (17 prototype screens)                     |
 
-| 功能         | 描述                             | 状态      |
-| ------------ | -------------------------------- | --------- |
-| MCP 笔记检索 | 对话时自动检索相关笔记作为上下文 | 📋 计划中 |
-| 用户信息页面 | 个人资料查看和编辑               | 📋 计划中 |
+### Next up 📋
 
-### Phase 3：管理功能 📋
-
-| 功能       | 描述                         | 状态      |
-| ---------- | ---------------------------- | --------- |
-| 管理员后台 | 用户管理、权限分配、统计看板 | 📋 计划中 |
-| 操作日志   | 用户行为记录和审计           | 📋 计划中 |
+| Feature            | Description                                                     |
+| ------------------ | --------------------------------------------------------------- |
+| Project memory     | Answers automatically reference workspace history, notes, and project goals |
+| Session summaries  | Structured distillation: topics / conclusions / open questions / TODOs |
+| TODO extraction    | Identify TODOs from conversations, with confirm and complete     |
+| Knowledge back-links| Show cited sources on answers, jumping to the referenced notes or messages |
+| Deployment & demo  | One-command Docker setup, demo data, and a demo script          |
 
 ---
 
-## 📄 许可证
+## 📄 License
 
 [MIT License](./LICENSE)
