@@ -1,4 +1,5 @@
 import { SearchOutlined } from '@ant-design/icons'
+import type { ReactNode } from 'react'
 import type { WorkspaceItem } from '@/api/workspace'
 import { SkeletonCard } from '@/components/ui'
 import { formatRelative } from '@/utils/time'
@@ -29,28 +30,40 @@ export function ProjectList({
   loading,
   selectedId,
   onSelect,
+  header,
 }: {
   projects: WorkspaceItem[]
   loading: boolean
   selectedId: number | null
   onSelect: (item: WorkspaceItem) => void
+  /** 列表顶部固定项（如「项目工作台」入口），加载/空态下仍保留 */
+  header?: ReactNode
 }) {
   if (loading) {
     return (
-      <div className="flex flex-col gap-2">
-        {[1, 2, 3].map((key) => (
-          <SkeletonCard key={key} rows={2} />
-        ))}
+      <div className="project-list flex-1 overflow-y-auto">
+        {header}
+        <div className="flex flex-col gap-2">
+          {[1, 2, 3].map((key) => (
+            <SkeletonCard key={key} rows={2} />
+          ))}
+        </div>
       </div>
     )
   }
 
   if (!projects.length) {
-    return <div className="px-2.5 py-5 text-center text-xs text-placeholder">还没有项目</div>
+    return (
+      <div className="project-list flex-1 overflow-y-auto">
+        {header}
+        <div className="px-2.5 py-5 text-center text-xs text-placeholder">还没有项目</div>
+      </div>
+    )
   }
 
   return (
     <div className="project-list flex-1 overflow-y-auto">
+      {header}
       {projects.map((item) => (
         <button
           key={item.id}

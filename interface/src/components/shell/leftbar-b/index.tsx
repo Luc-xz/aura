@@ -54,26 +54,12 @@ export default function LeftbarBShell() {
     Icon: typeof WorkspaceIcon
   }>
 
-  const settingModules = [
-    canWorkspace && {
-      key: 'workspace',
-      label: '工作台',
-      path: '/workspace',
-      Icon: WorkspaceIcon,
-    },
-    canNotes && { key: 'notes', label: '笔记', path: '/note', Icon: NoteIcon },
-    canSetting && { key: 'setting', label: '设置', path: '/setting', Icon: SettingIcon },
-  ].filter(Boolean) as Array<{
-    key: string
-    label: string
-    path: string
-    Icon: typeof WorkspaceIcon
-  }>
-
   const isActivePath = (path: string, prefix = false) =>
     prefix ? pathname.startsWith(path) : pathname === path
   // 工作台模块激活覆盖网格页与推进页（原型 03 data-key=workspace / 06 data-key=chat）
   const isWorkspaceModule = pathname.startsWith('/workspace') || pathname === '/chat'
+  // 设置模块激活覆盖设置与系统管理（同一分组）
+  const isSettingModule = pathname.startsWith('/setting') || pathname.startsWith('/admin')
 
   return (
     <LeftbarNavContext.Provider value={{ setNav: setCustomNav }}>
@@ -87,20 +73,30 @@ export default function LeftbarBShell() {
             {mode === 'work' ? <span className="brand__tag">自主体验</span> : null}
           </div>
 
+          {/* 模块导航固定横排、全页面常驻（UX 优化 2026-10-15）：不再随页面模式横竖切换，note 页自定义导航也保留此行 */}
+          <nav className="modnav modnav--row">
+            {primaryModules.map(({ key, label, path, Icon }) => (
+              <button
+                key={key}
+                type="button"
+                className={`modnav__item ${
+                  (key === 'workspace'
+                    ? isWorkspaceModule
+                    : key === 'setting'
+                      ? isSettingModule
+                      : isActivePath(path, path === '/note'))
+                    ? 'is-active'
+                    : ''
+                }`}
+                onClick={() => navigate(path)}>
+                <Icon />
+                {label}
+              </button>
+            ))}
+          </nav>
+
           {mode === 'settings' ? (
             <>
-              <nav className="modnav">
-                {settingModules.map(({ key, label, path, Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`modnav__item ${isActivePath(path, path === '/note') ? 'is-active' : ''}`}
-                    onClick={() => navigate(path)}>
-                    <Icon />
-                    {label}
-                  </button>
-                ))}
-              </nav>
               <div className="divider" />
               <div className="group-title">设置</div>
               <nav className="setnav">
@@ -154,25 +150,7 @@ export default function LeftbarBShell() {
           ) : customNav ? (
             customNav.node
           ) : (
-            <>
-              <nav className={`modnav ${mode === 'work' ? 'modnav--row' : ''}`}>
-                {primaryModules.map(({ key, label, path, Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`modnav__item ${
-                      (key === 'workspace' ? isWorkspaceModule : isActivePath(path, path === '/note'))
-                        ? 'is-active'
-                        : ''
-                    }`}
-                    onClick={() => navigate(path)}>
-                    <Icon />
-                    {label}
-                  </button>
-                ))}
-              </nav>
-              <LeftbarProjects />
-            </>
+            <LeftbarProjects />
           )}
 
           <div className="user-bar">
@@ -199,8 +177,10 @@ export default function LeftbarBShell() {
 
 function LeftbarProjects() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { filteredProjects, keyword, setKeyword, loading, selectedId, selectProject } =
     useProjectSidebar()
+  const onGrid = location.pathname.startsWith('/workspace')
 
   return (
     <>
@@ -213,8 +193,21 @@ function LeftbarProjects() {
       <ProjectList
         projects={filteredProjects}
         loading={loading}
-        // 网格页侧栏无选中态（原型 03），推进页默认首项高亮（原型 06）
-        selectedId={location.pathname.startsWith('/workspace') ? null : selectedId}
+        // 固定入口「项目工作台」置顶（UX 优化 2026-10-15）；网格页固定项高亮，
+        // 推进页高亮当前项目（原型 06 首项默认选中语义）
+        header={
+          <button
+            type="button"
+            className={`project-item project-item--entry text-left ${onGrid ? 'project-item--active' : ''}`}
+            onClick={() => navigate('/workspace')}>
+            <span className="project-item__name">
+              <WorkspaceIcon style={{ width: 13, height: 13 }} />
+              项目工作台
+            </span>
+            <span className="project-item__meta">全部项目</span>
+          </button>
+        }
+        selectedId={onGrid ? null : selectedId}
         onSelect={selectProject}
       />
     </>

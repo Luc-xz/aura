@@ -196,14 +196,7 @@ export default function Page() {
               return (
                 <div
                   key={record.id}
-                  className="flex cursor-pointer flex-col gap-2 rounded-xl border bg-surface p-4 transition-colors"
-                  style={{
-                    width: 256,
-                    minHeight: 148,
-                    borderColor: selected ? 'var(--primary)' : 'var(--line)',
-                    borderWidth: selected ? 1.5 : 1,
-                    boxShadow: selected ? 'var(--sh-sm)' : 'var(--sh-xs)',
-                  }}
+                  className={`role-card flex flex-col gap-2 ${selected ? 'role-card--active' : ''}`}
                   onClick={() => openPerm(record)}>
                   <div className="row-between">
                     <span className="t-h3">{record.name}</span>
@@ -273,12 +266,7 @@ export default function Page() {
             {/* 网格内新建入口（原型 13 虚线卡） */}
             <AuthButton permission="role:create">
               <div
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl bg-surface"
-                style={{
-                  width: 256,
-                  minHeight: 148,
-                  border: `1px dashed var(--line-strong)`,
-                }}
+                className="role-card role-card--create"
                 onClick={openCreate}>
                 <svg
                   width="18"
