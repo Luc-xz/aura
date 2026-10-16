@@ -222,15 +222,16 @@ export default function Page() {
               { value: 'button', label: '按钮' },
             ]}
           />
-          <span
-            className="t-primary w-medium ml-auto cursor-pointer"
+          <button
+            type="button"
+            className="cell-link t-primary w-medium ml-auto"
             onClick={() => setCollapsed(allExpanded ? new Set(allFlat.filter(({ row }) => row.children?.length).map(({ row }) => row.id)) : new Set())}>
             {allExpanded ? '收起全部' : '展开全部'}
-          </span>
+          </button>
         </div>
 
         {/* 树形表格（原型 14 compact 44px 行） */}
-        <div className="table">
+        <div className="table menu-table">
           <div
             className="table__head"
             style={{ height: 40 }}>
@@ -286,15 +287,11 @@ export default function Page() {
                     className="flex items-center gap-1"
                     style={{ width: 290, paddingLeft: depth * 22 }}>
                     {hasChildren ? (
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 14 14"
-                        fill="none"
-                        stroke="var(--placeholder)"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                        className={`mr-1 cursor-pointer transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
+                      <button
+                        type="button"
+                        className="tree-toggle mr-1"
+                        aria-label={isCollapsed ? `展开 ${row.name}` : `收起 ${row.name}`}
+                        aria-expanded={!isCollapsed}
                         onClick={() =>
                           setCollapsed((prev) => {
                             const next = new Set(prev)
@@ -302,8 +299,18 @@ export default function Page() {
                             return next
                           })
                         }>
-                        <path d="M5 3.5 9 7l-4 3.5" />
-                      </svg>
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 14 14"
+                          fill="none"
+                          stroke="var(--placeholder)"
+                          strokeWidth="1.4"
+                          strokeLinecap="round"
+                          className={`transition-transform ${isCollapsed ? '' : 'rotate-90'}`}>
+                          <path d="M5 3.5 9 7l-4 3.5" />
+                        </svg>
+                      </button>
                     ) : (
                       <span className="w-3" />
                     )}
@@ -328,11 +335,12 @@ export default function Page() {
                     className="flex gap-2.5"
                     style={{ width: 110 }}>
                     <AuthButton permission="menu:update">
-                      <span
+                      <button
+                        type="button"
                         className="cell-link"
                         onClick={() => openEdit(row)}>
                         编辑
-                      </span>
+                      </button>
                     </AuthButton>
                     <AuthButton permission="menu:delete">
                       <Popconfirm
@@ -341,7 +349,12 @@ export default function Page() {
                         cancelText="取消"
                         disabled={!!row.children?.length}
                         onConfirm={() => handleDelete(row)}>
-                        <span className={`cell-link ${row.children?.length ? 't-placeholder' : 't-muted'}`}>删除</span>
+                        <button
+                          type="button"
+                          className="cell-link"
+                          disabled={!!row.children?.length}>
+                          删除
+                        </button>
                       </Popconfirm>
                     </AuthButton>
                   </span>

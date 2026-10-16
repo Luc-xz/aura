@@ -195,49 +195,54 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
             ) : null}
             <div className="msg__text whitespace-pre-wrap">{item.content}</div>
             <div className="msg__actions">
-              <span
-                className="cursor-pointer hover:text-primary"
+              <button
+                type="button"
+                className="msg-action"
                 onClick={() => handleCopy(item.content)}>
                 复制
-              </span>
+              </button>
               {item.id ? (
-                <span
-                  className="cursor-pointer hover:text-primary"
+                <button
+                  type="button"
+                  className="msg-action"
                   onClick={(e) => openSave(e, item)}>
                   存为笔记
-                </span>
+                </button>
               ) : null}
               {index === conversation.length - 1 && !loading ? (
-                <span
-                  className="cursor-pointer hover:text-primary"
+                <button
+                  type="button"
+                  className="msg-action"
                   onClick={() => handleRegenerate(index)}>
                   重新生成
-                </span>
+                </button>
               ) : null}
             </div>
             {item.references?.length ? (
               <div className="ref-row">
                 <span className="t-xs t-placeholder">引用来源：</span>
                 {item.references.map((ref) => (
-                  <span
+                  <button
+                    type="button"
                     key={ref.id}
                     className="ref-tag"
                     onClick={() => toNote(ref.id)}>
                     📄 {ref.title}
-                  </span>
+                  </button>
                 ))}
               </div>
             ) : null}
             {item.savedNotes?.length ? (
               <div className="flex flex-col items-start gap-1.5">
                 {item.savedNotes.map((n) => (
-                  <span
+                  <button
+                    type="button"
                     key={n.id}
                     className="save-receipt"
                     onClick={() => toNote(n.id)}>
                     <CheckCurrentIcon />
                     已保存：{n.title} · 查看笔记
-                  </span>
+                  </button>
                 ))}
               </div>
             ) : null}
@@ -399,11 +404,13 @@ function ChatPanel({ workspace, modelList, sessionNoteOpen, onSessionNoteClose, 
             }}
             placement="bottomRight"
             disabled={!workspace}>
-            <span
-              className="model-chip cursor-pointer"
-              title="切换模型">
+            <button
+              type="button"
+              className="model-chip"
+              title="切换模型"
+              disabled={!workspace}>
               ✦ {workspace?.modelName || '默认模型'}
-            </span>
+            </button>
           </Dropdown>
           <button
             type="button"

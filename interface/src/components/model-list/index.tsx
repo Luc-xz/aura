@@ -312,22 +312,24 @@ export default function ModelList({ editable = false, selectHander = () => {} })
                     <span
                       className="flex gap-3"
                       style={{ width: 170 }}>
-                      <span
+                      <button
+                        type="button"
                         className="cell-link"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleConfig(item)
                         }}>
                         编辑
-                      </span>
-                      <span
+                      </button>
+                      <button
+                        type="button"
                         className="cell-link t-muted"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleSwitch(item)
                         }}>
                         {item.isActive ? '停用' : '启用'}
-                      </span>
+                      </button>
                       <Popconfirm
                         title="删除该模型配置？"
                         okText="删除"
@@ -336,11 +338,12 @@ export default function ModelList({ editable = false, selectHander = () => {} })
                           e?.stopPropagation()
                           handleDelete(item.id)
                         }}>
-                        <span
+                        <button
+                          type="button"
                           className="cell-danger"
                           onClick={(e) => e.stopPropagation()}>
                           删除
-                        </span>
+                        </button>
                       </Popconfirm>
                     </span>
                   ) : (

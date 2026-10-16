@@ -304,58 +304,67 @@ export default function Page({ loaderData }) {
               <article
                 key={item.id}
                 className={`project-card ${item.status === 2 ? 'project-card--archived' : ''}`}
-                onClick={() => enterChat(item)}>
-                <span className={`project-card__status ${status.cls}`}>{status.label}</span>
-                <span
-                  className="project-card__title"
-                  title={item.title}>
-                  {item.title}
-                </span>
-                <span className="project-card__goal">
-                  {item.goal ? `目标：${item.goal}` : <span className="t-placeholder">未设置目标</span>}
-                </span>
-                <span className="project-card__desc">{item.description || '暂无背景描述'}</span>
-                <span className="project-card__meta">
-                  {[item.modelName || '未挂载模型', formatRelative(item.updatedAt), `${item.chatCount} 条对话`].join(' · ')}
-                </span>
-                <div
-                  className="project-card__actions"
-                  onClick={(e) => e.stopPropagation()}>
+              >
+                <button
+                  type="button"
+                  className="project-card__main"
+                  onClick={() => enterChat(item)}>
+                  <span className={`project-card__status ${status.cls}`}>{status.label}</span>
+                  <span
+                    className="project-card__title"
+                    title={item.title}>
+                    {item.title}
+                  </span>
+                  <span className="project-card__goal">
+                    {item.goal ? `目标：${item.goal}` : <span className="t-placeholder">未设置目标</span>}
+                  </span>
+                  <span className="project-card__desc">{item.description || '暂无背景描述'}</span>
+                  <span className="project-card__meta">
+                    {[item.modelName || '未挂载模型', formatRelative(item.updatedAt), `${item.chatCount} 条对话`].join(' · ')}
+                  </span>
+                </button>
+                <div className="project-card__actions">
                   {item.status !== 2 ? (
                     <>
-                      <span
+                      <button
+                        type="button"
                         className="t-primary w-semi"
                         onClick={() => enterChat(item)}>
                         继续推进
-                      </span>
-                      <span
+                      </button>
+                      <button
+                        type="button"
                         className="t-muted"
                         onClick={() => openEdit(item)}>
                         编辑
-                      </span>
-                      <span
+                      </button>
+                      <button
+                        type="button"
                         className="t-muted"
                         onClick={() => changeStatus(item, 2)}>
                         归档
-                      </span>
+                      </button>
                     </>
                   ) : (
                     <>
-                      <span
+                      <button
+                        type="button"
                         className="t-primary w-semi"
                         onClick={() => enterChat(item)}>
                         查看
-                      </span>
-                      <span
+                      </button>
+                      <button
+                        type="button"
                         className="t-muted"
                         onClick={() => changeStatus(item, 0)}>
                         恢复为进行中
-                      </span>
-                      <span
+                      </button>
+                      <button
+                        type="button"
                         className="t-danger"
                         onClick={() => confirmDelete(item)}>
                         删除
-                      </span>
+                      </button>
                     </>
                   )}
                 </div>

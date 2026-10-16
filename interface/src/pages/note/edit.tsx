@@ -119,13 +119,14 @@ export default function Page({ loaderData, actionData }) {
         <div className="project-list flex-1 overflow-y-auto gap-1.5">
           {filteredList.length ? (
             filteredList.map((note) => (
-              <div
+              <button
+                type="button"
                 key={note.id}
-                className={`session-item ${note.id === currentId ? 'session-item--active' : ''} cursor-pointer`}
+                className={`session-item ${note.id === currentId ? 'session-item--active' : ''}`}
                 onClick={() => navigate(`/note/edit/${note.id}`)}>
                 <span className="session-item__title">{note.title || '未命名笔记'}</span>
                 <span className="session-item__meta">{formatRelative(note.updatedAt)}</span>
-              </div>
+              </button>
             ))
           ) : (
             <div className="px-2.5 py-5 text-center text-xs text-placeholder">没有匹配的笔记</div>

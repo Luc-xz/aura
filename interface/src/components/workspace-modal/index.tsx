@@ -149,12 +149,13 @@ export default function WorkspaceModal({ open, defaultModelName, editing = null,
         </div>
         <div className="modal__foot">
           {editing && onDelete ? (
-            <span
-              className="t-danger t-sm w-medium cursor-pointer"
+            <button
+              type="button"
+              className="cell-danger t-danger t-sm w-medium"
               style={{ marginRight: 'auto', alignSelf: 'center' }}
               onClick={onDelete}>
               删除项目
-            </span>
+            </button>
           ) : null}
           <button
             type="button"

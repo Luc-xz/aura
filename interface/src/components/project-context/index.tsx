@@ -78,15 +78,16 @@ export default function ProjectContext({ workspace, notes, onSaveSessionNote, on
           <div className="group-title">已沉淀结论</div>
           {notes.length ? (
             notes.map((note) => (
-              <div
+              <button
+                type="button"
                 key={note.id}
-                className="conclusion cursor-pointer"
+                className="conclusion"
                 title="打开笔记"
                 onClick={() => navigate(`/note/edit/${note.id}`)}>
                 <span className="conclusion__title">{note.title || '未命名笔记'}</span>
                 <span className="conclusion__body">{excerpt(note.description || note.content)}</span>
                 <span className="conclusion__source">来自笔记 · {formatRelative(note.updatedAt)}</span>
-              </div>
+              </button>
             ))
           ) : (
             <div

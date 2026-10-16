@@ -176,18 +176,20 @@ export default function Page() {
                   className="flex gap-3"
                   style={{ width: 180 }}>
                   <AuthButton permission="user:update">
-                    <span
+                    <button
+                      type="button"
                       className="cell-link"
                       onClick={() => openEdit(record)}>
                       编辑
-                    </span>
+                    </button>
                   </AuthButton>
                   <AuthButton permission="user:assign_role">
-                    <span
+                    <button
+                      type="button"
                       className="cell-link t-muted"
                       onClick={() => openAssign(record)}>
                       分配角色
-                    </span>
+                    </button>
                   </AuthButton>
                   <AuthButton permission="user:delete">
                     <Popconfirm
@@ -195,7 +197,11 @@ export default function Page() {
                       okText="删除"
                       cancelText="取消"
                       onConfirm={() => handleDelete(record)}>
-                      <span className="cell-danger">删除</span>
+                        <button
+                          type="button"
+                          className="cell-danger">
+                          删除
+                        </button>
                     </Popconfirm>
                   </AuthButton>
                 </span>
@@ -213,25 +219,29 @@ export default function Page() {
               共 {total} 条 · 第 {page}/{totalPages} 页
             </span>
             <div className="pager__pages">
-              <span
-                className={`pager__btn ${page <= 1 ? 't-placeholder' : 'cursor-pointer'}`}
+              <button
+                type="button"
+                className="pager__btn"
+                aria-label="上一页"
+                disabled={page <= 1}
                 onClick={() => {
-                  if (page <= 1) return
                   setPage(page - 1)
                   fetchList({ page: page - 1 })
                 }}>
                 ‹
-              </span>
+              </button>
               <span className="pager__btn pager__btn--active">{page}</span>
-              <span
-                className={`pager__btn ${page >= totalPages ? 't-placeholder' : 'cursor-pointer'}`}
+              <button
+                type="button"
+                className="pager__btn"
+                aria-label="下一页"
+                disabled={page >= totalPages}
                 onClick={() => {
-                  if (page >= totalPages) return
                   setPage(page + 1)
                   fetchList({ page: page + 1 })
                 }}>
                 ›
-              </span>
+              </button>
             </div>
           </div>
         ) : null}

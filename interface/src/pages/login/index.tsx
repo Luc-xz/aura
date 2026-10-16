@@ -175,7 +175,7 @@ export function LoginPanel() {
   const submitting = navigation.state === 'submitting'
 
   const handleSubmit = (values) => {
-    submit(values, { method: 'post' })
+    submit({ ...values, type: 'login' }, { method: 'post' })
   }
 
   return (
@@ -185,11 +185,7 @@ export function LoginPanel() {
       className="auth__card aura-form"
       requiredMark={false}
       colon={false}
-      initialValues={{ type: 'login' }}
       onFinish={handleSubmit}>
-      <Form.Item
-        name="type"
-        hidden></Form.Item>
       <div className="auth__intro">
         <span className="auth__title">登录 Aura</span>
         <span className="t-sm t-muted">登录后继续推进你的项目</span>
@@ -204,6 +200,7 @@ export function LoginPanel() {
         <Input
           prefix={<MailIcon />}
           placeholder="请输入邮箱"
+          autoComplete="email"
         />
       </Form.Item>
       <Form.Item
@@ -214,6 +211,7 @@ export function LoginPanel() {
           prefix={<LockIcon />}
           type="password"
           placeholder="请输入密码"
+          autoComplete="current-password"
         />
       </Form.Item>
       <Button
@@ -227,12 +225,13 @@ export function LoginPanel() {
       </Button>
       <span className="auth__foot">
         没有账户？
-        <a
-          className="t-primary w-medium cursor-pointer"
+        <button
+          type="button"
+          className="auth__switch t-primary w-medium"
           onClick={() => navigate('/login?type=register')}>
           {' '}
           立即注册
-        </a>
+        </button>
       </span>
     </Form>
   )
@@ -246,7 +245,7 @@ export function RegisterPanel() {
   const submitting = navigation.state === 'submitting'
 
   const handleSubmit = (values) => {
-    submit(values, { method: 'post' })
+    submit({ ...values, type: 'register' }, { method: 'post' })
   }
 
   return (
@@ -257,11 +256,7 @@ export function RegisterPanel() {
       className="auth__card aura-form"
       requiredMark={false}
       colon={false}
-      initialValues={{ type: 'register' }}
       onFinish={handleSubmit}>
-      <Form.Item
-        name="type"
-        hidden></Form.Item>
       <div className="auth__intro">
         <span className="auth__title">注册 Aura</span>
         <span className="t-sm t-muted">创建账户，开始你的第一个项目</span>
@@ -276,6 +271,7 @@ export function RegisterPanel() {
         <Input
           prefix={<UserIcon />}
           placeholder="请输入用户名"
+          autoComplete="username"
         />
       </Form.Item>
       <Form.Item
@@ -288,6 +284,7 @@ export function RegisterPanel() {
         <Input
           prefix={<MailIcon />}
           placeholder="请输入邮箱"
+          autoComplete="email"
         />
       </Form.Item>
       <Form.Item
@@ -301,6 +298,7 @@ export function RegisterPanel() {
           prefix={<LockIcon />}
           type="password"
           placeholder="请输入密码"
+          autoComplete="new-password"
         />
       </Form.Item>
       <Form.Item
@@ -312,6 +310,7 @@ export function RegisterPanel() {
           {
             validator: (rule, value) => {
               return new Promise((resolve, reject) => {
+                if (!value) return resolve()
                 if (value !== form.getFieldValue('password')) {
                   reject('两次输入的密码不一致')
                 } else {
@@ -325,6 +324,7 @@ export function RegisterPanel() {
           prefix={<LockIcon />}
           type="password"
           placeholder="请再次输入密码"
+          autoComplete="new-password"
         />
       </Form.Item>
       <Button
@@ -338,12 +338,13 @@ export function RegisterPanel() {
       </Button>
       <span className="auth__foot">
         已有账户？
-        <a
-          className="t-primary w-medium cursor-pointer"
+        <button
+          type="button"
+          className="auth__switch t-primary w-medium"
           onClick={() => navigate('/login?type=login')}>
           {' '}
           去登录
-        </a>
+        </button>
       </span>
     </Form>
   )

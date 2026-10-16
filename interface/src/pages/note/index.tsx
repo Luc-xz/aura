@@ -6,7 +6,6 @@ import { getNotePage } from '@/api/note'
 import { getWorkspaceList } from '@/api/workspace'
 import { ProjectSearch } from '@/components/shell/project-sidebar'
 import { useLeftbarNav } from '@/components/shell/leftbar-nav'
-import { NoteIcon, SettingIcon, WorkspaceIcon } from '@/components/shell/icons'
 import { EmptyState } from '@/components/ui'
 import { formatRelative } from '@/utils/time'
 
@@ -101,28 +100,6 @@ export default function Page({ loaderData }) {
   const navNode = useMemo(
     () => (
       <>
-        <nav className="modnav">
-          <button
-            type="button"
-            className="modnav__item"
-            onClick={() => navigate('/chat')}>
-            <WorkspaceIcon />
-            工作台
-          </button>
-          <button
-            type="button"
-            className="modnav__item is-active">
-            <NoteIcon />
-            笔记
-          </button>
-          <button
-            type="button"
-            className="modnav__item"
-            onClick={() => navigate('/setting')}>
-            <SettingIcon />
-            设置
-          </button>
-        </nav>
         <div className="divider" />
         <div className="group-title">筛选</div>
         <nav className="setnav">
@@ -240,21 +217,25 @@ export default function Page({ loaderData }) {
             list.map((note) => (
               <article
                 key={note.id}
-                className="note-item cursor-pointer"
-                onClick={() => navigate(`/note/edit/${note.id}`)}>
-                <span className="note-item__title">{note.title || '未命名笔记'}</span>
-                <span className="note-item__excerpt">{note.description || note.content?.slice(0, 80) || '（暂无摘要）'}</span>
+                className="note-item">
+                <button
+                  type="button"
+                  className="note-item__main"
+                  onClick={() => navigate(`/note/edit/${note.id}`)}>
+                  <span className="note-item__title">{note.title || '未命名笔记'}</span>
+                  <span className="note-item__excerpt">{note.description || note.content?.slice(0, 80) || '（暂无摘要）'}</span>
+                </button>
                 <div className="note-item__meta">
                   {(note.keywords || []).slice(0, 4).map((kw: string) => (
-                    <span
+                    <button
+                      type="button"
                       key={kw}
                       className="tag tag-btn"
                       onClick={(e) => {
-                        e.stopPropagation()
                         handleTagSearch(kw)
                       }}>
                       {kw}
-                    </span>
+                    </button>
                   ))}
                   <span className="ml-auto">
                     {formatRelative(note.updatedAt)}
@@ -291,12 +272,13 @@ export default function Page({ loaderData }) {
           <div className="flex flex-wrap gap-1.5">
             {tagCounts.length ? (
               tagCounts.map((tag) => (
-                <span
+                <button
+                  type="button"
                   key={tag}
                   className="tag tag-btn"
                   onClick={() => handleTagSearch(tag)}>
                   {tag}
-                </span>
+                </button>
               ))
             ) : (
               <span className="t-xs t-placeholder">暂无标签</span>
@@ -324,13 +306,14 @@ export default function Page({ loaderData }) {
           <span className="side-card__title">最近编辑</span>
           {recentNotes.length ? (
             recentNotes.map((note, index) => (
-              <div
+              <button
+                type="button"
                 key={note.id}
-                className={`session-item ${index === 0 ? 'session-item--active' : ''} cursor-pointer`}
+                className={`session-item ${index === 0 ? 'session-item--active' : ''}`}
                 onClick={() => navigate(`/note/edit/${note.id}`)}>
                 <span className="session-item__title">{note.title || '未命名笔记'}</span>
                 <span className="session-item__meta">{formatRelative(note.updatedAt)}</span>
-              </div>
+              </button>
             ))
           ) : (
             <span className="t-xs t-placeholder">暂无记录</span>

@@ -194,78 +194,85 @@ export default function Page() {
             {list.map((record) => {
               const selected = permRole?.id === record.id
               return (
-                <div
+                <article
                   key={record.id}
-                  className={`role-card flex flex-col gap-2 ${selected ? 'role-card--active' : ''}`}
-                  onClick={() => openPerm(record)}>
-                  <div className="row-between">
-                    <span className="t-h3">{record.name}</span>
-                    {record.isSystem === 1 ? (
-                      <span className="badge-lock">
-                        <svg
-                          width="10"
-                          height="10"
-                          viewBox="0 0 14 14"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.4">
-                          <rect
-                            x="3"
-                            y="6"
-                            width="8"
-                            height="6"
-                            rx="1.5"
-                          />
-                          <path d="M4.6 6V4.6a2.4 2.4 0 0 1 4.8 0V6" />
-                        </svg>
-                        系统内置 · 只读
-                      </span>
-                    ) : (
-                      <span
-                        className="badge-lock"
-                        style={{ borderStyle: 'dashed' }}>
-                        自定义
-                      </span>
-                    )}
-                  </div>
-                  <span className="t-sm t-muted">{record.description || '—'}</span>
-                  <div className="mt-auto flex items-center justify-between">
-                    <span className="t-sm t-placeholder">{record.code}</span>
-                    {selected ? (
-                      <Pill
-                        tone="info"
-                        size="sm">
-                        配置中
-                      </Pill>
-                    ) : (
-                      <span className="t-xs t-primary">点击配置权限</span>
-                    )}
-                  </div>
-                  <div
-                    className="flex gap-3"
-                    onClick={(e) => e.stopPropagation()}>
+                  className={`role-card ${selected ? 'role-card--active' : ''}`}>
+                  <button
+                    type="button"
+                    className="role-card__body"
+                    onClick={() => openPerm(record)}>
+                    <div className="row-between">
+                      <span className="t-h3">{record.name}</span>
+                      {record.isSystem === 1 ? (
+                        <span className="badge-lock">
+                          <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 14 14"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.4">
+                            <rect
+                              x="3"
+                              y="6"
+                              width="8"
+                              height="6"
+                              rx="1.5"
+                            />
+                            <path d="M4.6 6V4.6a2.4 2.4 0 0 1 4.8 0V6" />
+                          </svg>
+                          系统内置 · 只读
+                        </span>
+                      ) : (
+                        <span
+                          className="badge-lock"
+                          style={{ borderStyle: 'dashed' }}>
+                          自定义
+                        </span>
+                      )}
+                    </div>
+                    <span className="t-sm t-muted">{record.description || '—'}</span>
+                    <div className="mt-auto flex items-center justify-between">
+                      <span className="t-sm t-placeholder">{record.code}</span>
+                      {selected ? (
+                        <Pill
+                          tone="info"
+                          size="sm">
+                          配置中
+                        </Pill>
+                      ) : (
+                        <span className="t-xs t-primary">点击配置权限</span>
+                      )}
+                    </div>
+                  </button>
+                  <div className="role-card__actions">
                     <AuthButton permission="role:update">
-                      <span
-                        className={`cell-link ${record.isSystem === 1 ? 't-placeholder' : ''}`}
-                        onClick={() => record.isSystem !== 1 && openEdit(record)}>
+                      <button
+                        type="button"
+                        className="cell-link"
+                        disabled={record.isSystem === 1}
+                        onClick={() => openEdit(record)}>
                         编辑
-                      </span>
+                      </button>
                     </AuthButton>
                     <AuthButton permission="role:delete">
-                      <span
-                        className={`cell-danger ${record.isSystem === 1 ? 't-placeholder' : ''}`}
-                        onClick={() => record.isSystem !== 1 && handleDelete(record)}>
+                      <button
+                        type="button"
+                        className="cell-danger"
+                        disabled={record.isSystem === 1}
+                        onClick={() => handleDelete(record)}>
                         删除
-                      </span>
+                      </button>
                     </AuthButton>
                   </div>
-                </div>
+                </article>
               )
             })}
 
             {/* 网格内新建入口（原型 13 虚线卡） */}
             <AuthButton permission="role:create">
-              <div
+              <button
+                type="button"
                 className="role-card role-card--create"
                 onClick={openCreate}>
                 <svg
@@ -279,7 +286,7 @@ export default function Page() {
                   <path d="M9 2v14M2 9h14" />
                 </svg>
                 <span className="t-body t-primary w-medium">新建自定义角色</span>
-              </div>
+              </button>
             </AuthButton>
           </div>
         )}
@@ -331,14 +338,17 @@ export default function Page() {
                 const isButton = node.type === 'button'
                 const isChild = depth > 0
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={node.id}
                     className={`tree-row ${isChild ? (isButton ? 'tree-row--btn' : 'tree-row--child') : ''} ${permRole.isSystem === 1 && !isSuperAdmin ? 'tree-row--disabled' : ''}`}
-                    onClick={() => !(permRole.isSystem === 1 && !isSuperAdmin) && toggleRow(node, !checked)}>
+                    aria-pressed={checked}
+                    disabled={permRole.isSystem === 1 && !isSuperAdmin}
+                    onClick={() => toggleRow(node, !checked)}>
                     <span className={`tree-check ${checked ? 'tree-check--on' : 'tree-check--off'}`}></span>
                     <span className={isButton ? 't-sm' : ''}>{node.name}</span>
                     {node.permission ? <span className="perm-code">{node.permission}</span> : null}
-                  </div>
+                  </button>
                 )
               })}
             </div>
