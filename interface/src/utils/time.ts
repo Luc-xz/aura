@@ -9,6 +9,13 @@ export const formatDate = (input: string | number | Date) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
+export const formatDateTime = (input?: string | number | Date | null) => {
+  if (input === undefined || input === null || input === '') return ''
+  const d = new Date(input)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 // 相对时间：一年内给相对描述（对齐原型「9 天前 / 1 个月前」），更早（或时钟偏差导致的未来时间）回退为日期
 export const formatRelative = (input: string | number | Date): string => {
   const date = new Date(input)

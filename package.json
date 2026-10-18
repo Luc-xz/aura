@@ -1,6 +1,7 @@
 {
   "name": "aura",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test:server": "pnpm --filter aura-server test",

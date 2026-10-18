@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSubmit, useNavigate } from 'react-router'
 import { useLeftbarNav } from '@/components/shell/leftbar-nav'
 import { ProjectSearch } from '@/components/shell/project-sidebar'
-import { formatRelative } from '@/utils/time'
+import { formatDateTime, formatRelative } from '@/utils/time'
 
 const getNoteDetail = async (id: string) => {
   const [err, res] = await getNoteById(id)
@@ -238,7 +238,7 @@ export default function Page({ loaderData, actionData }) {
           <div className="divider" />
           <div className="flex items-center justify-between">
             <span className="t-sm t-muted">创建时间</span>
-            <span className="t-sm">{loaderData.detail ? loaderData.detail.createdAt?.slice(0, 16) : '—'}</span>
+            <span className="t-sm">{loaderData.detail ? formatDateTime(loaderData.detail.createdAt) : '—'}</span>
           </div>
         </div>
         <div className="side-card side-card--plain">

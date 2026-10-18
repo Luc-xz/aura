@@ -7,6 +7,7 @@ import { authMiddleware } from '../middlewares/auth.js'
 import { requireOwnership } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound, Forbidden } from '../utils/appError.js'
+import { parseDateRange } from '../utils/dateRange.js'
 
 const router = express.Router()
 
@@ -30,16 +31,12 @@ function listOptions(query) {
     filters.title = query.title
   }
   for (const field of ['createdAt', 'updatedAt']) {
-    if (query[field] === undefined) continue
-    if (typeof query[field] !== 'string') throw BadRequest('invalid date range')
-    const range = query[field].split(',')
-    if (range.length !== 2 || range.some(value => !value.trim() || !Number.isFinite(Date.parse(value)))) {
-      throw BadRequest('invalid date range')
-    }
-    filters[field] = range
+    const range = parseDateRange(query[field])
+    if (range) filters[field] = range
   }
   return { filters, sort: { orderBy: query.orderBy, orderDir: query.orderDir } }
 }
+
 
 // Presence, not truthiness: status=0 and empty/null text are intentional updates.
 function projectPayload(body, creating = false) {

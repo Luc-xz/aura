@@ -6,6 +6,7 @@ import { authMiddleware } from '../middlewares/auth.js'
 import { requireOwnership } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound } from '../utils/appError.js'
+import { pickDateFilters } from '../utils/dateRange.js'
 
 const router = express.Router()
 
@@ -40,11 +41,7 @@ function noteEndpoints(apiRouter) {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await Note.findAll({
       user: req.user,
-      filters: {
-        ...rest,
-        createdAt: rest?.createdAt?.split(',') || null,
-        updatedAt: rest?.updatedAt?.split(',') || null,
-      },
+      filters: pickDateFilters(rest),
       pagination: {
         page,
         pageSize

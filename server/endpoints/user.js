@@ -7,6 +7,7 @@ import Rbac from '../models/rbac.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import Validator from '../../shared/utils/validator.js'
 import { AppError, BadRequest, NotFound, Conflict, Forbidden } from '../utils/appError.js'
+import { pickDateFilters } from '../utils/dateRange.js'
 import { comparePassword } from '../utils/bcrypt.js'
 import { randomUUID } from 'node:crypto'
 import jwt from 'jsonwebtoken'
@@ -61,7 +62,7 @@ function userEndpoints(apiRouter) {
   router.get('/list', ...withAuthContext, requirePermission('user:list'), asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await User.findAll({
-      filters: rest,
+      filters: pickDateFilters(rest),
       sort: {
         orderBy,
         orderDir
@@ -77,11 +78,7 @@ function userEndpoints(apiRouter) {
   router.get('/page', ...withAuthContext, requirePermission('user:list'), asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await User.findAll({
-      filters: {
-        ...rest,
-        createdAt: rest?.createdAt?.split(',') || null,
-        updatedAt: rest?.updatedAt?.split(',') || null,
-      },
+      filters: pickDateFilters(rest),
       pagination: {
         page,
         pageSize

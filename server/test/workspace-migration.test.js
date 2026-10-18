@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, it, expect } from 'vitest'
 import pool from '../sql/index.js'
+import { readMigrationStatements } from './support/migrations.js'
 
 const schema = async () => {
   const [columns] = await pool.query(`SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA
@@ -16,6 +17,10 @@ const schema = async () => {
 describe('workspace migration contract', () => {
   it('upgrades populated legacy tables without data loss and matches a fresh init.sql schema', async () => {
     const migration = fs.readFileSync(path.resolve(import.meta.dirname, '../sql/migrations/20260924_alter_workspace_project_fields.sql'), 'utf8')
+    const datetimeMigration = readMigrationStatements(
+      path.resolve(import.meta.dirname, '../sql/migrations/20261018_datetime_utc.sql'),
+      'aura_test'
+    )
     const fresh = await schema()
     // Fixture: schema immediately before B1, inside the guarded aura_test DB only.
     await pool.query('DROP TABLE chat, workspace')
@@ -33,6 +38,9 @@ describe('workspace migration contract', () => {
     )`)
     await pool.query("INSERT INTO workspace (id, user_id, title, model_id) VALUES (42, 7, 'legacy project', 9)")
     await pool.query("INSERT INTO chat (id, workspace_id, proposer, content) VALUES (43, 42, 'user', 'legacy message')")
+    for (const statement of datetimeMigration) {
+      await pool.query(statement)
+    }
     for (const statement of migration.split(';').map((s) => s.trim()).filter(Boolean)) {
       await pool.query(statement)
     }

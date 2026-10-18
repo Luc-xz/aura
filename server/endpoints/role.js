@@ -6,6 +6,7 @@ import { authMiddleware } from '../middlewares/auth.js'
 import { loadAuthContext, requirePermission, isSuperAdmin, invalidateAll } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound, Conflict, Forbidden } from '../utils/appError.js'
+import { pickDateFilters } from '../utils/dateRange.js'
 
 const router = express.Router()
 
@@ -16,7 +17,7 @@ function roleEndpoints(apiRouter) {
   router.get('/list', requirePermission('role:list'), asyncHandler(async (req, res) => {
     const { orderBy, orderDir, ...rest } = req.query
     const data = await Role.findAll({
-      filters: rest,
+      filters: pickDateFilters(rest),
       sort: {
         orderBy,
         orderDir
@@ -33,11 +34,7 @@ function roleEndpoints(apiRouter) {
   router.get('/page', requirePermission('role:list'), asyncHandler(async (req, res) => {
     const { page, pageSize, orderBy, orderDir, ...rest } = req.query
     const data = await Role.findAll({
-      filters: {
-        ...rest,
-        createdAt: rest?.createdAt?.split(',') || null,
-        updatedAt: rest?.updatedAt?.split(',') || null,
-      },
+      filters: pickDateFilters(rest),
       pagination: {
         page: parseInt(page) || 1,
         pageSize: parseInt(pageSize) || 10

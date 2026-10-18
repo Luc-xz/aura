@@ -7,6 +7,7 @@ import { authMiddleware } from '../middlewares/auth.js'
 import { loadAuthContext, requirePermission, invalidateAll } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound, Conflict } from '../utils/appError.js'
+import { pickDateFilters } from '../utils/dateRange.js'
 
 const VALID_MENU_TYPES = ['directory', 'menu', 'button']
 
@@ -17,9 +18,7 @@ function menuEndpoints(apiRouter) {
 
   // 1. 获取菜单平铺列表
   router.get('/list', requirePermission('menu:list'), asyncHandler(async (req, res) => {
-    const data = await Menu.findAll({
-      ...req.query
-    })
+    const data = await Menu.findAll(pickDateFilters(req.query))
     res.status(200).json({
       data,
       code: 200,
@@ -29,9 +28,7 @@ function menuEndpoints(apiRouter) {
 
   // 2. 获取菜单树
   router.get('/tree', requirePermission('menu:list'), asyncHandler(async (req, res) => {
-    const data = await Menu.findAll({
-      ...req.query
-    })
+    const data = await Menu.findAll(pickDateFilters(req.query))
     const tree = toTree(data)
     res.status(200).json({
       data: tree,

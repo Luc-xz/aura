@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router'
 import { CheckCircleOutlined } from '@ant-design/icons'
 import { Pill } from '@/components/ui'
 import type { WorkspaceItem } from '@/api/workspace'
-import { formatRelative } from '@/utils/time'
+import { formatDate, formatRelative } from '@/utils/time'
 
 interface NoteBrief {
   id: number
@@ -55,7 +55,7 @@ export default function ProjectContext({ workspace, notes, onSaveSessionNote, on
             <span className="t-body w-medium">{workspace.goal ? `目标：${workspace.goal}` : '未设置项目目标'}</span>
             <span className="t-sm t-muted">{workspace.description || '暂无背景描述'}</span>
             <span className="t-xs t-placeholder">
-              创建于 {workspace.createdAt?.slice(0, 10) || '—'} · {workspace.chatCount} 条对话
+              创建于 {formatDate(workspace.createdAt) || '—'} · {workspace.chatCount} 条对话
             </span>
             {/* B7 上下文注入透出：仅 goal/description 已注入，笔记注入为远期 */}
             {workspace.goal || workspace.description ? (

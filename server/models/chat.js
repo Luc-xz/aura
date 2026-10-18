@@ -52,7 +52,7 @@ export default class Chat {
         'INSERT INTO chat (workspace_id, proposer, content, model_id) VALUES (?, ?, ?, ?)',
         [workspaceId, proposer, content, modelId ?? null]
       )
-      await connection.query('UPDATE workspace SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [workspaceId])
+      await connection.query('UPDATE workspace SET updated_at = CURRENT_TIMESTAMP(3) WHERE id = ?', [workspaceId])
       await connection.commit()
       return result.insertId
     } catch (error) {

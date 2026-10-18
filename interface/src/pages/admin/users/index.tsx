@@ -3,6 +3,7 @@ import { App, Drawer, Form, Input, Popconfirm, Select } from 'antd'
 import { findById, page as pageUser, remove as removeUser, update as updateUser, assignRoles } from '@/api/user'
 import { list as listRoles } from '@/api/role'
 import { AuthButton } from '@/components/permission'
+import { formatDateTime } from '@/utils/time'
 
 interface UserRow { id: number; name: string; email: string; createdAt: string }
 interface RoleRow { id: number; name: string; code: string; isSystem: number }
@@ -171,7 +172,7 @@ export default function Page() {
                     <span className="t-xs t-placeholder">{record.email}</span>
                   </div>
                 </div>
-                <span className="cell-grow t-muted num">{record.createdAt?.slice(0, 16)}</span>
+                <span className="cell-grow t-muted num">{formatDateTime(record.createdAt)}</span>
                 <span
                   className="flex gap-3"
                   style={{ width: 180 }}>

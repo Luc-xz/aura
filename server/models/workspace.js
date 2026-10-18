@@ -64,7 +64,7 @@ export default class Workspace {
       COALESCE(SUM(status = 1), 0) AS paused,
       COALESCE(SUM(status = 2), 0) AS archived,
       COALESCE(SUM(EXISTS(SELECT 1 FROM chat WHERE chat.workspace_id = workspace.id
-        AND chat.created_at >= NOW() - INTERVAL 7 DAY AND chat.created_at <= NOW())), 0) AS advancedThisWeek
+        AND chat.created_at >= UTC_TIMESTAMP(3) - INTERVAL 7 DAY AND chat.created_at <= UTC_TIMESTAMP(3))), 0) AS advancedThisWeek
       FROM workspace WHERE user_id = ?`, [user.id])
     return Object.fromEntries(Object.entries(row).map(([key, value]) => [key, Number(value)]))
   }

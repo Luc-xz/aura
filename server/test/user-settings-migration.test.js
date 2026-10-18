@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, it, expect } from 'vitest'
 import pool from '../sql/index.js'
+import { readMigrationStatements } from './support/migrations.js'
 
 const schema = async () => {
   const [columns] = await pool.query(`SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
@@ -16,6 +17,10 @@ const schema = async () => {
 describe('user settings migration contract', () => {
   it('upgrades the pre-B3 table without data loss and matches a fresh init.sql schema', async () => {
     const migration = fs.readFileSync(path.resolve(import.meta.dirname, '../sql/migrations/20260924_alter_user_settings_default_model.sql'), 'utf8')
+    const datetimeMigration = readMigrationStatements(
+      path.resolve(import.meta.dirname, '../sql/migrations/20261018_datetime_utc.sql'),
+      'aura_test'
+    )
     const fresh = await schema()
     // Fixture: schema immediately before B3, inside the guarded aura_test DB only.
     await pool.query('DROP TABLE user_settings')
@@ -30,6 +35,9 @@ describe('user settings migration contract', () => {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )`)
     await pool.query('INSERT INTO user_settings (user_id, default_model_id) VALUES (7, 9)')
+    for (const statement of datetimeMigration) {
+      await pool.query(statement)
+    }
     for (const statement of migration.split(';').map((s) => s.trim()).filter(Boolean)) {
       await pool.query(statement)
     }

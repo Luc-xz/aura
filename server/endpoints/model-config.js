@@ -5,6 +5,7 @@ import { authMiddleware } from '../middlewares/auth.js'
 import { requireOwnership } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound } from '../utils/appError.js'
+import { pickDateFilters } from '../utils/dateRange.js'
 
 const NATIVE_PROVIDERS = ['openai', 'anthropic', 'google']
 const PROVIDER_RE = /^[a-z0-9][a-z0-9._-]*$/i
@@ -18,11 +19,7 @@ function modelConfigEndpoints(apiRouter) {
     const { orderBy, orderDir, ...rest } = req.query
     const data = await ModelConfig.findAll({
       user: req.user,
-      filters: {
-        ...rest,
-        createdAt: rest?.createdAt?.split(',') || null,
-        updatedAt: rest?.updatedAt?.split(',') || null,
-      },
+      filters: pickDateFilters(rest),
       sort: {
         orderBy,
         orderDir

@@ -11,6 +11,7 @@ import { createModelInstance } from '../utils/model-factory.js'
 import { generateText, streamText, stepCountIs } from 'ai'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound, BadGateway } from '../utils/appError.js'
+import { pickDateFilters } from '../utils/dateRange.js'
 import { logger } from '../utils/logger.js'
 import { buildNoteTools, NOTE_TOOLS_SYSTEM_PROMPT } from '../tool/index.js'
 
@@ -27,11 +28,7 @@ function chatEndpoints(apiRouter) {
     const data = await Chat.findByWorkspaceId(
       workspaceId,
       {
-        filters: {
-          ...rest,
-          createdAt: rest?.createdAt?.split(',') || null,
-          updatedAt: rest?.updatedAt?.split(',') || null,
-        },
+        filters: pickDateFilters(rest),
         sort: {
           orderBy,
           orderDir
