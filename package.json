@@ -1,13 +1,24 @@
 {
   "name": "aura",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test:server": "pnpm --filter aura-server test",
     "test:server:watch": "pnpm --filter aura-server test:watch",
+    "test:docs": "tsx scripts/run-gates.ts",
+    "verify-md-links": "tsx scripts/verify-md-links.ts",
+    "verify-agent-notes": "tsx scripts/verify-agent-notes.ts",
     "start:server": "pnpm --filter aura-server start",
     "dev:server": "pnpm --filter aura-server dev",
     "dev:ui": "pnpm --filter aura-interface dev"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.0",
+    "mdast-util-from-markdown": "^2.0.3",
+    "mdast-util-gfm": "^3.1.0",
+    "micromark-extension-gfm": "^3.0.0",
+    "tsx": "^4.22.4"
   },
   "keywords": [],
   "author": "",

@@ -3,7 +3,7 @@
 UI 原型以**可读 HTML** 形态交付：每屏一个自包含单文件，模型与开发可直接读取。
 设计源文件：Ardot `Aura 工作台改版原型` — https://ardot.tencent.com/file/723970175272232（视觉基准，可随时重新导出）。
 
-配套文档：`docs/frontend-workspace-redesign-dev-doc.md`（改造方案）、`docs/aura-ui-redesign-options.html`（A/B 草图）。
+配套文档：屏幕到路由的映射见本文第四节；系统现状见 [docs/architecture.md](../../docs/architecture.md)；前端设计令牌落地在 `interface/src/assets/styles/`。
 
 ---
 
