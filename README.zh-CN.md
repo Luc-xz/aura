@@ -45,9 +45,12 @@ aura/
 │   ├── sql/              # init.sql 与 migrations
 │   ├── scripts/          # 测试服务启动脚本等
 │   └── test/             # Vitest 集成测试
-├── shared/               # 前后端共享常量与工具
+├── shared/               # 后端使用的共享常量与工具
 ├── design/prototype/     # UI 原型（方案 B，17 屏，可读 HTML）
-└── docs/                 # 产品规划文档
+├── docs/                 # 产品路线图与系统架构
+├── .agents/notes/        # 决策记录（为什么这样定、否掉了什么）
+├── scripts/              # 文档校验 gate（链接、决策记录格式）
+└── AGENTS.md             # agent 与维护者的常驻规则
 ```
 
 ## 🚀 快速开始

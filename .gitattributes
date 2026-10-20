@@ -1,0 +1,12 @@
+# The repository's canonical text form is LF, enforced at checkout too: no
+# smudge boundary between working tree and repo, so the documentation gates
+# see one form on every host. Windows command scripts require CRLF in the
+# working tree for cmd.exe; the override after the default keeps the in-repo
+# form normalized as text.
+* text=auto eol=lf
+*.cmd text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary

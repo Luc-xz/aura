@@ -45,9 +45,12 @@ aura/
 │   ├── sql/              # init.sql and migrations
 │   ├── scripts/          # Test service bootstrap scripts, etc.
 │   └── test/             # Vitest integration tests
-├── shared/               # Constants and utils shared by frontend and backend
+├── shared/               # Constants and utils used by the backend
 ├── design/prototype/     # UI prototypes (scheme B, 17 screens, readable HTML)
-└── docs/                 # Product planning docs
+├── docs/                 # Product roadmap and system architecture
+├── .agents/notes/        # Decision records (why, and what was rejected)
+├── scripts/              # Documentation gates (links, decision-record format)
+└── AGENTS.md             # Standing rules for agents and maintainers
 ```
 
 ## 🚀 Getting Started

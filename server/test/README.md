@@ -53,12 +53,10 @@ node node_modules/vitest/vitest.mjs run
 
 不会调用真实收费模型：chat happy-path 沿用模拟模型。
 
-## 阶段性红灯
+## 红灯处理
 
-B0 恢复了 `a0eec5c` 的 15 条历史契约测试。恢复后不是全绿：
-B0 当时的红灯包括 B1/B2 项目字段与统计，以及 B3/B4 设置及默认模型回退。
-B1/B2 本轮已实现，当前全量回归预期只剩 B3/B4 的两条红灯；阶段结果见 `docs/workspace-redesign-b1-b2-acceptance.md`。
-这些用例正常执行并失败，不使用 skip、todo 或 expected-failure 掩盖。
+测试用例正常执行；失败就是失败，不使用 skip、todo 或 expected-failure 掩盖。
+需要暂时接受的已知失败，必须在同一变更内记一条 Agent Note 说明原因与消除条件，
+而不是留在本文件里追踪。
 
-验收记录见 `docs/workspace-redesign-b0-baseline.md`。后续阶段应逐步消除对应红灯，
-不能把“B0 验收完成”等同于“G1 后端就绪”。
+测试覆盖的系统现状见 [architecture.md](../../docs/architecture.md#测试)。
